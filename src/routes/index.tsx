@@ -68,7 +68,7 @@ function Index() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Logo />
-        {home ? <Button asChild><Link to={home}>Open cockpit</Link></Button> : <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>}
+        <Link to={home ?? "/auth"} className="text-sm text-muted-foreground hover:text-foreground">Sign in</Link>
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24">
         {entryError && <p role="alert" className="mb-4 text-destructive">Unable to open your account. Please try signing in again.</p>}
@@ -81,7 +81,7 @@ function Index() {
             One shared sky for virtual airlines and pilots. Build a company or a flying career, move passengers and urgent freight, and keep every Smooth Coin accountable.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg"><Link to={home ?? "/auth"}>{home ? "Open cockpit" : "Start flying"}</Link></Button>
+            <Button asChild size="lg"><Link to={home ?? "/auth"}>Enter Flight Deck</Link></Button>
             <Button asChild size="lg" variant="outline"><a href="#how-it-works">How SmoothSky works</a></Button>
           </div>
           </div>
@@ -138,7 +138,7 @@ function Index() {
               <h3 className="mt-4 text-xl font-semibold">Urgent contracts never stop</h3>
               <p className="mt-2 text-sm text-muted-foreground">Twelve special missions are always live somewhere in the network. Accept one, beat the clock and collect the fixed payout.</p>
             </div>
-            <Button asChild className="mt-6 self-start"><Link to="/auth">Create your account</Link></Button>
+            <Button asChild className="mt-6 self-start"><Link to="/leaderboard">View Live Leaderboard</Link></Button>
           </div>
         </section>
       </main>

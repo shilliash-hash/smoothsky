@@ -10,6 +10,7 @@ import { companyQuery } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
+import aurora from "@/assets/smoothsky-aurora-logo.png.asset.json";
 import { GameInfo } from "./GameInfo";
 import { SupporterBadge } from "./SupporterBadge";
 
@@ -38,7 +39,14 @@ export function AppShell({
     navigate({ to: "/auth", replace: true });
   }
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
+      <img
+        src={aurora.url}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-4 top-4 hidden w-[calc((100vw-72rem)/2-2rem)] max-w-[260px] opacity-75 2xl:block"
+        style={{ maskImage: "radial-gradient(circle, black 45%, transparent 72%)", WebkitMaskImage: "radial-gradient(circle, black 45%, transparent 72%)" }}
+      />
       <header className="border-b border-border bg-panel/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3">
           <div className="flex flex-wrap items-center gap-3 sm:gap-6">
