@@ -176,6 +176,13 @@
       "when": 1795095423244,
       "tag": "0024_pilot_careers_and_acars_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795097246977,
+      "tag": "0025_pilot_flights_stakes_personal_hangar",
+      "breakpoints": true
     }
   ]
 }

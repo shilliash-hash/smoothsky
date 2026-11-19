@@ -7,6 +7,7 @@ export const companyQuery = queryOptions({
     const { data, error } = await supabase
       .from("companies")
       .select("*, home_base:airports!companies_home_base_icao_fkey(*)")
+      .eq("is_personal", false)
       .maybeSingle();
     if (error) throw error;
     return data;

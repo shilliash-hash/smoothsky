@@ -10,7 +10,7 @@ export const getOperations = createServerFn({ method: "GET" })
     if (sync.error) throw new Error(sync.error.message);
     const settled = await db.rpc("settle_due_test_flights");
     if (settled.error) throw new Error(settled.error.message);
-    const { data: company, error: ce } = await db.from("companies").select("*").maybeSingle();
+    const { data: company, error: ce } = await db.from("companies").select("*").eq("is_personal", false).maybeSingle();
     if (ce) throw ce;
     const airports = [];
     for (let offset = 0; ; offset += 1000) {

@@ -119,3 +119,78 @@ export const getPilotLeaderboard = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+export type PilotAircraft = {
+  id: string; registration: string; location_icao: string; status: string; mode: "ROSTER" | "FREELANCE" | "PERSONAL";
+  company_name: string; company_icao: string; commission_pct: number; type_id: string; model: string; tier: number; pax: number;
+  range_nm: number; cruise_kts: number; minimum_runway_ft: number; rated: boolean; reserved_by_me: boolean; reserved_by_other: boolean; reserved_until: string | null;
+};
+export type PilotFlight = {
+  id: string; flight_number: string; status: string; mode: PilotAircraft["mode"]; commission_pct: number | null; origin_icao: string; destination_icao: string;
+  distance_nm: number; passengers: number; estimated_minutes: number; departed_at: string | null; completed_at: string | null; time_scale: number | null;
+  net: number | null; registration: string; company_name: string;
+};
+export type PilotStake = { id: string; company_name: string; icao_code: string; pct: number; price_paid: number; acquired_at: string; locked_until: string; current_value: number; next_dividend_at: string };
+export type PilotOps = {
+  career_role: string | null; type_ratings: number[]; balance: number; server_time: string; aircraft: PilotAircraft[]; flights: PilotFlight[];
+  stakes: PilotStake[]; dividends_total: number; has_personal: boolean;
+  personal_types: { id: string; model: string; tier: number; pax: number; range_nm: number; purchase_price: number }[];
+};
+
+export const getPilotOps = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await context.supabase.rpc("ensure_my_profile");
+    const { data, error } = await context.supabase.rpc("pilot_operations");
+    if (error) throw new Error(error.message);
+    return data as unknown as PilotOps;
+  });
+
+export const pilotFlight = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    action: z.enum(["reserve", "release", "quote", "dispatch", "start", "settle", "cancel"]),
+    aircraft: z.string().uuid().optional(), destination: z.string().trim().max(8).optional(),
+    flightNumber: z.string().trim().max(12).optional(), flight: z.string().uuid().optional(),
+  }))
+  .handler(async ({ data, context }) => {
+    const args: { p_action: string; p_aircraft?: string; p_destination?: string; p_flight_number?: string; p_flight?: string } = { p_action: data.action };
+    if (data.aircraft) args.p_aircraft = data.aircraft;
+    if (data.destination) args.p_destination = data.destination;
+    if (data.flightNumber) args.p_flight_number = data.flightNumber;
+    if (data.flight) args.p_flight = data.flight;
+    const { data: result, error } = await context.supabase.rpc("pilot_flight_action", args);
+    if (error) throw new Error(error.message);
+    return result as unknown as Record<string, string | number | boolean | null>;
+  });
+
+export const getStakeMarket = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("stake_market");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const stakeAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ action: z.enum(["buy", "sell", "offer"]), companyId: z.string().uuid().optional(), stakeId: z.string().uuid().optional(), pct: z.number().min(0).max(30).optional() }))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase;
+    const { error } = data.action === "buy"
+      ? await db.rpc("buy_stake", { p_company: data.companyId!, p_pct: data.pct! })
+      : data.action === "sell"
+        ? await db.rpc("sell_stake", { p_stake: data.stakeId! })
+        : await db.rpc("set_stake_offer", { p_pct: data.pct ?? 0 });
+    if (error) throw new Error(error.message);
+    return true;
+  });
+
+export const buyPersonalAircraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ type: z.string().min(1), registration: z.string().trim().max(10).optional() }))
+  .handler(async ({ data, context }) => {
+    const { data: id, error } = await context.supabase.rpc("buy_personal_aircraft", data.registration ? { p_type: data.type, p_registration: data.registration } : { p_type: data.type });
+    if (error) throw new Error(error.message);
+    return id as string;
+  });

@@ -71,3 +71,8 @@
 - [ ] Freelance job board
 - [ ] Airline stakes (≤30%, 7-day lock) and weekly dividends
 - [ ] Personal hangar (one T1–3 aircraft, private charters)
+
+- [x] Pilot roster/freelance flights with reservation and commission split
+- [x] Freelance job board (Crew ops)
+- [x] Airline stakes with 7-day lock and weekly dividends
+- [x] Personal hangar (one Tier 1–3 aircraft)

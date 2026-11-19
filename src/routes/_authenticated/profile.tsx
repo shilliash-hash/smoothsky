@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { BadgeCheck, Briefcase, Lock, Plane, UserRound } from "lucide-react";
+import { BadgeCheck, Briefcase, Lock, Plane, UserRound, PieChart, Warehouse } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
 import { AcarsConnection } from "@/components/game/AcarsConnection";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
-import { buyTypeRating, getCareer, getHiringCompanies, getPilotProfile, rosterAction, setCompanyHiring, simbriefUsernameSchema } from "@/lib/pilot.functions";
+import { buyPersonalAircraft, getPilotOps, getStakeMarket, stakeAction, buyTypeRating, getCareer, getHiringCompanies, getPilotProfile, rosterAction, setCompanyHiring, simbriefUsernameSchema } from "@/lib/pilot.functions";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [
@@ -123,8 +123,70 @@ function Profile() {
       </>}
     </div>}
 
-    <div className="mt-6 grid gap-4 sm:grid-cols-2">
-      {["Airline stakes & dividends", "Personal hangar"].map(t => <div key={t} className="rounded-sm border border-dashed border-border p-4 text-sm text-muted-foreground"><Lock className="mr-2 inline h-4 w-4" />{t} — coming in the next update.</div>)}
-    </div>
+    <StakesAndHangar role={role} companyOffer={company ? Number(company.stake_offer_pct ?? 0) : null} />
   </AppShell>;
+}
+
+function StakesAndHangar({ role, companyOffer }: { role: string | null; companyOffer: number | null }) {
+  const qc = useQueryClient();
+  const loadOps = useServerFn(getPilotOps);
+  const loadMarket = useServerFn(getStakeMarket);
+  const stake = useServerFn(stakeAction);
+  const buyPlane = useServerFn(buyPersonalAircraft);
+  const { data: ops, refetch } = useQuery({ queryKey: ["pilot-ops"], queryFn: () => loadOps() });
+  const { data: market = [], refetch: refetchMarket } = useQuery({ queryKey: ["stake-market"], queryFn: () => loadMarket() });
+  const [pct, setPct] = useState<Record<string, number>>({});
+  const [offer, setOffer] = useState(companyOffer ?? 0);
+  const [plane, setPlane] = useState({ type: "", registration: "" });
+  useEffect(() => { if (companyOffer !== null) setOffer(companyOffer); }, [companyOffer]);
+  const run = async (fn: () => Promise<unknown>, ok: string) => {
+    try { await fn(); toast.success(ok); await Promise.all([refetch(), refetchMarket(), qc.invalidateQueries({ queryKey: ["career"] }), qc.invalidateQueries({ queryKey: ["company"] })]); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Action failed"); }
+  };
+  const balance = Number(ops?.balance ?? 0);
+  return <div className="mt-6 grid gap-6 lg:grid-cols-2">
+    <div className="instrument p-5">
+      <p className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><PieChart className="h-4 w-4" /> Airline stakes</p>
+      {role === "ENTREPRENEUR" && companyOffer !== null && <div className="mt-3">
+        <Label htmlFor="so">Stake offered to pilots (0–30% of your airline)</Label>
+        <div className="mt-2 flex gap-2"><Input id="so" type="number" min={0} max={30} step={1} value={offer} onChange={e => setOffer(Number(e.target.value))} />
+          <Button onClick={() => run(() => stake({ data: { action: "offer", pct: offer } }), "Stake offer saved")}>Save</Button></div>
+        <p className="mt-2 text-xs text-muted-foreground">Stakes are priced from net worth. Each week stakeholders receive their share of 50% of operating profit (adjustable by admins).</p>
+      </div>}
+      {ops && ops.stakes.length > 0 && <>
+        <p className="mt-4 text-xs uppercase text-muted-foreground">Your stakes · dividends received {formatCr(Number(ops.dividends_total))}</p>
+        <ul className="mt-2 divide-y divide-border">{ops.stakes.map(s => { const locked = new Date(s.locked_until).getTime() > Date.now(); return <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+          <div><span className="font-semibold">{s.company_name}</span> <span className="readout text-primary">{s.icao_code}</span> · {s.pct}%
+            <div className="text-xs text-muted-foreground">Paid {formatCr(Number(s.price_paid))} · now {formatCr(Number(s.current_value))} · next dividend {new Date(s.next_dividend_at).toISOString().slice(0, 10)}</div></div>
+          <Button size="sm" variant="outline" disabled={locked} title={locked ? `Locked until ${new Date(s.locked_until).toISOString().slice(0, 16).replace("T", " ")} UTC` : undefined}
+            onClick={() => confirm(`Sell back for about ${formatCr(Number(s.current_value))}?`) && run(() => stake({ data: { action: "sell", stakeId: s.id } }), "Stake sold")}>{locked ? <><Lock className="h-3 w-3" /> Locked</> : "Sell"}</Button>
+        </li>; })}</ul>
+      </>}
+      <p className="mt-4 text-xs uppercase text-muted-foreground">Stakes on offer</p>
+      {market.length === 0 && <p className="mt-2 text-sm text-muted-foreground">No airline is offering stakes right now.</p>}
+      <ul className="mt-2 divide-y divide-border">{market.map(m => { const avail = Number(m.offered_pct) - Number(m.sold_pct); const want = pct[m.company_id] ?? 1; const price = want * Number(m.price_per_pct); return <li key={m.company_id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+        <div><span className="font-semibold">{m.name}</span> <span className="readout text-primary">{m.icao_code}</span>
+          <div className="text-xs text-muted-foreground">Net worth {formatCr(Number(m.net_worth))} · {avail}% available · {formatCr(Number(m.price_per_pct))} per 1%</div></div>
+        {avail > 0 && <div className="flex items-center gap-2"><Input className="w-20" type="number" min={0.5} max={avail} step={0.5} value={want} onChange={e => setPct({ ...pct, [m.company_id]: Number(e.target.value) })} />
+          <Button size="sm" disabled={want <= 0 || want > avail || price > balance} onClick={() => run(() => stake({ data: { action: "buy", companyId: m.company_id, pct: want } }), `Bought ${want}% of ${m.name}`)}>{formatCr(price)}</Button></div>}
+      </li>; })}</ul>
+      <p className="mt-2 text-xs text-muted-foreground">Bought stakes cannot be sold back for 7 days.</p>
+    </div>
+    <div className="instrument p-5">
+      <p className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Warehouse className="h-4 w-4" /> Personal hangar</p>
+      {role !== "PILOT_ONLY" ? <p className="mt-3 text-sm text-muted-foreground">Available to Pilot Only careers. Airline owners buy aircraft in the Aircraft market.</p>
+      : ops?.has_personal ? <p className="mt-3 text-sm">You own a personal aircraft. Fly it from <Link to="/crew" className="text-primary underline">Crew ops</Link> — you pay all costs and keep all revenue.</p>
+      : <>
+        <p className="mt-2 text-sm">Buy one Tier 1–3 aircraft and fly it on your own account: 100% of costs and 100% of profit go to your wallet.</p>
+        <select className="mt-3 w-full rounded-sm border border-border bg-background px-2 py-2 text-sm" value={plane.type} onChange={e => setPlane({ ...plane, type: e.target.value })}>
+          <option value="">Choose aircraft…</option>
+          {ops?.personal_types.map(t => <option key={t.id} value={t.id} disabled={!ops.type_ratings.includes(t.tier)}>{t.model} · T{t.tier} · {t.pax} pax · {formatCr(Number(t.purchase_price))}{ops.type_ratings.includes(t.tier) ? "" : " (rating required)"}</option>)}
+        </select>
+        <Input className="mt-2" placeholder="Registration (optional, assigned if empty)" value={plane.registration} onChange={e => setPlane({ ...plane, registration: e.target.value.toUpperCase() })} />
+        {(() => { const t = ops?.personal_types.find(x => x.id === plane.type); return <Button className="mt-3 w-full" disabled={!t || Number(t.purchase_price) > balance}
+          onClick={() => run(() => buyPlane({ data: { type: plane.type, registration: plane.registration || undefined } }), "Personal aircraft purchased")}>{t ? `Buy for ${formatCr(Number(t.purchase_price))}` : "Buy aircraft"}</Button>; })()}
+        <p className="mt-2 text-xs text-muted-foreground">Wallet: {formatCr(balance)}. Earn SC with roster or freelance flights first.</p>
+      </>}
+    </div>
+  </div>;
 }

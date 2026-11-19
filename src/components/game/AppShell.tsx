@@ -77,6 +77,7 @@ export function AppShell({
             {!company && (
               <nav className="flex flex-wrap gap-4 text-sm">
                 <Link to="/profile" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Profile</Link>
+                <Link to="/crew" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Crew ops</Link>
                 <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
               </nav>
             )}

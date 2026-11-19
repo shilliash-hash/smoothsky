@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBasesRouteImport } from './routes/_authenticated/bases'
+import { Route as AuthenticatedCrewRouteImport } from './routes/_authenticated/crew'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
@@ -54,6 +55,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBasesRoute = AuthenticatedBasesRouteImport.update({
   id: '/bases',
   path: '/bases',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrewRoute = AuthenticatedCrewRouteImport.update({
+  id: '/crew',
+  path: '/crew',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bases': typeof AuthenticatedBasesRoute
+  '/crew': typeof AuthenticatedCrewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bases': typeof AuthenticatedBasesRoute
+  '/crew': typeof AuthenticatedCrewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bases': typeof AuthenticatedBasesRoute
+  '/_authenticated/crew': typeof AuthenticatedCrewRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/bases'
+    | '/crew'
     | '/dashboard'
     | '/dispatch'
     | '/leaderboard'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin'
     | '/bases'
+    | '/crew'
     | '/dashboard'
     | '/dispatch'
     | '/leaderboard'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/bases'
+    | '/_authenticated/crew'
     | '/_authenticated/dashboard'
     | '/_authenticated/dispatch'
     | '/_authenticated/leaderboard'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/bases'
       fullPath: '/bases'
       preLoaderRoute: typeof AuthenticatedBasesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crew': {
+      id: '/_authenticated/crew'
+      path: '/crew'
+      fullPath: '/crew'
+      preLoaderRoute: typeof AuthenticatedCrewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -364,6 +383,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBasesRoute: typeof AuthenticatedBasesRoute
+  AuthenticatedCrewRoute: typeof AuthenticatedCrewRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
@@ -377,6 +397,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBasesRoute: AuthenticatedBasesRoute,
+  AuthenticatedCrewRoute: AuthenticatedCrewRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,

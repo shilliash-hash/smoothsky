@@ -239,11 +239,14 @@ export type Database = {
           icao_code: string
           id: string
           is_hiring: boolean
+          is_personal: boolean
           is_supporter: boolean
           name: string
+          next_dividend_at: string
           next_flight_sequence: number
           prev_week_rank: number | null
           roster_commission_pct: number
+          stake_offer_pct: number
           user_id: string
         }
         Insert: {
@@ -253,11 +256,14 @@ export type Database = {
           icao_code: string
           id?: string
           is_hiring?: boolean
+          is_personal?: boolean
           is_supporter?: boolean
           name: string
+          next_dividend_at?: string
           next_flight_sequence?: number
           prev_week_rank?: number | null
           roster_commission_pct?: number
+          stake_offer_pct?: number
           user_id: string
         }
         Update: {
@@ -267,11 +273,14 @@ export type Database = {
           icao_code?: string
           id?: string
           is_hiring?: boolean
+          is_personal?: boolean
           is_supporter?: boolean
           name?: string
+          next_dividend_at?: string
           next_flight_sequence?: number
           prev_week_rank?: number | null
           roster_commission_pct?: number
+          stake_offer_pct?: number
           user_id?: string
         }
         Relationships: [
@@ -391,6 +400,57 @@ export type Database = {
           },
         ]
       }
+      company_stakes: {
+        Row: {
+          acquired_at: string
+          company_id: string
+          holder_id: string
+          id: string
+          locked_until: string
+          pct: number
+          price_paid: number
+          sale_price: number | null
+          sold_at: string | null
+        }
+        Insert: {
+          acquired_at?: string
+          company_id: string
+          holder_id: string
+          id?: string
+          locked_until?: string
+          pct: number
+          price_paid: number
+          sale_price?: number | null
+          sold_at?: string | null
+        }
+        Update: {
+          acquired_at?: string
+          company_id?: string
+          holder_id?: string
+          id?: string
+          locked_until?: string
+          pct?: number
+          price_paid?: number
+          sale_price?: number | null
+          sold_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_stakes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_stakes_holder_id_fkey"
+            columns: ["holder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       economy_config: {
         Row: {
           description: string
@@ -421,6 +481,8 @@ export type Database = {
           ownership: string
           purchase_price: number
           registration: string
+          reserved_by: string | null
+          reserved_until: string | null
           returned_at: string | null
           status: string
           weekly_rate: number
@@ -436,6 +498,8 @@ export type Database = {
           ownership?: string
           purchase_price?: number
           registration: string
+          reserved_by?: string | null
+          reserved_until?: string | null
           returned_at?: string | null
           status?: string
           weekly_rate: number
@@ -451,6 +515,8 @@ export type Database = {
           ownership?: string
           purchase_price?: number
           registration?: string
+          reserved_by?: string | null
+          reserved_until?: string | null
           returned_at?: string | null
           status?: string
           weekly_rate?: number
@@ -495,6 +561,10 @@ export type Database = {
           id: string
           origin_icao: string
           passengers: number
+          pilot_commission_pct: number | null
+          pilot_funding: number
+          pilot_id: string | null
+          pilot_mode: string | null
           rules_snapshot: Json
           settlement: Json | null
           status: string
@@ -515,6 +585,10 @@ export type Database = {
           id?: string
           origin_icao: string
           passengers: number
+          pilot_commission_pct?: number | null
+          pilot_funding?: number
+          pilot_id?: string | null
+          pilot_mode?: string | null
           rules_snapshot: Json
           settlement?: Json | null
           status?: string
@@ -535,6 +609,10 @@ export type Database = {
           id?: string
           origin_icao?: string
           passengers?: number
+          pilot_commission_pct?: number | null
+          pilot_funding?: number
+          pilot_id?: string | null
+          pilot_mode?: string | null
           rules_snapshot?: Json
           settlement?: Json | null
           status?: string
@@ -828,6 +906,7 @@ export type Database = {
       acars_pilot: { Args: { p_key: string }; Returns: string }
       acars_pirep: { Args: { p: Json; p_key: string }; Returns: Json }
       acars_position: { Args: { p: Json; p_key: string }; Returns: Json }
+      act_as: { Args: { p_user: string }; Returns: string }
       admin_company_supporters: {
         Args: never
         Returns: {
@@ -863,6 +942,11 @@ export type Database = {
         Returns: number
       }
       assert_company_investment: { Args: never; Returns: undefined }
+      buy_personal_aircraft: {
+        Args: { p_registration?: string; p_type: string }
+        Returns: string
+      }
+      buy_stake: { Args: { p_company: string; p_pct: number }; Returns: string }
       buy_type_rating: { Args: { p_group: string }; Returns: undefined }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       choose_pilot_career: {
@@ -881,6 +965,20 @@ export type Database = {
         }[]
       }
       company_financial_health: { Args: never; Returns: Json }
+      company_net_worth: { Args: { p_company: string }; Returns: number }
+      company_post: {
+        Args: {
+          p_company: string
+          p_credit: string
+          p_debit: string
+          p_delta: number
+          p_desc: string
+          p_key: string
+          p_ref: string
+          p_type: string
+        }
+        Returns: number
+      }
       create_company: {
         Args: { p_home_base: string; p_icao_code: string; p_name: string }
         Returns: string
@@ -1010,8 +1108,34 @@ export type Database = {
       next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
+      pay_due_dividends: { Args: { p_company: string }; Returns: undefined }
       pilot_balance: { Args: { p_user: string }; Returns: number }
+      pilot_flight_action: {
+        Args: {
+          p_action: string
+          p_aircraft?: string
+          p_destination?: string
+          p_flight?: string
+          p_flight_number?: string
+        }
+        Returns: Json
+      }
+      pilot_mode_for: {
+        Args: { p_aircraft: string; p_user: string }
+        Returns: string
+      }
+      pilot_operations: { Args: never; Returns: Json }
+      pilot_post: {
+        Args: {
+          p_amount: number
+          p_desc: string
+          p_type: string
+          p_user: string
+        }
+        Returns: number
+      }
       process_due_obligations: { Args: never; Returns: undefined }
+      process_due_obligations_core: { Args: never; Returns: undefined }
       purchase_aircraft: {
         Args: { p_registration?: string; p_type: string }
         Returns: string
@@ -1032,6 +1156,7 @@ export type Database = {
       regenerate_acars_key: { Args: never; Returns: string }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      sell_stake: { Args: { p_stake: string }; Returns: number }
       set_company_hiring: {
         Args: { p_freelance: number; p_hiring: boolean; p_roster: number }
         Returns: undefined
@@ -1040,6 +1165,7 @@ export type Database = {
         Args: { p_company: string; p_supporter: boolean }
         Returns: undefined
       }
+      set_stake_offer: { Args: { p_pct: number }; Returns: undefined }
       settle_due_test_flights: { Args: never; Returns: undefined }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }
@@ -1048,6 +1174,18 @@ export type Database = {
       sign_lease: {
         Args: { p_type: string; p_weeks?: number }
         Returns: string
+      }
+      stake_market: {
+        Args: never
+        Returns: {
+          company_id: string
+          icao_code: string
+          name: string
+          net_worth: number
+          offered_pct: number
+          price_per_pct: number
+          sold_pct: number
+        }[]
       }
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
       sync_lease_payments: { Args: never; Returns: undefined }
