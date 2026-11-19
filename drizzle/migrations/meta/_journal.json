@@ -43,6 +43,13 @@
       "when": 1795051593891,
       "tag": "0005_airport_local_identifiers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795051730409,
+      "tag": "0006_flight_ledger_entry_types",
+      "breakpoints": true
     }
   ]
 }
