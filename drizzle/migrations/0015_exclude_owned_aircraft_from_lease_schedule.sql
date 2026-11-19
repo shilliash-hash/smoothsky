@@ -1,0 +1,1 @@
+DO $$ DECLARE d text; BEGIN SELECT pg_get_functiondef('public.sync_lease_payments()'::regprocedure) INTO d; d:=replace(d,'AND f.returned_at IS NULL;', 'AND f.returned_at IS NULL AND f.ownership=''LEASED'';'); EXECUTE d; END $$;

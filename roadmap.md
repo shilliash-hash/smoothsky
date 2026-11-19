@@ -24,3 +24,10 @@
 - [x] Aircraft financial detail with daily lease allocation and operating costs.
 - [x] Decimal admin steps and larger, distinctly colored radar PAX gauges.
 - [x] Verify signed-in flows, economic rules and radar readability.
+
+## Fleet purchase & test operations
+- [x] Independent radar category and Size/Tier filters with multi-selection.
+- [x] Country-aware unique registrations, owned aircraft purchase and editable catalogue prices.
+- [x] Daily company operating results chart replacing the fleet tile.
+- [x] Enabled accelerated web simulation with start and automatic test settlement.
+- [x] Verify purchases, uniqueness, filters and complete test-flight settlement.

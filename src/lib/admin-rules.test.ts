@@ -12,4 +12,8 @@ describe("airport fuel and admin validation", () => {
     expect(() => validateEconomyValue("airport_fee_multipliers", [1, 2, 3])).toThrow());
   it("lease rates cannot be negative", () =>
     expect(aircraftSchema.shape.weekly_rate.safeParse(-1).success).toBe(false));
+  it("purchase prices cannot be negative", () =>
+    expect(aircraftSchema.shape.purchase_price.safeParse(-1).success).toBe(false));
+  it("a configured purchase price of 50000 SC is accepted", () =>
+    expect(aircraftSchema.shape.purchase_price.parse(50000)).toBe(50000));
 });

@@ -28,6 +28,7 @@ export type Database = {
           minimum_runway_ft: number
           model: string
           pax: number
+          purchase_price: number
           range_nm: number
           security_deposit: number
           tier: number
@@ -46,6 +47,7 @@ export type Database = {
           minimum_runway_ft?: number
           model: string
           pax: number
+          purchase_price?: number
           range_nm: number
           security_deposit: number
           tier: number
@@ -64,6 +66,7 @@ export type Database = {
           minimum_runway_ft?: number
           model?: string
           pax?: number
+          purchase_price?: number
           range_nm?: number
           security_deposit?: number
           tier?: number
@@ -343,6 +346,8 @@ export type Database = {
           leased_at: string
           location_icao: string
           next_payment_due: string
+          ownership: string
+          purchase_price: number
           registration: string
           returned_at: string | null
           status: string
@@ -356,6 +361,8 @@ export type Database = {
           leased_at?: string
           location_icao: string
           next_payment_due: string
+          ownership?: string
+          purchase_price?: number
           registration: string
           returned_at?: string | null
           status?: string
@@ -369,6 +376,8 @@ export type Database = {
           leased_at?: string
           location_icao?: string
           next_payment_due?: string
+          ownership?: string
+          purchase_price?: number
           registration?: string
           returned_at?: string | null
           status?: string
@@ -565,6 +574,33 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_rules: {
+        Row: {
+          alphabet: string
+          country: string
+          prefix: string
+          source: string
+          suffix_length: number
+          suffix_pattern: string
+        }
+        Insert: {
+          alphabet?: string
+          country: string
+          prefix: string
+          source?: string
+          suffix_length: number
+          suffix_pattern: string
+        }
+        Update: {
+          alphabet?: string
+          country?: string
+          prefix?: string
+          source?: string
+          suffix_length?: number
+          suffix_pattern?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           role: Database["public"]["Enums"]["app_role"]
@@ -599,6 +635,10 @@ export type Database = {
         }[]
       }
       aircraft_finance: { Args: { p_aircraft: string }; Returns: Json }
+      aircraft_registration: {
+        Args: { p_requested?: string; p_type: string }
+        Returns: string
+      }
       airport_fuel_capacity: {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
@@ -609,6 +649,16 @@ export type Database = {
       }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       company_balance: { Args: { p_company: string }; Returns: number }
+      company_daily_results: {
+        Args: never
+        Returns: {
+          cash_flow: number
+          day: string
+          expenses: number
+          net: number
+          revenue: number
+        }[]
+      }
       create_company: {
         Args: { p_home_base: string; p_icao_code: string; p_name: string }
         Returns: string
@@ -632,6 +682,10 @@ export type Database = {
       }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
+      purchase_aircraft: {
+        Args: { p_registration?: string; p_type: string }
+        Returns: string
+      }
       radar_airport_metrics: {
         Args: never
         Returns: {
@@ -645,6 +699,7 @@ export type Database = {
           pax_stock: number
         }[]
       }
+      settle_due_test_flights: { Args: never; Returns: undefined }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }
         Returns: Json

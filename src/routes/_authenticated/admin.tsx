@@ -55,6 +55,7 @@ const freshAircraft: AircraftEdit = {
   engine: "Piston",
   security_deposit: 5000,
   weekly_rate: 1500,
+  purchase_price: 50000,
   fuel_type: "100LL",
   fuel_burn_gph: 9,
   fuel_capacity_gal: 56,
@@ -209,6 +210,7 @@ function Admin() {
                     ["cruise_kts", "Cruise (kt)"],
                     ["security_deposit", "Deposit (SC)"],
                     ["weekly_rate", "Weekly lease (SC)"],
+                    ["purchase_price", "Purchase price (SC)"],
                     ["fuel_burn_gph", "Fuel burn (gal/h)"],
                     ["fuel_capacity_gal", "Fuel capacity (gal)"],
                     ["minimum_runway_ft", "Minimum runway (ft)"],
@@ -225,6 +227,7 @@ function Admin() {
                         [
                           "security_deposit",
                           "weekly_rate",
+                          "purchase_price",
                           "fuel_burn_gph",
                           "fuel_capacity_gal",
                         ].includes(key)
@@ -276,7 +279,7 @@ function Admin() {
                   <th>Seats / cargo</th>
                   <th>Range</th>
                   <th>Deposit</th>
-                  <th>Weekly lease</th>
+                  <th>Weekly lease</th><th>Purchase price</th>
                   <th />
                 </tr>
               </thead>
@@ -294,7 +297,7 @@ function Admin() {
                     </td>
                     <td>{a.range_nm} NM</td>
                     <td>{formatCr(Number(a.security_deposit))}</td>
-                    <td>{formatCr(Number(a.weekly_rate))}</td>
+                    <td>{formatCr(Number(a.weekly_rate))}</td><td>{formatCr(Number(a.purchase_price))}</td>
                     <td>
                       <Button
                         variant="outline"

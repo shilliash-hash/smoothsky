@@ -43,7 +43,7 @@ export function AppShell({
                   className="text-muted-foreground hover:text-foreground"
                   activeProps={{ className: "text-primary" }}
                 >
-                  Lease market
+                  Aircraft market
                 </Link>
                 <Link
                   to="/dispatch"

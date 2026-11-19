@@ -7,6 +7,8 @@ export const getOperations = createServerFn({ method: "GET" })
     const db = context.supabase;
     const sync = await db.rpc("sync_lease_payments");
     if (sync.error) throw new Error(sync.error.message);
+    const settled = await db.rpc("settle_due_test_flights");
+    if (settled.error) throw new Error(settled.error.message);
     const { data: company, error: ce } = await db.from("companies").select("*").maybeSingle();
     if (ce) throw ce;
     const airports = [];

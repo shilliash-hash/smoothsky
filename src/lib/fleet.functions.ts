@@ -39,7 +39,7 @@ export const getAircraftFinance = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const result = await context.supabase.rpc("aircraft_finance", { p_aircraft: data.aircraft });
     if (result.error) throw new Error(result.error.message);
-    return result.data as unknown as { revenue: number; fuel: number; airport: number; handling: number; maintenance: number; lease_paid: number; lease_accrued: number; deposit: number; daily_lease: number; ends_at: string; term_weeks: number; weekly_rate: number; returned_at: string | null; flights: number };
+    return result.data as unknown as { ownership: string; asset_value: number; revenue: number; fuel: number; airport: number; handling: number; maintenance: number; lease_paid: number; lease_accrued: number; deposit: number; daily_lease: number; ends_at: string; term_weeks: number; weekly_rate: number; returned_at: string | null; flights: number };
   });
 export const saveOperatingRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -48,6 +48,28 @@ export const saveOperatingRules = createServerFn({ method: "POST" })
     const access = await context.supabase.rpc("is_admin");
     if (access.error || !access.data) throw new Error("Administrator access required");
     const result = await context.supabase.from("operating_rules").update(data).eq("singleton", true).select().single();
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+export const purchaseAircraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ type: z.string(), registration: z.string().trim().max(12) }))
+  .handler(async ({ data, context }) => {
+    const result = await context.supabase.rpc("purchase_aircraft", { p_type: data.type, ...(data.registration ? { p_registration: data.registration } : {}) });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+export const getCompanyResults = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const result = await context.supabase.rpc("company_daily_results");
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+export const getRegistrationRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const result = await context.supabase.from("registration_rules").select("*");
     if (result.error) throw new Error(result.error.message);
     return result.data;
   });

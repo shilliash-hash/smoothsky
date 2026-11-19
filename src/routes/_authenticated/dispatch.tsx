@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
 import { distanceNm, flightProgress } from "@/lib/dispatch-engine";
@@ -54,6 +55,8 @@ function Dispatch() {
   const [filter, setFilter] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
+  const [simulation, setSimulation] = useState(true);
+  const simulationEnabled = simulation && d.rules["web_simulation_enabled"] === true;
   const [quoteError, setQuoteError] = useState("");
   const [now, setNow] = useState(d.serverTime);
   const selected =
@@ -137,6 +140,10 @@ function Dispatch() {
             Open radar
           </Link>
         </Button>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center gap-4 border-y border-border py-3">
+        <label className="flex items-center gap-2 text-sm"><Switch checked={simulation} onCheckedChange={setSimulation} disabled={d.rules["web_simulation_enabled"] !== true} />Simulation without ACARS</label>
+        <span className="readout text-xs text-amber">{d.rules["web_simulation_enabled"] !== true ? "Disabled by administrator" : simulationEnabled ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}×` : "ACARS required"}</span>
       </div>
       <section className="mt-6 border-y border-border py-5">
         <label className="text-xs uppercase text-muted-foreground" htmlFor="dispatch-aircraft">
@@ -251,7 +258,7 @@ function Dispatch() {
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || quote.passengers === 0 || d.rules["web_simulation_enabled"] !== true
+                      busy || quote.passengers === 0 || !simulationEnabled
                     }
                     onClick={() => run("dispatch")}
                   >
@@ -297,9 +304,9 @@ function Dispatch() {
                 <div className="flex flex-wrap gap-2">
                   {f.status === "DISPATCHED" && (
                     <>
-                      <Button size="sm" disabled={busy} onClick={() => run("start", f.id)}>
+                      <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} onClick={() => run("start", f.id)}>
                         <Play className="h-4 w-4" />
-                        Simulate departure
+                        Start test flight · {String(d.rules["simulation_time_scale"])}×
                       </Button>
                       <Button
                         size="icon"

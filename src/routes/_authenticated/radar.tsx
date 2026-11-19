@@ -10,6 +10,8 @@ import { projectedPassengers, flightProgress, type Economy } from "@/lib/dispatc
 import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
+import { airportCategories, airportMatches, type AirportCategory } from "@/lib/radar-filters";
+import { Checkbox } from "@/components/ui/checkbox";
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
@@ -43,6 +45,9 @@ function Radar() {
   const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
+  const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
+  const [tiers, setTiers] = useState<number[]>([1,2,3,4,5,6,7]);
+  const visible = d.airports.filter(a => airportMatches(a, categories, tiers));
   const onAirport = useCallback((a: Airport) => {
     setAirport(a);
     setFlight(null);
@@ -88,7 +93,7 @@ function Radar() {
           <h1 className="mt-1 text-3xl font-semibold">Operational radar</h1>
         </div>
         <span className="readout text-xs text-muted-foreground">
-          {d.airports.length.toLocaleString()} airports ·{" "}
+          {visible.length.toLocaleString()} / {d.airports.length.toLocaleString()} airports ·{" "}
           {d.flights.filter((f) => f.status === "EN_ROUTE").length} airborne
         </span>
       </div>
@@ -121,6 +126,16 @@ function Radar() {
         ))}
       </div>
       <div className="relative border-y border-border">
+        <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-border py-4">
+          <fieldset className="flex flex-wrap items-center gap-4"><legend className="mb-2 text-xs uppercase text-muted-foreground">Airport categories</legend>
+            <Button size="sm" variant="outline" onClick={() => setCategories([...airportCategories])}>All categories</Button>
+            {airportCategories.map(c => <label key={c} className="flex items-center gap-2 text-sm"><Checkbox checked={categories.includes(c)} onCheckedChange={checked => setCategories(old => checked ? [...old,c] : old.filter(x=>x!==c))} />{c}</label>)}
+          </fieldset>
+          <fieldset className="flex flex-wrap items-center gap-3"><legend className="mb-2 text-xs uppercase text-muted-foreground">Airport Tier / Size</legend>
+            <Button size="sm" variant="outline" onClick={() => setTiers([1,2,3,4,5,6,7])}>All tiers</Button>
+            {[1,2,3,4,5,6,7].map(t => <label key={t} className="flex items-center gap-1 text-sm"><Checkbox checked={tiers.includes(t)} onCheckedChange={checked => setTiers(old=>checked?[...old,t]:old.filter(x=>x!==t))} />T{t}</label>)}
+          </fieldset>
+        </div>
         <ClientOnly
           fallback={
             <div className="flex h-[600px] items-center justify-center text-muted-foreground">
@@ -131,6 +146,7 @@ function Radar() {
           <Suspense fallback={<div className="h-[600px]">Loading map…</div>}>
             <RadarMap
               data={d}
+              airportFilter={visible.map(a=>a.icao)}
               selected={chosen}
               rangeOnly={rangeOnly}
               layers={layers}

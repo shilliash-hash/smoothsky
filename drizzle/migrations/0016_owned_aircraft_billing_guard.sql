@@ -1,0 +1,1 @@
+DO $$ DECLARE d text; BEGIN SELECT pg_get_functiondef('public.sync_lease_payments()'::regprocedure) INTO d; d:=replace(d,'AND fa.returned_at IS NULL;', 'AND fa.returned_at IS NULL AND fa.ownership=''LEASED'';'); IF position('fa.ownership=''LEASED''' in d)=0 THEN RAISE EXCEPTION 'Billing guard not installed'; END IF; EXECUTE d; END $$;

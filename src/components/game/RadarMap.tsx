@@ -11,6 +11,7 @@ import {
 } from "@/lib/dispatch-engine";
 export default function RadarMap({
   data,
+  airportFilter,
   selected,
   rangeOnly,
   layers,
@@ -19,6 +20,7 @@ export default function RadarMap({
   onFlight,
 }: {
   data: Operations;
+  airportFilter: string[];
   selected: string;
   rangeOnly: boolean;
   layers: { pax: boolean; activity: boolean; flights: boolean };
@@ -82,6 +84,7 @@ export default function RadarMap({
       return Number(bGrounded) - Number(aGrounded) || b.size - a.size || a.icao.localeCompare(b.icao);
     });
     for (const a of airports) {
+      if (!airportFilter.includes(a.icao)) continue;
       if (!m.getBounds().pad(0.1).contains([a.lat, a.lon])) continue;
       const reachable = !origin || distanceNm(origin, a) <= radius;
       if (rangeOnly && !reachable) continue;
@@ -153,6 +156,7 @@ export default function RadarMap({
     }
   }, [
     data.airports,
+    airportFilter,
     data.fleet,
     data.metrics,
     selected,

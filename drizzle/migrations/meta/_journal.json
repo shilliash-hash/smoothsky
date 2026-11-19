@@ -92,6 +92,34 @@
       "when": 1795056026420,
       "tag": "0012_active_fleet_admin_count",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795057545808,
+      "tag": "0013_aircraft_purchase_and_country_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795057576763,
+      "tag": "0014_daily_results_and_test_simulation",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795058031402,
+      "tag": "0015_exclude_owned_aircraft_from_lease_schedule",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795058087971,
+      "tag": "0016_owned_aircraft_billing_guard",
+      "breakpoints": true
     }
   ]
 }

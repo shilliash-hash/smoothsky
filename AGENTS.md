@@ -44,3 +44,6 @@ use the editor.
 - Lease contracts store term/rate snapshots; authenticated SQL synchronizes due weekly ledger payments before operations, caps billing at expiry and excludes returned aircraft from active fleet limits.
 - Aircraft P&L aggregates the complete owner ledger by registration/flight reference and accrues lease cost across contract periods; refundable deposits are assets, not expenses.
 - Fuel mass uses editable fuel-specific densities and exact US-gallon/litre and pound/kg conversion constants; planned reserve is separate from billed consumption and never constitutes ACARS validation.
+- Country registration rules live in a read-only catalogue; acquisition serializes allocation and enforces a global normalized unique index, preserving old registrations for ledger references.
+- Owned aircraft use a transactional purchase ledger entry and price snapshot, bypass lease expiry checks, and do not count toward lease limits; acquisition is an asset, not an operating expense.
+- Daily results aggregate the complete owner ledger and prorated contract accrual in SQL; web-test arrivals settle idempotently on authenticated operational refresh, never as ACARS evidence.

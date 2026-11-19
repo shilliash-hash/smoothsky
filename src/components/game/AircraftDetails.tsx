@@ -46,10 +46,10 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
           <dt>Lease payments posted</dt><dd className="text-right">{formatCr(Number(f.lease_paid))}</dd>
           <dt>Cash result (excl. deposit)</dt><dd className="text-right">{formatCr(Number(f.revenue) - operating - Number(f.lease_paid))}</dd>
           <dt>{f.returned_at ? 'Deposit refunded' : 'Refundable deposit held'}</dt><dd className="text-right">{formatCr(Number(f.deposit))}</dd>
-          <dt>Contract term</dt><dd className="text-right">{f.term_weeks} weeks</dd>
-          <dt>Contract ends</dt><dd className="text-right">{new Date(f.ends_at).toLocaleString('en-US')}</dd>
+          {f.ownership === "OWNED" ? <><dt>Owned aircraft · asset value</dt><dd className="text-right">{formatCr(Number(f.asset_value))}</dd></> : <><dt>Contract term</dt><dd className="text-right">{f.term_weeks} weeks</dd>
+          <dt>Contract ends</dt><dd className="text-right">{new Date(f.ends_at).toLocaleString('en-US')}</dd></>}
         </dl>
-        {f.returned_at ? <p className="text-muted-foreground">Aircraft returned</p> : Date.now() >= Date.parse(f.ends_at) ? <div className="space-y-3 border-t border-border pt-4">
+        {f.ownership === "OWNED" ? <p className="text-xs text-primary">Owned outright · no lease payments</p> : f.returned_at ? <p className="text-muted-foreground">Aircraft returned</p> : Date.now() >= Date.parse(f.ends_at) ? <div className="space-y-3 border-t border-border pt-4">
           <p className="text-sm text-amber">Contract expired · Dispatch suspended</p>
           <label className="flex items-center justify-between gap-4 text-sm">Renewal term (weeks)<Input aria-label="Renewal term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" /></label>
           <p className="readout text-xs">Renewal: {formatCr(renewalRate(baseRate, renewalDiscount))} / week · {(renewalDiscount * 100).toFixed(0)}% discount</p>

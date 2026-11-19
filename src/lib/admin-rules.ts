@@ -12,6 +12,7 @@ export const aircraftSchema = z.object({
   engine: z.string().trim().min(1),
   security_deposit: z.number().nonnegative(),
   weekly_rate: z.number().nonnegative(),
+  purchase_price: z.number().nonnegative(),
   fuel_type: z.enum(["100LL", "Jet-A"]),
   fuel_burn_gph: z.number().positive(),
   fuel_capacity_gal: z.number().positive(),

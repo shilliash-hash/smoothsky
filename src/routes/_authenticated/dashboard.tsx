@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { Plane, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
 import { economyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { SmoothCoin } from "@/components/game/SmoothCoin";
 import { AppShell } from "@/components/game/AppShell";
 import { useState } from "react";
-import { fleetOverviewQuery } from "@/lib/fleet";
+import { fleetOverviewQuery, companyResultsQuery } from "@/lib/fleet";
+import { CompanyResults } from "@/components/game/CompanyResults";
 import { AircraftDetails } from "@/components/game/AircraftDetails";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -17,11 +18,11 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     if (!c) throw redirect({ to: "/onboarding" });
   },
   head: () => ({ meta: [{ title: "Dashboard — SmoothSky" }, { name: "description", content: "Your SmoothSky airline balance, fleet, home base and transaction history." }, { property: "og:title", content: "Dashboard — SmoothSky" }, { property: "og:description", content: "Your SmoothSky airline balance, fleet, home base and transaction history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(fleetOverviewQuery),
+  loader: async ({ context }) => { await Promise.all([context.queryClient.ensureQueryData(fleetOverviewQuery), context.queryClient.ensureQueryData(companyResultsQuery)]); },
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
@@ -40,15 +41,12 @@ function Dashboard() {
       <p className="readout text-xs uppercase text-amber">{c.icao_code} · Operations Center</p>
       <h1 className="mt-1 text-3xl font-semibold">{c.name}</h1>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><SmoothCoin className="h-5 w-5 text-xs" /> Balance</div>
           <p className="readout mt-2 text-3xl text-primary">{formatCr(balance)}</p>
         </div>
-        <div className="instrument p-5">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Plane className="h-4 w-4" /> Fleet</div>
-          <p className="readout mt-2 text-3xl">{fleet.length}<span className="text-base text-muted-foreground"> / {Number(economy?.['max_active_leases'] ?? 3)}</span></p>
-        </div>
+        <CompanyResults />
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>
           <p className="readout mt-2 text-3xl text-amber">{hb?.icao}</p>
@@ -59,8 +57,8 @@ function Dashboard() {
 
       <section className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Fleet</h2>
-          <Button asChild size="sm" variant="outline"><Link to="/market">Lease market</Link></Button>
+          <h2 className="text-lg font-semibold">Fleet <span className="text-xs text-muted-foreground">{fleet.filter(f=>f.ownership === "LEASED").length} / {Number(economy?.["max_active_leases"] ?? 3)} leased · {fleet.filter(f=>f.ownership === "OWNED").length} owned</span></h2>
+          <Button asChild size="sm" variant="outline"><Link to="/market">Aircraft market</Link></Button>
         </div>
         {fleet.length === 0 ? (
           <div className="mt-3 border-y border-border py-8 text-center">
@@ -78,9 +76,9 @@ function Dashboard() {
                 <p className="mt-1 text-sm">{f.type?.manufacturer} {f.type?.model}</p>
                 <dl className="readout mt-3 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                   <dt>Location</dt><dd className="text-right text-foreground">{f.location_icao}</dd>
-                  <dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
+                  {f.ownership === "OWNED" ? <><dt>Ownership</dt><dd className="text-right text-primary">Owned</dd><dt>Asset value</dt><dd className="text-right">{formatCr(f.purchase_price)}</dd></> : <><dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
                   <dt>Contract ends</dt><dd className="text-right text-foreground">{new Date(overview.contracts.find(k => k.aircraft_id === f.id)?.ends_at ?? f.next_payment_due).toLocaleDateString("en-US")}</dd>
-                  <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd>
+                  <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
                 </dl>
               </Button>
             ))}
