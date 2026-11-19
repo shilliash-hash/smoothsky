@@ -28,6 +28,30 @@ export const ledgerQuery = (companyId: string) =>
     },
   });
 
+export const transactionHistoryQuery = (companyId: string, aircraftId: string | null) =>
+  queryOptions({
+    queryKey: ["transaction-history", companyId, aircraftId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("transaction_history", {
+        p_company: companyId,
+        ...(aircraftId ? { p_aircraft: aircraftId } : {}),
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+export const ledgerAircraftQuery = (companyId: string) =>
+  queryOptions({
+    queryKey: ["ledger-aircraft", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("fleet_aircraft")
+        .select("id, registration, returned_at").eq("company_id", companyId).order("registration");
+      if (error) throw error;
+      return data;
+    },
+  });
+
 export const fleetQuery = (companyId: string) =>
   queryOptions({
     queryKey: ["fleet", companyId],

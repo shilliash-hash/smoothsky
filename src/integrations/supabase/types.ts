@@ -710,6 +710,25 @@ export type Database = {
       }
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
       sync_lease_payments: { Args: never; Returns: undefined }
+      transaction_history: {
+        Args: { p_aircraft?: string; p_company: string }
+        Returns: {
+          aircraft_id: string
+          balance_after: number
+          company_delta: number
+          created_at: string
+          credit_account: string
+          debit_account: string
+          description: string
+          destination_icao: string
+          entry_type: string
+          flight_id: string
+          id: number
+          origin_icao: string
+          reference: string
+          registration: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

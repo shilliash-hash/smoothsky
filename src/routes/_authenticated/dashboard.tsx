@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin } from "lucide-react";
-import { companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
+import { companyQuery, fleetQuery, ledgerQuery, ledgerAircraftQuery, transactionHistoryQuery } from "@/lib/game";
 import { economyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { useState } from "react";
 import { fleetOverviewQuery, companyResultsQuery } from "@/lib/fleet";
 import { CompanyResults } from "@/components/game/CompanyResults";
 import { AircraftDetails } from "@/components/game/AircraftDetails";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { flightTransactionContext } from "@/lib/transaction-history";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -27,11 +29,14 @@ const typeLabel: Record<string, string> = { AIRCRAFT_PURCHASE: "Aircraft purchas
 function Dashboard() {
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const [selected, setSelected] = useState<string | null>(null);
+  const [ledgerAircraft, setLedgerAircraft] = useState<string | null>(null);
   const { data: company } = useSuspenseQuery(companyQuery);
   const { data: economy } = useQuery(economyQuery);
   const c = company;
   const { data: ledger = [] } = useQuery(ledgerQuery(c?.id ?? ""));
   const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
+  const { data: historyAircraft = [] } = useQuery(ledgerAircraftQuery(c?.id ?? ""));
+  const { data: transactions = [], isPending: historyPending, error: historyError } = useQuery(transactionHistoryQuery(c?.id ?? "", ledgerAircraft));
   const balance = ledger[0]?.balance_after ?? 0;
   if (!c) return null;
   const hb = c.home_base;
@@ -87,18 +92,28 @@ function Dashboard() {
       </section>
 
       <section className="mt-8">
-        <h2 className="text-lg font-semibold">Transaction history</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Transaction history</h2>
+          <Select value={ledgerAircraft ?? "all"} onValueChange={(value) => setLedgerAircraft(value === "all" ? null : value)}>
+            <SelectTrigger aria-label="Filter transactions by aircraft" className="w-full sm:w-64"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All aircraft & company entries</SelectItem>
+              {historyAircraft.map((aircraft) => <SelectItem key={aircraft.id} value={aircraft.id}>{aircraft.registration}{aircraft.returned_at ? " · Returned" : ""}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="mt-3 overflow-x-auto border-y border-border">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="text-left text-xs uppercase text-muted-foreground">
               <tr className="border-b border-border"><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Description</th><th className="p-3">Accounts (Dr / Cr)</th><th className="p-3 text-right">Amount</th><th className="p-3 text-right">Balance</th></tr>
             </thead>
             <tbody className="readout">
-              {ledger.map((e) => (
+              {(historyPending || historyError || transactions.length === 0) && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">{historyPending ? "Loading transactions…" : historyError ? "Unable to load transactions." : "No transactions for this aircraft."}</td></tr>}
+              {transactions.map((e) => (
                 <tr key={e.id} className="border-b border-border/50 last:border-0">
                   <td className="p-3 text-muted-foreground">{new Date(e.created_at).toLocaleString("en-US")}</td>
                   <td className="p-3">{typeLabel[e.entry_type] ?? e.entry_type}</td>
-                  <td className="p-3 font-sans">{e.description}</td>
+                  <td className="p-3 font-sans">{flightTransactionContext(e) ? <span className="readout text-primary">{flightTransactionContext(e)}</span> : e.description}</td>
                   <td className="p-3 text-xs text-muted-foreground">{e.debit_account} / {e.credit_account}</td>
                   <td className={`p-3 text-right ${e.company_delta >= 0 ? "text-success" : "text-destructive"}`}>{e.company_delta >= 0 ? "+" : ""}{formatCr(e.company_delta)}</td>
                   <td className="p-3 text-right">{formatCr(e.balance_after)}</td>

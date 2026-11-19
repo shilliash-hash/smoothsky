@@ -35,3 +35,8 @@
 ## Charter surcharge tuning
 - [x] Configure 65/50/35/20/0 SC per passenger for aircraft Tiers 1–7 and expose grouped ADMIN inputs.
 - [x] Show distance fare and charter surcharge beside Dispatch ticket revenue; verify rules and signed-in views.
+
+## Transaction history readability
+- [x] Add registration, route and short flight ID to new settlements and resolve historical flight references without editing the ledger.
+- [x] Add aircraft filtering including returned aircraft, applied before the transaction limit.
+- [x] Verify signed-in history, filtering, mobile overflow and settlement description definition; identity tests passed.
