@@ -9,7 +9,7 @@ const modes: { id: Mode; label: string }[] = [{ id: "net", label: "Net P&L" }, {
 
 function HudTooltip({ active, payload }: { active?: boolean; payload?: { payload: { day: string; revenue: number; expenses: number; net: number; cash: number } }[] }) {
   if (!active || !payload?.length) return null;
-  const r = payload[0].payload;
+  const r = payload[0]?.payload; if (!r) return null;
   const margin = r.revenue > 0 ? (r.net / r.revenue) * 100 : null;
   return <div className="instrument readout min-w-44 p-3 text-xs">
     <p className="text-amber">{r.day} UTC</p>
