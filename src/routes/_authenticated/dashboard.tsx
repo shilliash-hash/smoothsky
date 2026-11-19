@@ -1,4 +1,3 @@
-import aurora from "@/assets/smoothsky-aurora-logo.png.asset.json";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin } from "lucide-react";
@@ -59,7 +58,6 @@ function Dashboard() {
   return (
     <AppShell company={c}>
       <div className="flex items-center gap-4">
-        <img src={aurora.url} alt="" width={64} height={64} className="h-16 w-16 rounded-md border border-primary/40 object-cover" />
         <div>
           <p className="readout text-xs uppercase text-amber">{c.icao_code} · Operations Center · SmoothSky Network</p>
           <h1 className="mt-1 text-3xl font-semibold">{c.name}</h1>

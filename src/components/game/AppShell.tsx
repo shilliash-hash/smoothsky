@@ -44,10 +44,10 @@ export function AppShell({
         src={aurora.url}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute left-4 top-4 hidden w-[calc((100vw-72rem)/2-2rem)] max-w-[260px] opacity-75 2xl:block"
+        className="pointer-events-none fixed left-2 top-0 z-20 hidden w-[calc((100vw-72rem)/2-2rem)] max-w-[260px] opacity-75 2xl:block"
         style={{ maskImage: "radial-gradient(circle, black 45%, transparent 72%)", WebkitMaskImage: "radial-gradient(circle, black 45%, transparent 72%)" }}
       />
-      <header className="border-b border-border bg-panel/70 backdrop-blur">
+      <header className="relative z-10 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3">
           <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             <Logo />
