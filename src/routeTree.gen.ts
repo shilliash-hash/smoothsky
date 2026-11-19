@@ -26,6 +26,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as AuthenticatedUsedMarketRouteImport } from './routes/_authenticated/used-market'
+import { Route as ApiPublicAcarsActiveRouteImport } from './routes/api/public/acars/active'
 import { Route as ApiPublicAcarsConnectRouteImport } from './routes/api/public/acars/connect'
 import { Route as ApiPublicAcarsPirepRouteImport } from './routes/api/public/acars/pirep'
 import { Route as ApiPublicAcarsPositionRouteImport } from './routes/api/public/acars/position'
@@ -115,6 +116,11 @@ const AuthenticatedUsedMarketRoute = AuthenticatedUsedMarketRouteImport.update({
   path: '/used-market',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicAcarsActiveRoute = ApiPublicAcarsActiveRouteImport.update({
+  id: '/api/public/acars/active',
+  path: '/api/public/acars/active',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAcarsConnectRoute = ApiPublicAcarsConnectRouteImport.update({
   id: '/api/public/acars/connect',
   path: '/api/public/acars/connect',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/used-market': typeof AuthenticatedUsedMarketRoute
+  '/api/public/acars/active': typeof ApiPublicAcarsActiveRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
   '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/used-market': typeof AuthenticatedUsedMarketRoute
+  '/api/public/acars/active': typeof ApiPublicAcarsActiveRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
   '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/_authenticated/used-market': typeof AuthenticatedUsedMarketRoute
+  '/api/public/acars/active': typeof ApiPublicAcarsActiveRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
   '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/radar'
     | '/used-market'
+    | '/api/public/acars/active'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
     | '/api/public/acars/position'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/radar'
     | '/used-market'
+    | '/api/public/acars/active'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
     | '/api/public/acars/position'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/radar'
     | '/_authenticated/used-market'
+    | '/api/public/acars/active'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
     | '/api/public/acars/position'
@@ -268,6 +280,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicAcarsActiveRoute: typeof ApiPublicAcarsActiveRoute
   ApiPublicAcarsConnectRoute: typeof ApiPublicAcarsConnectRoute
   ApiPublicAcarsPirepRoute: typeof ApiPublicAcarsPirepRoute
   ApiPublicAcarsPositionRoute: typeof ApiPublicAcarsPositionRoute
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsedMarketRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/acars/active': {
+      id: '/api/public/acars/active'
+      path: '/api/public/acars/active'
+      fullPath: '/api/public/acars/active'
+      preLoaderRoute: typeof ApiPublicAcarsActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/acars/connect': {
       id: '/api/public/acars/connect'
       path: '/api/public/acars/connect'
@@ -458,6 +478,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicAcarsActiveRoute: ApiPublicAcarsActiveRoute,
   ApiPublicAcarsConnectRoute: ApiPublicAcarsConnectRoute,
   ApiPublicAcarsPirepRoute: ApiPublicAcarsPirepRoute,
   ApiPublicAcarsPositionRoute: ApiPublicAcarsPositionRoute,

@@ -82,3 +82,4 @@
 - [x] Cargo (belly + All-Cargo), airport cargo pools, admin cargo rules
 - [x] Special Missions board (MEDEVAC / AOG) with deadlines and 50% late penalty
 - [x] Homepage guide with live world telemetry
+- [x] ACARS live mode in Dispatch, emergency Cancel flight, /acars/active resume endpoint

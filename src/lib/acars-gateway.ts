@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 export const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
 };
 export const preflight = () => new Response(null, { status: 204, headers: cors });
@@ -55,6 +55,12 @@ export async function acarsCall(request: Request, fn: Rpc, schema?: z.ZodTypeAny
   if (error) {
     const status = error.code === "28000" ? 401 : error.code === "P0002" ? 404 : error.code === "P0409" ? 409 : error.code === "P0429" ? 429 : 422;
     return json({ error: error.message }, status);
+  }
+  if (fn === "acars_connect") {
+    const f = (data as { flight?: Record<string, unknown> | null })?.flight;
+    if (f) {
+      return json({ ...(data as object), ...f, id: f["flight_id"], callsign: f["flight_number"], origin: f["origin_icao"], destination: f["destination_icao"], aircraft: f["aircraft_type"], pax: f["passengers"] });
+    }
   }
   return json(data);
 }

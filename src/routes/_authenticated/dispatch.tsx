@@ -65,11 +65,13 @@ function Dispatch() {
   const [tiers, setTiers] = useVisibleTiers();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
-  const [simulation, setSimulation] = useState(true);
+  const webSimAllowed = d.rules["web_simulation_enabled"] === true;
+  const [simulation, setSimulation] = useState(webSimAllowed);
+  useEffect(() => { if (!webSimAllowed) setSimulation(false); }, [webSimAllowed]);
   const [cargoKg, setCargoKg] = useState(0);
   const [cargoQuoteKg, setCargoQuoteKg] = useState(0);
   const [allCargo, setAllCargo] = useState(false);
-  const simulationEnabled = simulation && d.rules["web_simulation_enabled"] === true;
+  const simulationEnabled = simulation && webSimAllowed;
   const [quoteError, setQuoteError] = useState("");
   const [now, setNow] = useState(d.serverTime);
   const selected =
@@ -134,7 +136,7 @@ function Dispatch() {
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { cargoKg: cargoQuoteKg, allCargo } : {}) } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { cargoKg: cargoQuoteKg, allCargo, simulation: simulationEnabled } : {}) } });
       if (kind === "dispatch") {
         setFlightNumber(null);
         setCargoKg(0);
@@ -151,7 +153,7 @@ function Dispatch() {
             ? "Test flight airborne"
             : kind === "cancel"
               ? "Flight cancelled"
-              : "Passengers reserved — ready for departure",
+              : simulationEnabled ? "Passengers reserved — ready for departure" : "Flight dispatched — connect your ACARS client",
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Flight action failed");
@@ -176,7 +178,7 @@ function Dispatch() {
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-4 border-y border-border py-3">
         <label className="flex items-center gap-2 text-sm"><Switch checked={simulation} onCheckedChange={setSimulation} disabled={d.rules["web_simulation_enabled"] !== true} />Simulation without ACARS</label>
-        <span className="readout text-xs text-amber">{d.rules["web_simulation_enabled"] !== true ? "Disabled by administrator" : simulationEnabled ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}×` : "ACARS required"}</span>
+        <span className="readout text-xs text-amber">{!webSimAllowed ? "ACARS LIVE MODE · web simulation disabled by administrator" : simulationEnabled ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}×` : "ACARS LIVE MODE"}</span>
       </div>
       <section className="mt-6 border-y border-border py-5">
         <label className="text-xs uppercase text-muted-foreground" htmlFor="dispatch-aircraft">
@@ -345,11 +347,14 @@ function Dispatch() {
       <section className="mt-10">
         <h2 className="text-lg font-semibold">Flight operations</h2>
         <span className="readout text-xs text-amber">
-          WEB TEST · {String(d.rules["simulation_time_scale"])}×
+          {webSimAllowed ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}× · ACARS LIVE` : "ACARS LIVE MODE · real-time telemetry"}
         </span>
         <div className="mt-3 divide-y divide-border border-y border-border">
           {d.flights.map((f) => {
-            const progress = flightProgress(f, now);
+            const acars = f.execution_source === "ACARS_AGENT";
+            const progress = acars ? 0 : flightProgress(f, now);
+            const live = (f.telemetry as { live?: { altitude_ft?: number; ground_speed_kt?: number; fuel_gal?: number; phase?: string } } | null)?.live;
+            const active = f.status === "DISPATCHED" || f.status === "EN_ROUTE";
             return (
               <div key={f.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
                 <div>
@@ -359,7 +364,12 @@ function Dispatch() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {f.passengers} pax{Number((f.estimate as Quote | null)?.cargo_kg ?? 0) > 0 ? ` · ${(f.estimate as Quote).cargo_kg} kg cargo` : ""} · {f.status.replace("_", " ")}
                   </p>
-                  {f.status === "EN_ROUTE" && (
+                  {acars && active && (
+                    <p className="readout mt-2 text-xs text-amber">
+                      {f.status === "DISPATCHED" ? "○ AWAITING ACARS" : `● LIVE ACARS · EN ROUTE${live ? ` · ${live.phase ?? ""} · ${Math.round(live.altitude_ft ?? 0)} ft · ${Math.round(live.ground_speed_kt ?? 0)} kt · ${Math.round(live.fuel_gal ?? 0)} gal` : ""}`}
+                    </p>
+                  )}
+                  {f.status === "EN_ROUTE" && !acars && (
                     <progress
                       aria-label="Flight progress"
                       className="mt-2 h-2 w-48 accent-primary"
@@ -369,29 +379,33 @@ function Dispatch() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {f.status === "DISPATCHED" && (
+                  {f.status === "DISPATCHED" && !acars && (
                     <>
                       <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} title={!simulationEnabled ? "Web simulation disabled — fly via ACARS" : undefined} onClick={() => run("start", f.id)}>
                         <Play className="h-4 w-4" />
                         Start test flight · {String(d.rules["simulation_time_scale"])}×
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title="Cancel dispatch"
-                        disabled={busy}
-                        onClick={() => run("cancel", f.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
                     </>
                   )}
-                  {f.status === "EN_ROUTE" && (
+                  {f.status === "EN_ROUTE" && !acars && (
                     <Button disabled={busy || progress < 1} onClick={() => run("settle", f.id)}>
                       <Check className="h-4 w-4" />
                       {progress < 1
                         ? `${Math.round(progress * 100)}% · En route`
                         : "Complete & settle"}
+                    </Button>
+                  )}
+                  {active && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => {
+                        if (confirm(`Cancel flight ${f.flight_number}? The aircraft returns to ${f.origin_icao} and no revenue is paid.`)) void run("cancel", f.id);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel flight
                     </Button>
                   )}
                   {f.status === "COMPLETED" && (

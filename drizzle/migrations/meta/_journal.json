@@ -218,6 +218,13 @@
       "when": 1795124540520,
       "tag": "0030_dispatch_without_web_simulation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795125944972,
+      "tag": "0031_acars_live_mode_and_emergency_cancel",
+      "breakpoints": true
     }
   ]
 }

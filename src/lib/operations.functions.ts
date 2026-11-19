@@ -81,6 +81,7 @@ export const flightAction = createServerFn({ method: "POST" })
       cargoKg: z.number().int().min(0).max(100000).optional(),
       allCargo: z.boolean().optional(),
       mission: z.string().uuid().optional(),
+      simulation: z.boolean().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -101,6 +102,10 @@ export const flightAction = createServerFn({ method: "POST" })
         } as never,
       );
       if (error) throw new Error(error.message);
+      if (data.action === "dispatch" && data.simulation === false && typeof result === "string") {
+        const mark = await db.rpc("mark_flight_acars" as never, { p_flight: result } as never);
+        if (mark.error) throw new Error(mark.error.message);
+      }
       return result;
     }
     if (!data.flight) throw new Error("Flight required");

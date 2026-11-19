@@ -1367,6 +1367,7 @@ export type Database = {
         Args: { p_action: string; p_aircraft: string; p_weeks?: number }
         Returns: string
       }
+      mark_flight_acars: { Args: { p_flight: string }; Returns: undefined }
       my_pilot_profile: { Args: never; Returns: Json }
       new_acars_key: { Args: never; Returns: string }
       next_flight_number: { Args: never; Returns: string }
