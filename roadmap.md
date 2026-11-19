@@ -1,5 +1,9 @@
 # Roadmap
 
+## Flight Logbook
+- [x] Add completed-flight page and navigation with aircraft filtering, including retired aircraft, without database changes.
+- [x] Verify settled results, flight-hour conversion, signed-in filtering and mobile layout.
+
 - [x] Translate all Phase 1 screens and notifications into English.
 - [x] Apply bottle-green, mint/sage and amber theme through shared tokens.
 - [x] Verify public and signed-in screens at desktop and mobile sizes.

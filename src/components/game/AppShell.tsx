@@ -62,6 +62,7 @@ export function AppShell({
                   Radar
                 </Link>
                 <Link to="/bases" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Bases</Link>
+                <Link to="/logbook" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Logbook</Link>
                 <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
               </nav>
             )}
