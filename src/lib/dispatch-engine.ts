@@ -26,5 +26,5 @@ export function projectedPassengers(stock:number,capacity:number,hours:number,id
 }
 export function estimatedCosts(nm:number,speed:number,burn:number,price:number) {const hours=nm/speed;return {minutes:hours*60,fuel:hours*burn,cost:Math.round(hours*burn*price*100)/100};}
 export function flightProgress(f:{departed_at:string|null;estimated_minutes:number;rules_snapshot:unknown},now:number){
- if(!f.departed_at)return 0;const r=f.rules_snapshot as Economy;return Math.min(1,Math.max(0,(now-Date.parse(f.departed_at))/(Number(f.estimated_minutes)*60000/Math.max(1,Number(r.simulation_time_scale)))));
+ if(!f.departed_at)return 0;const r=f.rules_snapshot as Economy;return Math.min(1,Math.max(0,(now-Date.parse(f.departed_at))/(Number(f.estimated_minutes)*60000/Math.max(1,Number(r['simulation_time_scale'])))));
 }
