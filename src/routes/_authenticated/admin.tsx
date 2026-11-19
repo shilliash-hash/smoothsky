@@ -399,7 +399,7 @@ function EconomyRow({
     >
       <div>
         <label htmlFor={row.key} className="text-sm font-medium capitalize">
-          {row.key.replaceAll("_", " ")}
+          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key.replaceAll("_", " ")}
         </label>
         <p className="mt-1 text-xs text-muted-foreground">{row.description}</p>
       </div>
@@ -411,10 +411,9 @@ function EconomyRow({
         />
       ) : isArray ? (
         <div className="grid grid-cols-4 gap-2">
-          {(JSON.parse(value) as number[]).map((item, index) => (
+          {(JSON.parse(value) as number[]).slice(0, row.key === "charter_by_tier" ? 5 : undefined).map((item, index) => (
             <label key={index} className="text-[10px] text-muted-foreground">
-              {row.key === "charter_by_tier" ? "T" : "Size "}
-              {index + 1}
+              {row.key === "charter_by_tier" ? `Tier ${index === 4 ? "5–7" : index + 1} · SC/pax` : `Size ${index + 1}`}
               <Input
                 aria-label={`${row.key.replaceAll("_", " ")} ${index + 1}`}
                 type="number"
@@ -425,6 +424,10 @@ function EconomyRow({
                 onChange={(e) => {
                   const values = JSON.parse(value) as number[];
                   values[index] = Number(e.target.value);
+                  if (row.key === "charter_by_tier" && index === 4) {
+                    values[5] = Number(e.target.value);
+                    values[6] = Number(e.target.value);
+                  }
                   setValue(JSON.stringify(values));
                 }}
               />

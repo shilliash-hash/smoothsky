@@ -31,3 +31,7 @@
 - [x] Daily company operating results chart replacing the fleet tile.
 - [x] Enabled accelerated web simulation with start and automatic test settlement.
 - [x] Verify purchases, uniqueness, filters and complete test-flight settlement.
+
+## Charter surcharge tuning
+- [x] Configure 65/50/35/20/0 SC per passenger for aircraft Tiers 1–7 and expose grouped ADMIN inputs.
+- [x] Show distance fare and charter surcharge beside Dispatch ticket revenue; verify rules and signed-in views.

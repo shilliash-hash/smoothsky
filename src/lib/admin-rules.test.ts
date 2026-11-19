@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { fuelProjection, fuelCapacity, validateEconomyValue, aircraftSchema } from "./admin-rules";
 describe("airport fuel and admin validation", () => {
+  it("accepts all seven configured charter rates", () =>
+    expect(validateEconomyValue("charter_by_tier", [65, 50, 35, 20, 0, 0, 0])).toEqual([65, 50, 35, 20, 0, 0, 0]));
+  it("rejects the obsolete four-tier charter configuration", () =>
+    expect(() => validateEconomyValue("charter_by_tier", [65, 50, 35, 20])).toThrow());
+  it("keeps the T5–7 charter rate shared", () =>
+    expect(() => validateEconomyValue("charter_by_tier", [65, 50, 35, 20, 0, 1, 0])).toThrow());
   it("100LL refills 10% of capacity per hour", () =>
     expect(fuelProjection(200, 1000, 1, 0.1)).toBe(300));
   it("Jet-A1 refills 10% of capacity per hour", () =>

@@ -14,6 +14,7 @@ export type Quote = {
   minutes: number;
   passengers: number;
   revenue: number;
+  rules: { fare_per_nm: number; charter_by_tier: number[] };
   fuel_gal: number;
   fuel_cost: number;
   landing_fee: number;

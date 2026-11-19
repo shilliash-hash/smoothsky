@@ -6,11 +6,24 @@ import {
   projectedPassengers,
   estimatedCosts,
   flightProgress,
+  ticketRevenueBreakdown,
 } from "./dispatch-engine";
 const a = { lat: 50.0777, lon: 19.7848 },
   b = { lat: 52.1657, lon: 20.9671 };
 const rules = { natural_cap: 0.95, hourly_rate: 0.01, transit_cap: 1.5 };
 describe("flight economy and radar", () => {
+  for (const [tier, bonus] of [[1, 65], [2, 50], [3, 35], [4, 20], [5, 0], [6, 0], [7, 0]]) {
+    it(`Tier ${tier} adds ${bonus} SC per passenger`, () => {
+      const result = ticketRevenueBreakdown(3 * (10 + Number(bonus)), 3, Number(tier), [65, 50, 35, 20, 0, 0, 0]);
+      expect(result.surchargePerPassenger).toBe(bonus);
+      expect(result.charterRevenue).toBe(3 * Number(bonus));
+      expect(result.distanceRevenue).toBe(30);
+    });
+  }
+  it("uses edited charter rates rather than hardcoded defaults", () =>
+    expect(ticketRevenueBreakdown(255, 3, 1, [75, 50, 35, 20, 0, 0, 0]).charterRevenue).toBe(225));
+  it("preserves the exact rounded SQL total", () =>
+    expect(ticketRevenueBreakdown(225.01, 3, 1, [65, 50, 35, 20, 0, 0, 0]).distanceRevenue).toBe(30.01));
   it("regenerates 1% per hour", () => expect(projectedPassengers(8, 80, 1, 0, rules)).toBe(8.8));
   it("caps natural regeneration at 95%", () =>
     expect(projectedPassengers(70, 80, 100, 0, rules)).toBe(76));

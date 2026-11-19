@@ -25,7 +25,8 @@ export function validateEconomyValue(key: string, value: unknown) {
   if (["airport_capacities", "airport_fee_multipliers", "charter_by_tier"].includes(key)) {
     return z
       .array(key === "airport_capacities" ? z.number().positive() : z.number().nonnegative())
-      .length(key === "charter_by_tier" ? 4 : 7)
+      .length(7)
+      .refine((values) => key !== "charter_by_tier" || (values[4] === values[5] && values[5] === values[6]), "Tiers 5–7 must share the same charter surcharge")
       .parse(value);
   }
   const number = z.number().finite().nonnegative().parse(value);

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
-import { distanceNm, flightProgress } from "@/lib/dispatch-engine";
+import { distanceNm, flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
@@ -62,6 +62,7 @@ function Dispatch() {
   const selected =
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
+  const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -239,8 +240,12 @@ function Dispatch() {
                       ["Maintenance reserve", -quote.maintenance],
                     ].map(([label, value]) => (
                       <div key={String(label)} className="flex justify-between gap-3 text-sm">
-                        <dt>{label}</dt>
-                        <dd>{formatCr(Number(value))}</dd>
+                        <dt className="min-w-0">{label}{label === "Ticket revenue" && revenueBreakdown && quote && (
+                          <span className="block text-xs text-muted-foreground">
+                            (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax)
+                          </span>
+                        )}</dt>
+                        <dd className="shrink-0">{formatCr(Number(value))}</dd>
                       </div>
                     ))}
                     <div className="flex justify-between border-t border-border pt-4">
