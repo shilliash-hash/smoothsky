@@ -8,6 +8,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -154,3 +155,9 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
+
+.leaflet-container { background: var(--panel); font-family: var(--font-sans); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background:var(--popover); color:var(--foreground); }
+.leaflet-control-zoom a { background:var(--secondary); color:var(--foreground); border-color:var(--border); }
+.radar-airport { color:var(--primary); background:var(--panel); border:1px solid var(--primary); border-radius:50%; }
+.radar-plane { color:var(--amber); font-size:24px; line-height:24px; }

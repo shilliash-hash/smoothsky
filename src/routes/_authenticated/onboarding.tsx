@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { airportsQuery, companyQuery } from "@/lib/game";
-import { STARTING_CAPITAL, formatCr, isValidCompanyCode, normalizeCompanyCode } from "@/lib/rules";
+import { economyQuery } from "@/lib/game";
+import { formatCr, isValidCompanyCode, normalizeCompanyCode } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 function Onboarding() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { data: economy } = useQuery(economyQuery);
   const { data: airports = [] } = useQuery(airportsQuery);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -56,7 +58,7 @@ function Onboarding() {
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries();
-    toast.success(`Airline created. Starting balance: ${formatCr(STARTING_CAPITAL)}.`);
+    toast.success(`Airline created. Starting balance: ${formatCr(Number(economy?.starting_capital ?? 50000))}.`);
     navigate({ to: "/dashboard" });
   }
 
@@ -64,7 +66,7 @@ function Onboarding() {
     <AppShell>
       <p className="readout text-xs uppercase text-amber">Pre-flight · Airline registration</p>
       <h1 className="mt-2 text-3xl font-semibold">Create your airline</h1>
-      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(STARTING_CAPITAL)}. Invest it wisely.</p>
+      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(Number(economy?.starting_capital ?? 50000))}. Invest it wisely.</p>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="space-y-5 py-2">
           <div className="space-y-2">
