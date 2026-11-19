@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.csv_fields(text) TO service_role;

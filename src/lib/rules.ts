@@ -18,5 +18,5 @@ export function canAffordLease(balance: number, t: { security_deposit: number; w
 }
 
 export function formatCr(n: number | string) {
-  return `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 })} Cr`;
+  return `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })} SC`;
 }

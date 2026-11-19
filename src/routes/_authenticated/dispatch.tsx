@@ -1,0 +1,334 @@
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
+import { Plane, Play, Check, X, Radar } from "lucide-react";
+import { toast } from "sonner";
+import { AppShell } from "@/components/game/AppShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { operationsQuery, type Quote } from "@/lib/operations";
+import { flightAction } from "@/lib/operations.functions";
+import { distanceNm, flightProgress } from "@/lib/dispatch-engine";
+import { formatCr } from "@/lib/rules";
+export const Route = createFileRoute("/_authenticated/dispatch")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { aircraft?: string | undefined; destination?: string | undefined } => ({
+    aircraft: typeof search["aircraft"] === "string" ? search["aircraft"] : undefined,
+    destination: typeof search["destination"] === "string" ? search["destination"] : undefined,
+  }),
+  loader: async ({ context }) => {
+    const d = await context.queryClient.ensureQueryData(operationsQuery);
+    if (!d.company) throw redirect({ to: "/onboarding" });
+  },
+  head: () => ({
+    meta: [
+      { title: "Dispatch — SmoothSky" },
+      {
+        name: "description",
+        content: "Plan passenger routes and review flight economics in SmoothSky.",
+      },
+      { property: "og:title", content: "Dispatch — SmoothSky" },
+      {
+        property: "og:description",
+        content: "Passenger dispatch, flight estimates and settlements.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Dispatch,
+});
+function Dispatch() {
+  const { data: d } = useSuspenseQuery(operationsQuery);
+  const qc = useQueryClient();
+  const action = useServerFn(flightAction);
+  const search = Route.useSearch();
+  const [aircraft, setAircraft] = useState(search["aircraft"] ?? "");
+  const [destination, setDestination] = useState(search["destination"] ?? "");
+  const [filter, setFilter] = useState("");
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
+  const [now, setNow] = useState(d.serverTime);
+  const selected =
+    d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
+  const origin = d.airports.find((a) => a.icao === selected?.location_icao);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    setQuote(null);
+    setQuoteError("");
+    if (!selected || !destination) return;
+    let active = true;
+    action({ data: { action: "quote", aircraft: selected.id, destination } })
+      .then((q) => {
+        if (active) setQuote(q as Quote);
+      })
+      .catch((e) => {
+        if (active) setQuoteError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selected?.id, selected?.status, destination, action]);
+  const destinations = useMemo(
+    () =>
+      !origin || !selected?.type
+        ? []
+        : d.airports
+            .filter(
+              (a) =>
+                a.icao !== origin.icao &&
+                distanceNm(origin, a) <= (selected.type?.range_nm ?? 0) &&
+                (!a.longest_runway_ft ||
+                  a.longest_runway_ft >= (selected.type?.minimum_runway_ft ?? 0)) &&
+                [a.icao, a.name, a.city].some((v) =>
+                  v.toLowerCase().includes(filter.toLowerCase()),
+                ),
+            )
+            .map((a) => ({ ...a, nm: distanceNm(origin, a) }))
+            .sort((a, b) => a.nm - b.nm)
+            .slice(0, 100),
+    [d.airports, origin, selected, filter],
+  );
+  async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
+    setBusy(true);
+    try {
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight } });
+      if (kind === "dispatch") {
+        setDestination("");
+        setQuote(null);
+      }
+      await qc.invalidateQueries();
+      toast.success(
+        kind === "settle"
+          ? "Flight settled in Smooth Coins"
+          : kind === "start"
+            ? "Test flight airborne"
+            : kind === "cancel"
+              ? "Flight cancelled"
+              : "Passengers reserved — ready for departure",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Flight action failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!d.company) return null;
+  return (
+    <AppShell company={d.company}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="readout text-xs uppercase text-amber">Operations · Passenger transport</p>
+          <h1 className="mt-1 text-3xl font-semibold">Dispatch</h1>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/radar">
+            <Radar className="h-4 w-4" />
+            Open radar
+          </Link>
+        </Button>
+      </div>
+      <section className="mt-6 border-y border-border py-5">
+        <label className="text-xs uppercase text-muted-foreground" htmlFor="dispatch-aircraft">
+          Aircraft
+        </label>
+        <select
+          id="dispatch-aircraft"
+          className="mt-2 block w-full rounded-sm border border-input bg-panel p-3"
+          value={selected?.id ?? ""}
+          onChange={(e) => {
+            setAircraft(e.target.value);
+            setDestination("");
+          }}
+        >
+          <option value="">Select aircraft</option>
+          {d.fleet
+            .filter((f) => f.status === "AVAILABLE")
+            .map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.registration} · {f.type?.model} · {f.location_icao}
+              </option>
+            ))}
+        </select>
+        <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
+          <span>{origin?.name ?? "No available aircraft"}</span>
+          <span>{selected?.type?.range_nm ?? 0} NM range</span>
+          <span>{formatCr(d.balance)} available</span>
+        </div>
+      </section>
+      {d.fleet.length === 0 ? (
+        <div className="py-12 text-center">
+          <p>No aircraft leased yet.</p>
+          <Button asChild className="mt-4">
+            <Link to="/market">Lease aircraft</Link>
+          </Button>
+        </div>
+      ) : (
+        selected?.status === "AVAILABLE" && (
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+            <section>
+              <h2 className="mb-3 text-lg font-semibold">Destinations</h2>
+              <Input
+                aria-label="Search destinations"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="ICAO, airport or city"
+              />
+              <div className="mt-3 max-h-[440px] overflow-y-auto divide-y divide-border">
+                {destinations.map((a) => (
+                  <Button
+                    key={a.icao}
+                    variant="ghost"
+                    aria-pressed={destination === a.icao}
+                    onClick={() => setDestination(a.icao)}
+                    className={`h-auto w-full justify-between gap-3 rounded-none py-3 text-left ${destination === a.icao ? "bg-accent" : ""}`}
+                  >
+                    <span className="min-w-0">
+                      <span className="readout text-primary">{a.icao}</span>
+                      <span className="block whitespace-normal text-xs text-muted-foreground">
+                        {a.name}
+                      </span>
+                    </span>
+                    <span className="readout shrink-0 text-xs">{Math.round(a.nm)} NM</span>
+                  </Button>
+                ))}
+                {destinations.length === 0 && (
+                  <p className="py-8 text-muted-foreground">No matching reachable airports.</p>
+                )}
+              </div>
+            </section>
+            <section className="border-t border-border pt-4 lg:border-t-0">
+              <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
+              <h2 className="mt-2 text-2xl">
+                {origin?.icao ?? "—"} → {destination || "—"}
+              </h2>
+              {quoteError && (
+                <p role="alert" className="mt-4 text-destructive">
+                  {quoteError}
+                </p>
+              )}
+              {quote ? (
+                <>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {quote.passengers} passengers · {Math.round(quote.distance_nm)} NM ·{" "}
+                    {Math.round(quote.minutes)} min
+                  </p>
+                  <dl className="readout mt-5 space-y-3">
+                    {[
+                      ["Ticket revenue", quote.revenue],
+                      ["Fuel", -quote.fuel_cost],
+                      ["Landing", -quote.landing_fee],
+                      ["Handling (both airports)", -quote.handling_fee],
+                      ["Maintenance reserve", -quote.maintenance],
+                    ].map(([label, value]) => (
+                      <div key={String(label)} className="flex justify-between gap-3 text-sm">
+                        <dt>{label}</dt>
+                        <dd>{formatCr(Number(value))}</dd>
+                      </div>
+                    ))}
+                    <div className="flex justify-between border-t border-border pt-4">
+                      <dt>Contribution margin</dt>
+                      <dd className={quote.net >= 0 ? "text-primary" : "text-destructive"}>
+                        {formatCr(quote.net)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    {quote.fuel_gal.toFixed(1)} US gal consumed · reserve{" "}
+                    {String(d.rules["fuel_reserve_minutes"])} min · excludes weekly lease
+                  </p>
+                  <Button
+                    className="mt-5 w-full"
+                    disabled={
+                      busy || quote.passengers === 0 || d.rules["web_simulation_enabled"] !== true
+                    }
+                    onClick={() => run("dispatch")}
+                  >
+                    <Plane className="h-4 w-4" />
+                    Dispatch flight
+                  </Button>
+                </>
+              ) : (
+                <p className="mt-6 text-sm text-muted-foreground">
+                  {destination ? "Calculating…" : "No destination selected"}
+                </p>
+              )}
+            </section>
+          </div>
+        )
+      )}
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">Flight operations</h2>
+        <span className="readout text-xs text-amber">
+          WEB TEST · {String(d.rules["simulation_time_scale"])}×
+        </span>
+        <div className="mt-3 divide-y divide-border border-y border-border">
+          {d.flights.map((f) => {
+            const progress = flightProgress(f, now);
+            return (
+              <div key={f.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+                <div>
+                  <p className="readout text-primary">
+                    {f.origin_icao} → {f.destination_icao}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {f.passengers} pax · {f.status.replace("_", " ")} · {f.id.slice(0, 8)}
+                  </p>
+                  {f.status === "EN_ROUTE" && (
+                    <progress
+                      aria-label="Flight progress"
+                      className="mt-2 h-2 w-48 accent-primary"
+                      value={progress}
+                      max={1}
+                    />
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {f.status === "DISPATCHED" && (
+                    <>
+                      <Button size="sm" disabled={busy} onClick={() => run("start", f.id)}>
+                        <Play className="h-4 w-4" />
+                        Simulate departure
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title="Cancel dispatch"
+                        disabled={busy}
+                        onClick={() => run("cancel", f.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  {f.status === "EN_ROUTE" && (
+                    <Button disabled={busy || progress < 1} onClick={() => run("settle", f.id)}>
+                      <Check className="h-4 w-4" />
+                      {progress < 1
+                        ? `${Math.round(progress * 100)}% · En route`
+                        : "Complete & settle"}
+                    </Button>
+                  )}
+                  {f.status === "COMPLETED" && (
+                    <span className="readout text-primary">
+                      {formatCr((f.settlement as Quote)?.net ?? 0)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {d.flights.length === 0 && (
+            <p className="py-8 text-muted-foreground">No flights dispatched yet.</p>
+          )}
+        </div>
+      </section>
+    </AppShell>
+  );
+}

@@ -8,6 +8,48 @@
       "when": 1795046633845,
       "tag": "0000_smoothsky_phase1",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795051173213,
+      "tag": "0001_smoothsky_economy_dispatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795051261041,
+      "tag": "0002_airport_import_support",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795051303618,
+      "tag": "0003_flight_economy_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795051490001,
+      "tag": "0004_import_parser_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795051593891,
+      "tag": "0005_airport_local_identifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795051730409,
+      "tag": "0006_flight_ledger_entry_types",
+      "breakpoints": true
     }
   ]
 }

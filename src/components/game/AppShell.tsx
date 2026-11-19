@@ -22,9 +22,11 @@ export function AppShell({ children, company }: { children: ReactNode; company?:
           <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             <Logo />
             {company && (
-              <nav className="flex gap-4 text-sm">
+              <nav className="flex flex-wrap gap-4 text-sm">
                 <Link to="/dashboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Dashboard</Link>
                 <Link to="/market" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Lease market</Link>
+              <Link to="/dispatch" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Dispatch</Link>
+                <Link to="/radar" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Radar</Link>
               </nav>
             )}
           </div>

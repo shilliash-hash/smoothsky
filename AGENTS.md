@@ -30,6 +30,10 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
-- Money-changing actions run only in SECURITY DEFINER SQL functions (create_company, lease_aircraft); clients have SELECT-only access — keeps the ledger tamper-proof.
+- Money-changing actions run only in SECURITY DEFINER SQL functions (create_company, lease_aircraft, settle_flight); clients have SELECT-only access — keeps the ledger tamper-proof.
 - company_ledger is append-only (trigger blocks UPDATE/DELETE); balance = latest balance_after — full audit trail.
-- Economy constants mirrored in src/lib/rules.ts with tests — UI checks must match DB rules.
+- Economy settings and aircraft specifications are read from database tables; flight quotes are calculated in SQL and frozen at dispatch — UI and settlement must share the same rules.
+- Protected operations use authenticated server functions and owner-scoped RLS; no privileged client queries — company data stays private.
+- Web simulation and future ACARS share flight records and settlement; ACARS writes require a separately verified ingestion adapter — manual data cannot impersonate simulator evidence.
+- Radar dynamically imports Leaflet and uses Turf nautical-mile/geodesic calculations — avoids SSR browser imports and hand-rolled map geometry.
+- Airport imports retain source provenance, provisional size classification and nullable fuel/runway data — missing information must not be fabricated.

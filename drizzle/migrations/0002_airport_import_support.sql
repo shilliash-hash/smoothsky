@@ -1,0 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+CREATE TABLE public.airport_import_sources (source text PRIMARY KEY, request_id bigint); GRANT ALL ON public.airport_import_sources TO service_role; ALTER TABLE public.airport_import_sources ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.csv_fields(line text) RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path=public AS $$ SELECT array_agg(replace(CASE WHEN left(m[1],1)='"' THEN substr(m[1],2,length(m[1])-2) ELSE m[1] END,'""','"')) FROM regexp_matches(line||',','("(?:[^"]|"")*"|[^,]*),','g') m $$;
+REVOKE ALL ON FUNCTION public.csv_fields(text) FROM PUBLIC,anon,authenticated;

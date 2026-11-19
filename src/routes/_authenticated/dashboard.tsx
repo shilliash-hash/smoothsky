@@ -2,8 +2,10 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Plane, MapPin, Wallet } from "lucide-react";
 import { companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
-import { MAX_LEASES, formatCr } from "@/lib/rules";
+import { economyQuery } from "@/lib/game";
+import { formatCr } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
+import { SmoothCoin } from "@/components/game/SmoothCoin";
 import { AppShell } from "@/components/game/AppShell";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -15,10 +17,11 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
   const { data: company } = useSuspenseQuery(companyQuery);
+  const { data: economy } = useQuery(economyQuery);
   const c = company;
   const { data: ledger = [] } = useQuery(ledgerQuery(c?.id ?? ""));
   const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
@@ -33,12 +36,12 @@ function Dashboard() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <div className="instrument p-5">
-          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Wallet className="h-4 w-4" /> Balance</div>
+          <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><SmoothCoin className="h-5 w-5 text-xs" /> Balance</div>
           <p className="readout mt-2 text-3xl text-primary">{formatCr(balance)}</p>
         </div>
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Plane className="h-4 w-4" /> Fleet</div>
-          <p className="readout mt-2 text-3xl">{fleet.length}<span className="text-base text-muted-foreground"> / {MAX_LEASES}</span></p>
+          <p className="readout mt-2 text-3xl">{fleet.length}<span className="text-base text-muted-foreground"> / {Number(economy?.['max_active_leases'] ?? 3)}</span></p>
         </div>
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>

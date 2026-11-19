@@ -1,0 +1,1 @@
+ALTER TABLE public.airports DROP CONSTRAINT airports_icao_check; ALTER TABLE public.airports ADD CONSTRAINT airports_identifier_check CHECK(icao ~ '^[A-Z0-9][A-Z0-9-]{2,19}$'); COMMENT ON COLUMN public.airports.icao IS 'ICAO when available; otherwise OurAirports local identifier for small airfields';

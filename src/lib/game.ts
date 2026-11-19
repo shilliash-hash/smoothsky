@@ -53,10 +53,17 @@ export const aircraftTypesQuery = queryOptions({
 
 export const airportsQuery = queryOptions({
   queryKey: ["airports"],
-  staleTime: Infinity,
+  staleTime: 30000,
   queryFn: async () => {
-    const { data, error } = await supabase.from("airports").select("*").order("icao");
-    if (error) throw error;
-    return data;
+    const rows = [];
+    for (let offset = 0;; offset += 1000) {
+      const { data, error } = await supabase.from("airports").select("*").order("icao").range(offset, offset + 999);
+      if (error) throw error;
+      rows.push(...data);
+      if (data.length < 1000) break;
+    }
+    return rows;
   },
 });
+
+export const economyQuery = queryOptions({queryKey:["economy"],staleTime:10000,refetchInterval:10000,queryFn:async()=>{const {data,error}=await supabase.from("economy_config").select("*");if(error)throw error;return Object.fromEntries(data.map(r=>[r.key,r.value]));}});

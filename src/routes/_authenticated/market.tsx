@@ -4,7 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { aircraftTypesQuery, companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
-import { MAX_LEASES, canAffordLease, formatCr, leaseUpfrontCost } from "@/lib/rules";
+import { economyQuery } from "@/lib/game";
+import { canAffordLease, formatCr, leaseUpfrontCost } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/game/AppShell";
 
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/market")({
 
 function Market() {
   const qc = useQueryClient();
+  const { data: economy } = useQuery(economyQuery);
   const { data: company } = useSuspenseQuery(companyQuery);
   const c = company;
   const { data: types = [] } = useQuery(aircraftTypesQuery);
@@ -26,7 +28,7 @@ function Market() {
   const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
   const [busy, setBusy] = useState<string | null>(null);
   const balance = ledger[0]?.balance_after ?? 0;
-  const full = fleet.length >= MAX_LEASES;
+  const full = fleet.length >= Number(economy?.['max_active_leases'] ?? 3);
 
   if (!c) return null;
 
@@ -54,7 +56,7 @@ function Market() {
         </div>
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {types.map((t) => {
+        {types.filter(t=>t.active).map((t) => {
           const afford = canAffordLease(balance, t);
           return (
             <div key={t.id} className="instrument flex flex-col p-5">

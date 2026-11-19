@@ -16,11 +16,16 @@ export type Database = {
     Tables: {
       aircraft_types: {
         Row: {
+          active: boolean
           cargo_kg: number
           cruise_kts: number
           engine: string
+          fuel_burn_gph: number
+          fuel_capacity_gal: number
+          fuel_type: string
           id: string
           manufacturer: string
+          minimum_runway_ft: number
           model: string
           pax: number
           range_nm: number
@@ -29,11 +34,16 @@ export type Database = {
           weekly_rate: number
         }
         Insert: {
+          active?: boolean
           cargo_kg: number
           cruise_kts: number
           engine: string
+          fuel_burn_gph?: number
+          fuel_capacity_gal?: number
+          fuel_type?: string
           id: string
           manufacturer: string
+          minimum_runway_ft?: number
           model: string
           pax: number
           range_nm: number
@@ -42,11 +52,16 @@ export type Database = {
           weekly_rate: number
         }
         Update: {
+          active?: boolean
           cargo_kg?: number
           cruise_kts?: number
           engine?: string
+          fuel_burn_gph?: number
+          fuel_capacity_gal?: number
+          fuel_type?: string
           id?: string
           manufacturer?: string
+          minimum_runway_ft?: number
           model?: string
           pax?: number
           range_nm?: number
@@ -56,33 +71,107 @@ export type Database = {
         }
         Relationships: []
       }
+      airport_import_sources: {
+        Row: {
+          request_id: number | null
+          source: string
+        }
+        Insert: {
+          request_id?: number | null
+          source: string
+        }
+        Update: {
+          request_id?: number | null
+          source?: string
+        }
+        Relationships: []
+      }
+      airport_passenger_pools: {
+        Row: {
+          airport_icao: string
+          last_departure_at: string
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          airport_icao: string
+          last_departure_at?: string
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          airport_icao?: string
+          last_departure_at?: string
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airport_passenger_pools_airport_icao_fkey"
+            columns: ["airport_icao"]
+            isOneToOne: true
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+        ]
+      }
       airports: {
         Row: {
+          airport_type: string
           city: string
+          classification_source: string
           country: string
+          data_source: string
+          development_level: number
+          elevation_ft: number | null
+          fuel_100ll_available: boolean | null
+          fuel_jeta_available: boolean | null
           iata: string | null
           icao: string
           lat: number
           lon: number
+          longest_runway_ft: number | null
           name: string
+          runway_surface: string | null
+          size: number
         }
         Insert: {
+          airport_type?: string
           city: string
+          classification_source?: string
           country: string
+          data_source?: string
+          development_level?: number
+          elevation_ft?: number | null
+          fuel_100ll_available?: boolean | null
+          fuel_jeta_available?: boolean | null
           iata?: string | null
           icao: string
           lat: number
           lon: number
+          longest_runway_ft?: number | null
           name: string
+          runway_surface?: string | null
+          size?: number
         }
         Update: {
+          airport_type?: string
           city?: string
+          classification_source?: string
           country?: string
+          data_source?: string
+          development_level?: number
+          elevation_ft?: number | null
+          fuel_100ll_available?: boolean | null
+          fuel_jeta_available?: boolean | null
           iata?: string | null
           icao?: string
           lat?: number
           lon?: number
+          longest_runway_ft?: number | null
           name?: string
+          runway_surface?: string | null
+          size?: number
         }
         Relationships: []
       }
@@ -174,6 +263,24 @@ export type Database = {
           },
         ]
       }
+      economy_config: {
+        Row: {
+          description: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          description?: string
+          key: string
+          value: Json
+        }
+        Update: {
+          description?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       fleet_aircraft: {
         Row: {
           aircraft_type_id: string
@@ -235,18 +342,125 @@ export type Database = {
           },
         ]
       }
+      flights: {
+        Row: {
+          aircraft_id: string
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          departed_at: string | null
+          destination_icao: string
+          distance_nm: number
+          estimate: Json
+          estimated_minutes: number
+          execution_source: string
+          id: string
+          origin_icao: string
+          passengers: number
+          rules_snapshot: Json
+          settlement: Json | null
+          status: string
+          telemetry: Json | null
+        }
+        Insert: {
+          aircraft_id: string
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          departed_at?: string | null
+          destination_icao: string
+          distance_nm: number
+          estimate: Json
+          estimated_minutes: number
+          execution_source?: string
+          id?: string
+          origin_icao: string
+          passengers: number
+          rules_snapshot: Json
+          settlement?: Json | null
+          status?: string
+          telemetry?: Json | null
+        }
+        Update: {
+          aircraft_id?: string
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          departed_at?: string | null
+          destination_icao?: string
+          distance_nm?: number
+          estimate?: Json
+          estimated_minutes?: number
+          execution_source?: string
+          id?: string
+          origin_icao?: string
+          passengers?: number
+          rules_snapshot?: Json
+          settlement?: Json | null
+          status?: string
+          telemetry?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flights_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flights_destination_icao_fkey"
+            columns: ["destination_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+          {
+            foreignKeyName: "flights_origin_icao_fkey"
+            columns: ["origin_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       company_balance: { Args: { p_company: string }; Returns: number }
       create_company: {
         Args: { p_home_base: string; p_icao_code: string; p_name: string }
         Returns: string
       }
+      csv_fields: { Args: { line: string }; Returns: string[] }
+      dispatch_flight: {
+        Args: { p_aircraft: string; p_destination: string }
+        Returns: string
+      }
+      economy_number: { Args: { p_key: string }; Returns: number }
+      flight_quote: {
+        Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
+      passenger_capacity: { Args: { p_airport: string }; Returns: number }
+      passenger_stock: { Args: { p_airport: string }; Returns: number }
+      settle_flight: {
+        Args: { p_flight: string; p_telemetry?: Json }
+        Returns: Json
+      }
+      start_test_flight: { Args: { p_flight: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

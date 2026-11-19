@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: Landmark, title: "Real economics", text: "Every credit goes through a double-entry ledger. A flight is not automatically profitable." },
+  { icon: Landmark, title: "Real economics", text: "Every Smooth Coin goes through a double-entry ledger. A flight is not automatically profitable." },
   { icon: Plane, title: "Aircraft leasing", text: "Start with a Cessna 172 or take a chance on a King Air. Deposits and weekly payments count, even when you are not flying." },
   { icon: Radar, title: "Global network", text: "Shared airports from Lukla to Heathrow. Nobody owns them — every airline can use them." },
 ];
