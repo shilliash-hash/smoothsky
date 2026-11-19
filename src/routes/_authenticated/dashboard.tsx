@@ -9,6 +9,7 @@ import { SmoothCoin } from "@/components/game/SmoothCoin";
 import { AppShell } from "@/components/game/AppShell";
 import { useState } from "react";
 import { fleetOverviewQuery, companyResultsQuery } from "@/lib/fleet";
+import { FleetCarousel } from "@/components/game/FleetCarousel";
 import { CompanyResults } from "@/components/game/CompanyResults";
 import { AircraftDetails } from "@/components/game/AircraftDetails";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -90,23 +91,7 @@ function Dashboard() {
             <Button asChild className="mt-4"><Link to="/market">Lease your first aircraft</Link></Button>
           </div>
         ) : (
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            {fleet.map((f) => (
-              <Button key={f.id} variant="outline" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => setSelected(f.id)} className="instrument block h-auto w-full p-4 text-left font-normal whitespace-normal">
-                <div className="flex items-center justify-between">
-                  <span className="readout text-lg text-primary">{f.registration}</span>
-                  <span className="rounded-sm bg-success/15 px-2 py-0.5 text-xs text-success">{f.status === "AVAILABLE" ? "Available" : f.status}</span>
-                </div>
-                <p className="mt-1 text-sm">{f.type?.manufacturer} {f.type?.model}</p>
-                <dl className="readout mt-3 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                  <dt>Location</dt><dd className="text-right text-foreground">{f.location_icao}</dd>
-                  {f.ownership === "OWNED" ? <><dt>Ownership</dt><dd className="text-right text-primary">Owned</dd><dt>Asset value</dt><dd className="text-right">{formatCr(f.purchase_price)}</dd></> : <><dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
-                  <dt>Contract ends</dt><dd className="text-right text-foreground">{new Date(overview.contracts.find(k => k.aircraft_id === f.id)?.ends_at ?? f.next_payment_due).toLocaleDateString("en-US")}</dd>
-                  <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
-                </dl>
-              </Button>
-            ))}
-          </div>
+          <FleetCarousel companyId={c.id} fleet={fleet} contractEnd={id => overview.contracts.find(k => k.aircraft_id === id)?.ends_at} onSelect={setSelected} />
         )}
       </section>
 
