@@ -15,6 +15,7 @@ import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
+import { SimbriefImport } from "@/components/game/SimbriefImport";
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -221,6 +222,14 @@ function Dispatch() {
               </div>
             </section>
             <section className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
+              <SimbriefImport
+                origin={origin?.icao ?? ""}
+                onImport={(plan) => {
+                  if (plan.flightNumber && flightNumberSchema.safeParse(plan.flightNumber).success) setFlightNumber(plan.flightNumber);
+                  if (plan.destination && destinations.some((x) => x.icao === plan.destination)) setDestination(plan.destination);
+                  else if (plan.destination) toast.warning(`${plan.destination} is not reachable by this aircraft`);
+                }}
+              />
               <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
               {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}

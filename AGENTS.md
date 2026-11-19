@@ -56,3 +56,4 @@ use the editor.
 - Financial debt is the negative ledger cash balance after obligations; recovery closes infrastructure and liquidates aircraft via new ledger entries without deleting history — preserves auditability.
 - Airport supply reset is admin-only and refuses active flights under a dispatch-blocking table lock — preserves transactional fuel reservations.
 - Leaderboard reads use an authenticated aggregate-only SQL function; net worth values active aircraft/deposits and FOB ledger investment, excluding retired assets, and UTC weekly snapshots are captured lazily to avoid external scheduling dependencies. Supporter badges are cosmetic and changed only by admin-checked SQL functions.
+- ACARS routes call key-checking SQL; positions overwrite flight telemetry; PIREPs reuse settle_flight; SimBrief only prefills dispatch — one settlement path.

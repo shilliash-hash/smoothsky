@@ -22,6 +22,9 @@ import { Route as AuthenticatedLogbookRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
+import { Route as ApiPublicAcarsConnectRouteImport } from './routes/api/public/acars/connect'
+import { Route as ApiPublicAcarsPirepRouteImport } from './routes/api/public/acars/pirep'
+import { Route as ApiPublicAcarsPositionRouteImport } from './routes/api/public/acars/position'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +91,21 @@ const AuthenticatedRadarRoute = AuthenticatedRadarRouteImport.update({
   path: '/radar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicAcarsConnectRoute = ApiPublicAcarsConnectRouteImport.update({
+  id: '/api/public/acars/connect',
+  path: '/api/public/acars/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAcarsPirepRoute = ApiPublicAcarsPirepRouteImport.update({
+  id: '/api/public/acars/pirep',
+  path: '/api/public/acars/pirep',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAcarsPositionRoute = ApiPublicAcarsPositionRouteImport.update({
+  id: '/api/public/acars/position',
+  path: '/api/public/acars/position',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +120,9 @@ export interface FileRoutesByFullPath {
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/radar': typeof AuthenticatedRadarRoute
+  '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
+  '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
+  '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,6 +137,9 @@ export interface FileRoutesByTo {
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/radar': typeof AuthenticatedRadarRoute
+  '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
+  '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
+  '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +156,9 @@ export interface FileRoutesById {
   '/_authenticated/market': typeof AuthenticatedMarketRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
+  '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
+  '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
+  '/api/public/acars/position': typeof ApiPublicAcarsPositionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,6 +175,9 @@ export interface FileRouteTypes {
     | '/market'
     | '/onboarding'
     | '/radar'
+    | '/api/public/acars/connect'
+    | '/api/public/acars/pirep'
+    | '/api/public/acars/position'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,6 +192,9 @@ export interface FileRouteTypes {
     | '/market'
     | '/onboarding'
     | '/radar'
+    | '/api/public/acars/connect'
+    | '/api/public/acars/pirep'
+    | '/api/public/acars/position'
   id:
     | '__root__'
     | '/'
@@ -177,6 +210,9 @@ export interface FileRouteTypes {
     | '/_authenticated/market'
     | '/_authenticated/onboarding'
     | '/_authenticated/radar'
+    | '/api/public/acars/connect'
+    | '/api/public/acars/pirep'
+    | '/api/public/acars/position'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +220,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicAcarsConnectRoute: typeof ApiPublicAcarsConnectRoute
+  ApiPublicAcarsPirepRoute: typeof ApiPublicAcarsPirepRoute
+  ApiPublicAcarsPositionRoute: typeof ApiPublicAcarsPositionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -279,6 +318,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRadarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/acars/connect': {
+      id: '/api/public/acars/connect'
+      path: '/api/public/acars/connect'
+      fullPath: '/api/public/acars/connect'
+      preLoaderRoute: typeof ApiPublicAcarsConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/acars/pirep': {
+      id: '/api/public/acars/pirep'
+      path: '/api/public/acars/pirep'
+      fullPath: '/api/public/acars/pirep'
+      preLoaderRoute: typeof ApiPublicAcarsPirepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/acars/position': {
+      id: '/api/public/acars/position'
+      path: '/api/public/acars/position'
+      fullPath: '/api/public/acars/position'
+      preLoaderRoute: typeof ApiPublicAcarsPositionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -314,6 +374,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicAcarsConnectRoute: ApiPublicAcarsConnectRoute,
+  ApiPublicAcarsPirepRoute: ApiPublicAcarsPirepRoute,
+  ApiPublicAcarsPositionRoute: ApiPublicAcarsPositionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

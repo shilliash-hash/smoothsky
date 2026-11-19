@@ -10,6 +10,7 @@ import { AppShell } from "@/components/game/AppShell";
 import { useState } from "react";
 import { fleetOverviewQuery, companyResultsQuery } from "@/lib/fleet";
 import { CompanyResults } from "@/components/game/CompanyResults";
+import { AcarsConnection } from "@/components/game/AcarsConnection";
 import { AircraftDetails } from "@/components/game/AircraftDetails";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { flightTransactionContext } from "@/lib/transaction-history";
@@ -60,6 +61,7 @@ function Dashboard() {
       <p className="readout text-xs uppercase text-amber">{c.icao_code} · Operations Center</p>
       <h1 className="mt-1 text-3xl font-semibold">{c.name}</h1>
 
+      <div className="mt-6"><AcarsConnection /></div>
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><SmoothCoin className="h-5 w-5 text-xs" /> Balance</div>

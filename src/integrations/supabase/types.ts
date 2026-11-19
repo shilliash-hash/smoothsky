@@ -666,6 +666,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          acars_api_key: string
+          acars_last_seen: string | null
+          created_at: string
+          id: string
+          simbrief_username: string | null
+        }
+        Insert: {
+          acars_api_key?: string
+          acars_last_seen?: string | null
+          created_at?: string
+          id: string
+          simbrief_username?: string | null
+        }
+        Update: {
+          acars_api_key?: string
+          acars_last_seen?: string | null
+          created_at?: string
+          id?: string
+          simbrief_username?: string | null
+        }
+        Relationships: []
+      }
       registration_rules: {
         Row: {
           alphabet: string
@@ -713,6 +737,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acars_connect: { Args: { p_key: string }; Returns: Json }
+      acars_flight_json: {
+        Args: { f: Database["public"]["Tables"]["flights"]["Row"] }
+        Returns: Json
+      }
+      acars_pilot: { Args: { p_key: string }; Returns: string }
+      acars_pirep: { Args: { p: Json; p_key: string }; Returns: Json }
+      acars_position: { Args: { p: Json; p_key: string }; Returns: Json }
       admin_company_supporters: {
         Args: never
         Returns: {
@@ -780,6 +812,22 @@ export type Database = {
             Returns: string
           }
       economy_number: { Args: { p_key: string }; Returns: number }
+      ensure_my_profile: {
+        Args: never
+        Returns: {
+          acars_api_key: string
+          acars_last_seen: string | null
+          created_at: string
+          id: string
+          simbrief_username: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       flight_quote: {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
@@ -837,6 +885,7 @@ export type Database = {
         Args: { p_action: string; p_aircraft: string; p_weeks?: number }
         Returns: string
       }
+      new_acars_key: { Args: never; Returns: string }
       next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
@@ -858,6 +907,7 @@ export type Database = {
           pax_stock: number
         }[]
       }
+      regenerate_acars_key: { Args: never; Returns: string }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
       set_company_supporter: {
