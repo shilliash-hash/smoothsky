@@ -6,10 +6,10 @@ import { Logo } from "@/components/game/Logo";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SmoothSky — Zbuduj własną linię lotniczą" },
-      { name: "description", content: "Niezależna platforma biznesu lotniczego dla symulatorów lotu: leasing maszyn, księga finansowa, globalna sieć lotnisk." },
-      { property: "og:title", content: "SmoothSky — Zbuduj własną linię lotniczą" },
-      { property: "og:description", content: "Leasing maszyn, księga finansowa i globalna sieć lotnisk dla pilotów wirtualnych." },
+      { title: "SmoothSky — Build your airline" },
+      { name: "description", content: "An independent aviation business simulation: aircraft leasing, financial ledger and a global airport network." },
+      { property: "og:title", content: "SmoothSky — Build your airline" },
+      { property: "og:description", content: "Aircraft leasing, a financial ledger and a global airport network for virtual pilots." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -18,9 +18,9 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: Landmark, title: "Twarda ekonomia", text: "Każdy kredyt przechodzi przez księgę z podwójnym zapisem. Lot nie jest automatycznie zyskowny." },
-  { icon: Plane, title: "Leasing floty", text: "Zacznij od Cessny 172 albo zaryzykuj King Aira. Kaucja i tygodniowa rata płyną niezależnie od lotów." },
-  { icon: Radar, title: "Globalna sieć", text: "Lotniska systemowe od Lukli po Heathrow. Nikt ich nie kupi — wszyscy z nich korzystają." },
+  { icon: Landmark, title: "Real economics", text: "Every credit goes through a double-entry ledger. A flight is not automatically profitable." },
+  { icon: Plane, title: "Aircraft leasing", text: "Start with a Cessna 172 or take a chance on a King Air. Deposits and weekly payments count, even when you are not flying." },
+  { icon: Radar, title: "Global network", text: "Shared airports from Lukla to Heathrow. Nobody owns them — every airline can use them." },
 ];
 
 function Index() {
@@ -28,18 +28,18 @@ function Index() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Logo />
-        <Button asChild variant="outline"><Link to="/auth">Zaloguj się</Link></Button>
+        <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-16">
-        <p className="readout text-xs uppercase text-amber">● Faza 1 · Operacje naziemne</p>
-        <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight tracking-tight md:text-6xl">
-          Zysk trzeba <span className="text-primary">wylatać</span>, nie kliknąć.
+        <p className="readout text-xs uppercase text-amber">● Phase 1 · Ground operations</p>
+        <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight md:text-6xl">
+          Smooth<span className="text-primary">Sky</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          SmoothSky to niezależna platforma biznesu lotniczego. Załóż linię, wybierz bazę, wyleasinguj pierwszą maszynę i pilnuj płynności.
+          Build your airline, choose a home base, lease your first aircraft and keep your cash flow under control.
         </p>
         <div className="mt-8 flex gap-3">
-          <Button asChild size="lg"><Link to="/auth">Załóż linię lotniczą</Link></Button>
+          <Button asChild size="lg"><Link to="/auth">Create your airline</Link></Button>
         </div>
         <div className="mt-20 grid gap-4 md:grid-cols-3">
           {features.map((f) => (

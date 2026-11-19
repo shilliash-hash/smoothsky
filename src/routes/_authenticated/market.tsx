@@ -13,27 +13,29 @@ export const Route = createFileRoute("/_authenticated/market")({
     const c = await context.queryClient.fetchQuery(companyQuery);
     if (!c) throw redirect({ to: "/onboarding" });
   },
-  head: () => ({ meta: [{ title: "Rynek leasingu — SmoothSky" }, { name: "description", content: "Leasing samolotów T1–T3." }] }),
+  head: () => ({ meta: [{ title: "Lease market — SmoothSky" }, { name: "description", content: "Compare and lease T1–T3 aircraft for your SmoothSky fleet." }, { property: "og:title", content: "Lease market — SmoothSky" }, { property: "og:description", content: "Compare and lease T1–T3 aircraft for your SmoothSky fleet." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Market,
 });
 
 function Market() {
   const qc = useQueryClient();
   const { data: company } = useSuspenseQuery(companyQuery);
-  const c = company!;
+  const c = company;
   const { data: types = [] } = useQuery(aircraftTypesQuery);
-  const { data: ledger = [] } = useQuery(ledgerQuery(c.id));
-  const { data: fleet = [] } = useQuery(fleetQuery(c.id));
+  const { data: ledger = [] } = useQuery(ledgerQuery(c?.id ?? ""));
+  const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
   const [busy, setBusy] = useState<string | null>(null);
   const balance = ledger[0]?.balance_after ?? 0;
   const full = fleet.length >= MAX_LEASES;
+
+  if (!c) return null;
 
   async function lease(id: string) {
     setBusy(id);
     const { error } = await supabase.rpc("lease_aircraft", { p_type: id });
     setBusy(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Samolot dołączył do floty w bazie domowej");
+    toast.success("Aircraft added to your fleet at your home base");
     qc.invalidateQueries({ queryKey: ["ledger"] });
     qc.invalidateQueries({ queryKey: ["fleet"] });
   }
@@ -43,11 +45,11 @@ function Market() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="readout text-xs uppercase text-amber">Standard Dry Lease</p>
-          <h1 className="mt-1 text-3xl font-semibold">Rynek leasingu</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">Płacisz kaucję i pierwszą ratę z góry. Rata tygodniowa naliczana jest niezależnie od tego, czy samolot lata. Paliwo i obsługa po Twojej stronie.</p>
+          <h1 className="mt-1 text-3xl font-semibold">Lease market</h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">Pay the security deposit and first weekly payment upfront. The weekly rate applies regardless of flight activity. Fuel and maintenance are your responsibility.</p>
         </div>
         <div className="instrument px-4 py-3 text-right">
-          <p className="text-xs uppercase text-muted-foreground">Dostępne środki</p>
+          <p className="text-xs uppercase text-muted-foreground">Available funds</p>
           <p className="readout text-xl text-primary">{formatCr(balance)}</p>
         </div>
       </div>
@@ -63,18 +65,18 @@ function Market() {
               <h3 className="mt-3 text-xl font-semibold">{t.manufacturer} {t.model}</h3>
               <p className="text-sm text-muted-foreground">{t.engine}</p>
               <dl className="readout mt-4 grid grid-cols-2 gap-y-1 text-sm">
-                <dt className="text-muted-foreground">Pasażerowie</dt><dd className="text-right">{t.pax}</dd>
+                <dt className="text-muted-foreground">Passengers</dt><dd className="text-right">{t.pax}</dd>
                 <dt className="text-muted-foreground">Cargo</dt><dd className="text-right">{t.cargo_kg} kg</dd>
-                <dt className="text-muted-foreground">Zasięg</dt><dd className="text-right">{t.range_nm} NM</dd>
-                <dt className="text-muted-foreground">Przelot</dt><dd className="text-right">{t.cruise_kts} kt</dd>
+                <dt className="text-muted-foreground">Range</dt><dd className="text-right">{t.range_nm} NM</dd>
+                <dt className="text-muted-foreground">Cruise</dt><dd className="text-right">{t.cruise_kts} kt</dd>
               </dl>
               <div className="readout mt-4 space-y-1 border-t border-border pt-4 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Kaucja</span><span>{formatCr(t.security_deposit)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Rata tygodniowa</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
-                <div className="flex justify-between font-semibold"><span>Na start</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Deposit</span><span>{formatCr(t.security_deposit)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Weekly rate</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
+                <div className="flex justify-between font-semibold"><span>Upfront total</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
               </div>
               <Button className="mt-5" disabled={!afford || full || busy !== null} onClick={() => lease(t.id)}>
-                {full ? "Limit floty osiągnięty" : !afford ? "Brak środków" : busy === t.id ? "Podpisywanie…" : "Podpisz leasing"}
+                {full ? "Fleet limit reached" : !afford ? "Insufficient funds" : busy === t.id ? "Signing…" : "Lease aircraft"}
               </Button>
             </div>
           );

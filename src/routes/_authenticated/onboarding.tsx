@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
     const c = await context.queryClient.fetchQuery(companyQuery);
     if (c) throw redirect({ to: "/dashboard" });
   },
-  head: () => ({ meta: [{ title: "Załóż linię lotniczą — SmoothSky" }, { name: "description", content: "Kreator nowej linii lotniczej." }] }),
+  head: () => ({ meta: [{ title: "Create your airline — SmoothSky" }, { name: "description", content: "Choose your airline name, ICAO code and home airport in SmoothSky." }, { property: "og:title", content: "Create your airline — SmoothSky" }, { property: "og:description", content: "Choose your airline name, ICAO code and home airport in SmoothSky." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Onboarding,
 });
 
@@ -50,54 +50,54 @@ function Onboarding() {
   const ready = name.trim().length >= 3 && isValidCompanyCode(code) && available && home;
 
   async function submit() {
-    if (!ready) return;
+    if (!ready || !home) return;
     setBusy(true);
-    const { error } = await supabase.rpc("create_company", { p_name: name.trim(), p_icao_code: normalizeCompanyCode(code), p_home_base: home! });
+    const { error } = await supabase.rpc("create_company", { p_name: name.trim(), p_icao_code: normalizeCompanyCode(code), p_home_base: home });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries();
-    toast.success(`Linia założona. Na koncie ${formatCr(STARTING_CAPITAL)}.`);
+    toast.success(`Airline created. Starting balance: ${formatCr(STARTING_CAPITAL)}.`);
     navigate({ to: "/dashboard" });
   }
 
   return (
     <AppShell>
-      <p className="readout text-xs uppercase text-amber">Pre-flight · Rejestracja przewoźnika</p>
-      <h1 className="mt-2 text-3xl font-semibold">Załóż swoją linię lotniczą</h1>
-      <p className="mt-2 text-muted-foreground">Na start otrzymasz kapitał {formatCr(STARTING_CAPITAL)}. Wydawaj go rozważnie.</p>
+      <p className="readout text-xs uppercase text-amber">Pre-flight · Airline registration</p>
+      <h1 className="mt-2 text-3xl font-semibold">Create your airline</h1>
+      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(STARTING_CAPITAL)}. Invest it wisely.</p>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="instrument space-y-5 p-6">
+        <div className="space-y-5 py-2">
           <div className="space-y-2">
-            <Label htmlFor="name">Nazwa linii</Label>
-            <Input id="name" maxLength={60} placeholder="np. SmoothSky Regional" value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor="name">Airline name</Label>
+            <Input id="name" maxLength={60} placeholder="e.g. SmoothSky Regional" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="code">Kod ICAO firmy (3 litery)</Label>
+            <Label htmlFor="code">Company ICAO code (3 letters)</Label>
             <div className="flex items-center gap-3">
               <Input id="code" maxLength={3} className="readout w-28 text-lg uppercase" placeholder="SSO" value={code} onChange={(e) => setCode(e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase())} />
-              {isValidCompanyCode(code) && available === true && <span className="flex items-center gap-1 text-sm text-success"><Check className="h-4 w-4" /> Wolny</span>}
-              {available === false && <span className="flex items-center gap-1 text-sm text-destructive"><X className="h-4 w-4" /> Zajęty</span>}
+              {isValidCompanyCode(code) && available === true && <span className="flex items-center gap-1 text-sm text-success"><Check className="h-4 w-4" /> Available</span>}
+              {available === false && <span className="flex items-center gap-1 text-sm text-destructive"><X className="h-4 w-4" /> Taken</span>}
             </div>
           </div>
           <div className="rounded-sm border border-border p-4">
-            <p className="readout text-xs uppercase text-muted-foreground">Baza domowa</p>
+            <p className="readout text-xs uppercase text-muted-foreground">Home base</p>
             {homeAirport ? (
               <p className="mt-1"><span className="readout text-primary">{homeAirport.icao}</span> · {homeAirport.name}, {homeAirport.city}</p>
-            ) : <p className="mt-1 text-sm text-muted-foreground">Wybierz lotnisko z listy.</p>}
+            ) : <p className="mt-1 text-sm text-muted-foreground">Choose an airport.</p>}
           </div>
-          <Button className="w-full" size="lg" disabled={!ready || busy} onClick={submit}>Zarejestruj linię</Button>
+          <Button className="w-full" size="lg" disabled={!ready || busy} onClick={submit}>Register airline</Button>
         </div>
-        <div className="instrument flex flex-col p-6">
-          <Label htmlFor="apt">Szukaj lotniska (ICAO, miasto, kraj)</Label>
-          <Input id="apt" className="mt-2" placeholder="EPWA, Kraków, Norway…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="flex min-w-0 flex-col py-2">
+          <Label htmlFor="apt">Search airports (ICAO, city, country)</Label>
+          <Input id="apt" className="mt-2" placeholder="EPWA, Krakow, Norway…" value={search} onChange={(e) => setSearch(e.target.value)} />
           <ul className="mt-3 max-h-96 flex-1 overflow-y-auto">
             {filtered.map((a) => (
               <li key={a.icao}>
-                <button type="button" onClick={() => setHome(a.icao)} className={`flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent ${home === a.icao ? "bg-accent text-primary" : ""}`}>
+                <Button type="button" variant="ghost" aria-pressed={home === a.icao} onClick={() => setHome(a.icao)} className={`flex h-auto w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm font-normal hover:bg-accent ${home === a.icao ? "bg-accent text-primary" : ""}`}>
                   <span className="readout w-12 text-primary">{a.icao}</span>
-                  <span className="flex-1 truncate">{a.name}</span>
-                  <span className="text-xs text-muted-foreground">{a.city}, {a.country}</span>
-                </button>
+                  <span className="min-w-0 flex-1 whitespace-normal">{a.name}</span>
+                  <span className="max-w-28 whitespace-normal text-right text-xs text-muted-foreground">{a.city}, {a.country}</span>
+                </Button>
               </li>
             ))}
           </ul>

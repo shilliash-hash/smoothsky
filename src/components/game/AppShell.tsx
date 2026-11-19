@@ -18,23 +18,23 @@ export function AppShell({ children, company }: { children: ReactNode; company?:
   return (
     <div className="min-h-screen">
       <header className="border-b border-border bg-panel/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-          <div className="flex items-center gap-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             <Logo />
             {company && (
               <nav className="flex gap-4 text-sm">
                 <Link to="/dashboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Dashboard</Link>
-                <Link to="/market" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Rynek leasingu</Link>
+                <Link to="/market" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Lease market</Link>
               </nav>
             )}
           </div>
           <div className="flex items-center gap-3">
             {company && <span className="readout hidden rounded-sm border border-amber/40 px-2 py-0.5 text-xs text-amber sm:inline">{company.icao_code}</span>}
-            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /> Wyloguj</Button>
+            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }

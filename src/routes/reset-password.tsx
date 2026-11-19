@@ -11,10 +11,12 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Nowe hasło — SmoothSky" },
-      { name: "description", content: "Ustaw nowe hasło do konta SmoothSky." },
-      { property: "og:title", content: "Nowe hasło — SmoothSky" },
-      { property: "og:description", content: "Ustaw nowe hasło do konta SmoothSky." },
+      { title: "Reset password — SmoothSky" },
+      { name: "description", content: "Set a new password for your SmoothSky account." },
+      { property: "og:title", content: "Reset password — SmoothSky" },
+      { property: "og:description", content: "Set a new password for your SmoothSky account." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ResetPassword,
@@ -26,24 +28,24 @@ function ResetPassword() {
   const [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) { toast.error("Hasło musi mieć co najmniej 8 znaków"); return; }
+    if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Hasło zmienione");
+    toast.success("Password updated");
     navigate({ to: "/dashboard" });
   }
   return (
     <div className="grid min-h-screen place-items-center px-4">
       <form onSubmit={submit} className="instrument w-full max-w-md space-y-4 p-6">
         <Logo />
-        <h1 className="text-xl font-semibold">Ustaw nowe hasło</h1>
+        <h1 className="text-xl font-semibold">Set a new password</h1>
         <div className="space-y-2">
-          <Label htmlFor="pw">Nowe hasło</Label>
+          <Label htmlFor="pw">New password</Label>
           <Input id="pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        <Button type="submit" className="w-full" disabled={busy}>Zapisz hasło</Button>
+        <Button type="submit" className="w-full" disabled={busy}>Save password</Button>
       </form>
     </div>
   );
