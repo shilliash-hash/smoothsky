@@ -41,7 +41,7 @@ export function AppShell({
   return (
     <div className="relative min-h-screen">
       <img
-        src={aurora.url}
+        src="/smoothsky-aurora-logo.png"
         alt=""
         aria-hidden="true"
         className="pointer-events-none fixed right-[calc(50%+36rem+0.75rem)] top-0 z-20 hidden w-[calc((100vw-72rem)/2-2rem)] max-w-[260px] opacity-75 2xl:block"
