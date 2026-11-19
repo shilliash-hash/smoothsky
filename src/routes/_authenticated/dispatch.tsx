@@ -16,6 +16,8 @@ import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
+import { useVisibleTiers, searchAirports } from "@/lib/airport-tiers";
+import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
@@ -58,6 +60,7 @@ function Dispatch() {
   const [flightNumber, setFlightNumber] = useState<string | null>(null);
   const numberValid = flightNumberSchema.safeParse(flightNumber ?? d.nextFlightNumber ?? "").success;
   const [filter, setFilter] = useState("");
+  const [tiers, setTiers] = useVisibleTiers();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [simulation, setSimulation] = useState(true);
@@ -104,21 +107,18 @@ function Dispatch() {
     () =>
       !origin || !selected?.type
         ? []
-        : d.airports
+        : searchAirports(d.airports, filter, tiers)
             .filter(
               (a) =>
                 a.icao !== origin.icao &&
                 distanceNm(origin, a) <= (selected.type?.range_nm ?? 0) &&
                 (!a.longest_runway_ft ||
-                  a.longest_runway_ft >= (selected.type?.minimum_runway_ft ?? 0)) &&
-                [a.icao, a.name, a.city].some((v) =>
-                  v.toLowerCase().includes(filter.toLowerCase()),
-                ),
+                  a.longest_runway_ft >= (selected.type?.minimum_runway_ft ?? 0)),
             )
             .map((a) => ({ ...a, nm: distanceNm(origin, a) }))
-            .sort((a, b) => a.nm - b.nm)
+            .sort((a, b) => (filter.trim() ? 0 : a.nm - b.nm))
             .slice(0, 100),
-    [d.airports, origin, selected, filter],
+    [d.airports, origin, selected, filter, tiers],
   );
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
@@ -214,6 +214,7 @@ function Dispatch() {
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="ICAO, airport or city"
               />
+              <div className="mt-3"><TierPills tiers={tiers} onChange={setTiers} /></div>
               <div className="mt-3 max-h-[440px] overflow-y-auto divide-y divide-border">
                 {destinations.map((a) => (
                   <Button

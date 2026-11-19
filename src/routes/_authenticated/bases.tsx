@@ -14,6 +14,8 @@ import { baseAction } from "@/lib/bases.functions";
 import { canOpenBase, canInvest } from "@/lib/bases-rules";
 import { companyQuery, airportsQuery, economyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
+import { useVisibleTiers, searchAirports } from "@/lib/airport-tiers";
+import { TierPills } from "@/components/game/TierPills";
 
 export const Route = createFileRoute("/_authenticated/bases")({
   loader: async ({ context }) => { const company = await context.queryClient.ensureQueryData(companyQuery); if (!company) throw redirect({ to: "/onboarding" }); await Promise.all([context.queryClient.ensureQueryData(basesQuery), context.queryClient.ensureQueryData(airportsQuery), context.queryClient.ensureQueryData(economyQuery)]); },
@@ -35,7 +37,8 @@ function Bases() {
   const [confirmation, setConfirmation] = useState<Parameters<typeof action>[0]["data"] | null>(null);
   const invest = data.health ? canInvest(data.health.status) : false;
   const number = (key: string) => Number(rules[key] ?? 0);
-  const matches = airports.filter(a => [a.icao, a.name, a.city].some(v => v.toLowerCase().includes(filter.toLowerCase())) && !data.bases.some(b => b.airport_icao === a.icao)).slice(0, 50);
+  const [tiers, setTiers] = useVisibleTiers();
+  const matches = searchAirports(airports, filter, tiers).filter(a => !data.bases.some(b => b.airport_icao === a.icao)).slice(0, 50);
   async function execute() {
     if (!confirmation) return;
     setBusy(true);
@@ -53,7 +56,7 @@ function Bases() {
       </article>; })}
     </section>
     <section className="mt-8 border-y border-border py-5"><h2 className="text-lg font-semibold">Open a FOB</h2><div className="mt-4 grid items-end gap-4 sm:grid-cols-2"><label className="text-sm">Base type<Select value={type} onValueChange={v => setType(v === "MAIN" ? "MAIN" : "SATELLITE")}><SelectTrigger aria-label="Base type" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="MAIN">Main FOB</SelectItem><SelectItem value="SATELLITE">Satellite FOB</SelectItem></SelectContent></Select></label><label className="text-sm">Airport search<Input aria-label="Search base airports" className="mt-2" placeholder="ICAO, airport or city" value={filter} onChange={e => setFilter(e.target.value)} /></label></div>
-      <div className="mt-4 max-h-56 overflow-y-auto divide-y divide-border">{matches.map(a => <Button key={a.icao} variant="ghost" aria-pressed={airport === a.icao} className={`h-auto w-full justify-start gap-3 rounded-none py-3 whitespace-normal text-left ${airport === a.icao ? "bg-accent" : ""}`} onClick={() => setAirport(a.icao)}><span className="readout text-primary">{a.icao}</span><span className="text-xs text-muted-foreground">{a.name}</span></Button>)}</div>
+      <div className="mt-4"><TierPills tiers={tiers} onChange={setTiers} /></div><div className="mt-3 max-h-56 overflow-y-auto divide-y divide-border">{matches.map(a => <Button key={a.icao} variant="ghost" aria-pressed={airport === a.icao} className={`h-auto w-full justify-start gap-3 rounded-none py-3 whitespace-normal text-left ${airport === a.icao ? "bg-accent" : ""}`} onClick={() => setAirport(a.icao)}><span className="readout text-primary">{a.icao}</span><span className="text-xs text-muted-foreground">{a.name}</span></Button>)}</div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4"><p className="readout text-sm">{airport || "Select airport"} · Setup {formatCr(number(`fob_${type.toLowerCase()}_setup`))} · {formatCr(number(`fob_${type.toLowerCase()}_upkeep`))}/week</p><Button disabled={busy || !invest || !airport || data.bases.some(b => b.airport_icao === airport) || !canOpenBase(type, data.bases) || (data.health?.balance ?? 0) < number(`fob_${type.toLowerCase()}_setup`)} onClick={() => setConfirmation({ action: "open", airport, type })}><Landmark className="h-4 w-4" />Open {type === "MAIN" ? "Main" : "Satellite"} FOB</Button></div>
     </section>
     <Dialog open={Boolean(confirmation)} onOpenChange={open => { if (!open && !busy) setConfirmation(null); }}><DialogContent><DialogTitle>Confirm base investment</DialogTitle><DialogDescription>{confirmation?.action === "open" ? `Open ${confirmation.type} FOB at ${confirmation.airport} for ${formatCr(number(`fob_${confirmation.type.toLowerCase()}_setup`))}. Weekly upkeep starts in seven days.` : confirmation?.action === "module" ? `Install ${confirmation.module} for ${formatCr(number(`fob_${confirmation.module}_setup`))}. Weekly upkeep increases by ${formatCr(number(`fob_${confirmation.module}_upkeep`))}.` : ""} Setup payments are non-refundable.</DialogDescription><div className="flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setConfirmation(null)}>Cancel</Button><Button disabled={busy} onClick={execute}>Confirm investment</Button></div></DialogContent></Dialog>

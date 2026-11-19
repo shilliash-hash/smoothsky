@@ -12,6 +12,8 @@ import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { airportCategories, airportMatches, type AirportCategory } from "@/lib/radar-filters";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useVisibleTiers } from "@/lib/airport-tiers";
+import { TierPills } from "@/components/game/TierPills";
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
@@ -46,7 +48,7 @@ function Radar() {
   const [flight, setFlight] = useState<Flight | null>(null);
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
   const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
-  const [tiers, setTiers] = useState<number[]>([1,2,3,4,5,6,7]);
+  const [tiers, setTiers] = useVisibleTiers();
   const visible = useMemo(() => d.airports.filter(a => airportMatches(a, categories, tiers)), [d.airports, categories, tiers]);
   const airportFilter = useMemo(() => visible.map(a => a.icao), [visible]);
   const onAirport = useCallback((a: Airport) => {
@@ -132,10 +134,7 @@ function Radar() {
             <Button size="sm" variant="outline" onClick={() => setCategories([...airportCategories])}>All categories</Button>
             {airportCategories.map(c => <label key={c} className="flex items-center gap-2 text-sm"><Checkbox checked={categories.includes(c)} onCheckedChange={checked => setCategories(old => checked ? [...old,c] : old.filter(x=>x!==c))} />{c}</label>)}
           </fieldset>
-          <fieldset className="flex flex-wrap items-center gap-3"><legend className="mb-2 text-xs uppercase text-muted-foreground">Airport Tier / Size</legend>
-            <Button size="sm" variant="outline" onClick={() => setTiers([1,2,3,4,5,6,7])}>All tiers</Button>
-            {[1,2,3,4,5,6,7].map(t => <label key={t} className="flex items-center gap-1 text-sm"><Checkbox checked={tiers.includes(t)} onCheckedChange={checked => setTiers(old=>checked?[...old,t]:old.filter(x=>x!==t))} />T{t}</label>)}
-          </fieldset>
+          <TierPills tiers={tiers} onChange={setTiers} />
         </div>
         <ClientOnly
           fallback={
