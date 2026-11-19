@@ -85,7 +85,7 @@ function Index() {
             <Button asChild size="lg" variant="outline"><a href="#how-it-works">How SmoothSky works</a></Button>
           </div>
           </div>
-          <img src={aurora.url} alt="SmoothSky — Persistent Aviation World" width={1254} height={1254} className="instrument w-full max-w-md justify-self-center shadow-[0_0_60px_-10px_color-mix(in_oklch,var(--primary)_45%,transparent)]" />
+          <img src="src/assets/smoothsky-aurora-logo.png" />
         </section>
 
         <section aria-label="Live world telemetry" className="mt-16 border-y border-border py-5">
