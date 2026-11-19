@@ -3,7 +3,7 @@ import greatCircle from '@turf/great-circle';
 import along from '@turf/along';
 import bearing from '@turf/bearing';
 import circle from '@turf/circle';
-import { point } from '@turf/helpers';
+import { point, lineString } from '@turf/helpers';
 export type Coordinates = { lat: number; lon: number };
 export type Economy = Record<string, number | boolean | number[]>;
 export const coordinates = (p: Coordinates): [number, number] => [p.lon, p.lat];
@@ -14,15 +14,15 @@ export function flightPosition(a: Coordinates,b: Coordinates,progress: number) {
  const p=Math.min(1,Math.max(0,progress));
  if(route.geometry.type!=='LineString') return {lat:a.lat+(b.lat-a.lat)*p,lon:a.lon+(b.lon-a.lon)*p,heading:bearing(point(coordinates(a)),point(coordinates(b)))};
  const nm=distanceNm(a,b);
- const at=along(route,nm*p,{units:'nauticalmiles'}).geometry.coordinates;
- const next=along(route,nm*Math.min(1,p+0.001),{units:'nauticalmiles'}).geometry.coordinates;
- return {lat:at[1],lon:at[0],heading:bearing(point(at),point(next))};
+ const at=along(lineString(route.geometry.coordinates),nm*p,{units:'nauticalmiles'}).geometry.coordinates;
+ const next=along(lineString(route.geometry.coordinates),nm*Math.min(1,p+0.001),{units:'nauticalmiles'}).geometry.coordinates;
+ return {lat:at[1]??a.lat,lon:at[0]??a.lon,heading:bearing(point(at),point(next))};
 }
 export const rangeRing = (a:Coordinates,nm:number) => circle(coordinates(a),nm,{units:'nauticalmiles',steps:120});
 export const routeArc = (a:Coordinates,b:Coordinates) => greatCircle(coordinates(a),coordinates(b));
 export function projectedPassengers(stock:number,capacity:number,hours:number,idleHours:number,rules:Economy) {
- const cap=capacity*Number(rules.natural_cap);
- return stock<cap?Math.min(cap,stock+capacity*Number(rules.hourly_rate)*Math.max(0,hours)):Math.min(capacity*Number(rules.transit_cap),Math.max(cap,stock-capacity*Number(rules.hourly_rate)*Math.max(0,idleHours)));
+ const cap=capacity*Number(rules['natural_cap']);
+ return stock<cap?Math.min(cap,stock+capacity*Number(rules['hourly_rate'])*Math.max(0,hours)):Math.min(capacity*Number(rules['transit_cap']),Math.max(cap,stock-capacity*Number(rules['hourly_rate'])*Math.max(0,idleHours)));
 }
 export function estimatedCosts(nm:number,speed:number,burn:number,price:number) {const hours=nm/speed;return {minutes:hours*60,fuel:hours*burn,cost:Math.round(hours*burn*price*100)/100};}
 export function flightProgress(f:{departed_at:string|null;estimated_minutes:number;rules_snapshot:unknown},now:number){

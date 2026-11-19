@@ -28,7 +28,7 @@ function Market() {
   const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
   const [busy, setBusy] = useState<string | null>(null);
   const balance = ledger[0]?.balance_after ?? 0;
-  const full = fleet.length >= Number(economy?.max_active_leases ?? 3);
+  const full = fleet.length >= Number(economy?.['max_active_leases'] ?? 3);
 
   if (!c) return null;
 

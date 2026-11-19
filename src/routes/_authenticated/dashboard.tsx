@@ -41,7 +41,7 @@ function Dashboard() {
         </div>
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Plane className="h-4 w-4" /> Fleet</div>
-          <p className="readout mt-2 text-3xl">{fleet.length}<span className="text-base text-muted-foreground"> / {Number(economy?.max_active_leases ?? 3)}</span></p>
+          <p className="readout mt-2 text-3xl">{fleet.length}<span className="text-base text-muted-foreground"> / {Number(economy?.['max_active_leases'] ?? 3)}</span></p>
         </div>
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>

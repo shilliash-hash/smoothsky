@@ -44,7 +44,7 @@ function Onboarding() {
   }, [code]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = search['trim']().toLowerCase();
     const list = q ? airports.filter((a) => [a.icao, a.iata, a.name, a.city, a.country].some((v) => v?.toLowerCase().includes(q))) : airports;
     return list.slice(0, 40);
   }, [airports, search]);
@@ -58,7 +58,7 @@ function Onboarding() {
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries();
-    toast.success(`Airline created. Starting balance: ${formatCr(Number(economy?.starting_capital ?? 50000))}.`);
+    toast.success(`Airline created. Starting balance: ${formatCr(Number(economy?.['starting_capital'] ?? 50000))}.`);
     navigate({ to: "/dashboard" });
   }
 
@@ -66,7 +66,7 @@ function Onboarding() {
     <AppShell>
       <p className="readout text-xs uppercase text-amber">Pre-flight · Airline registration</p>
       <h1 className="mt-2 text-3xl font-semibold">Create your airline</h1>
-      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(Number(economy?.starting_capital ?? 50000))}. Invest it wisely.</p>
+      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(Number(economy?.['starting_capital'] ?? 50000))}. Invest it wisely.</p>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="space-y-5 py-2">
           <div className="space-y-2">
