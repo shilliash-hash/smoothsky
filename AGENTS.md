@@ -28,3 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Money-changing actions run only in SECURITY DEFINER SQL functions (create_company, lease_aircraft); clients have SELECT-only access — keeps the ledger tamper-proof.
+- company_ledger is append-only (trigger blocks UPDATE/DELETE); balance = latest balance_after — full audit trail.
+- Economy constants mirrored in src/lib/rules.ts with tests — UI checks must match DB rules.
