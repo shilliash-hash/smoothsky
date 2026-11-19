@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { accountHome } from "@/lib/account-home";
+import aurora from "@/assets/smoothsky-aurora-logo.png.asset.json";
 import { getWorldTelemetry } from "@/lib/world.functions";
 import { Landmark, Users, Package, Radio, MapPin, Building2, UserRound, PlaneLanding, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,8 +39,8 @@ const steps = [
 
 function Index() {
   const { telemetry } = Route.useLoaderData();
-  const navigate = useNavigate();
   const [entryError, setEntryError] = useState(false);
+  const [home, setHome] = useState<"/dashboard" | "/profile" | "/onboarding" | null>(null);
   useEffect(() => {
     let active = true;
     async function enterAccount() {
@@ -48,14 +49,14 @@ function Index() {
         if (error) throw error;
         if (!data.session) return;
         const to = await accountHome(data.session.user.id);
-        if (active) await navigate({ to, replace: true });
+        if (active) setHome(to);
       } catch {
         if (active) setEntryError(true);
       }
     }
     void enterAccount();
     return () => { active = false; };
-  }, [navigate]);
+  }, []);
   const fmt = (n: number | undefined) => (n === undefined ? "—" : n.toLocaleString("en-US"));
   const stats = [
     { icon: MapPin, label: "Active airports", value: fmt(telemetry?.airports) },
@@ -67,11 +68,11 @@ function Index() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Logo />
-        <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
+        {home ? <Button asChild><Link to={home}>Open cockpit</Link></Button> : <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>}
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24">
         {entryError && <p role="alert" className="mb-4 text-destructive">Unable to open your account. Please try signing in again.</p>}
-        <section className="pt-12 md:pt-20">
+        <section className="grid items-center gap-10 pt-12 md:grid-cols-[1.3fr_1fr] md:pt-20"><div>
           <p className="readout text-xs uppercase text-amber">● Persistent Aviation World</p>
           <h1 className="mt-4 max-w-4xl text-5xl font-semibold leading-tight md:text-7xl">
             Smooth<span className="text-primary">Sky</span>
@@ -80,9 +81,11 @@ function Index() {
             One shared sky for virtual airlines and pilots. Build a company or a flying career, move passengers and urgent freight, and keep every Smooth Coin accountable.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg"><Link to="/auth">Start flying</Link></Button>
+            <Button asChild size="lg"><Link to={home ?? "/auth"}>{home ? "Open cockpit" : "Start flying"}</Link></Button>
             <Button asChild size="lg" variant="outline"><a href="#how-it-works">How SmoothSky works</a></Button>
           </div>
+          </div>
+          <img src={aurora.url} alt="SmoothSky — Persistent Aviation World" width={1254} height={1254} className="instrument w-full max-w-md justify-self-center shadow-[0_0_60px_-10px_color-mix(in_oklch,var(--primary)_45%,transparent)]" />
         </section>
 
         <section aria-label="Live world telemetry" className="mt-16 border-y border-border py-5">

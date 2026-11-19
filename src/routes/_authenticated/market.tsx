@@ -82,8 +82,8 @@ function Market() {
           <p className="readout text-xl text-primary">{formatCr(balance)}</p>
         </div>
       </div>
-      <Tabs value={mode} onValueChange={setMode} className="mt-6"><TabsList><TabsTrigger value="lease">Lease</TabsTrigger><TabsTrigger value="buy">Buy aircraft</TabsTrigger></TabsList></Tabs>
-      <Link to="/used-market" className="mt-3 inline-block text-sm text-primary underline-offset-4 hover:underline">Used market · pre-owned aircraft from brokers & players →</Link>
+      <div className="mt-6 flex flex-wrap items-center gap-2"><Tabs value={mode} onValueChange={setMode}><TabsList><TabsTrigger value="lease">Lease</TabsTrigger><TabsTrigger value="buy">Buy aircraft</TabsTrigger></TabsList></Tabs>
+      <Button asChild variant="outline" size="sm"><Link to="/used-market">Used market</Link></Button></div>
       {!invest && <p role="alert" className="mt-4 text-destructive">Outstanding obligations · Aircraft acquisitions suspended</p>}
       {mode === "lease" && <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
         <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />
