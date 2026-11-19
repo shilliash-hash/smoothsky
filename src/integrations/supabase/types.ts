@@ -234,35 +234,44 @@ export type Database = {
       companies: {
         Row: {
           created_at: string
+          freelance_commission_pct: number
           home_base_icao: string
           icao_code: string
           id: string
+          is_hiring: boolean
           is_supporter: boolean
           name: string
           next_flight_sequence: number
           prev_week_rank: number | null
+          roster_commission_pct: number
           user_id: string
         }
         Insert: {
           created_at?: string
+          freelance_commission_pct?: number
           home_base_icao: string
           icao_code: string
           id?: string
+          is_hiring?: boolean
           is_supporter?: boolean
           name: string
           next_flight_sequence?: number
           prev_week_rank?: number | null
+          roster_commission_pct?: number
           user_id: string
         }
         Update: {
           created_at?: string
+          freelance_commission_pct?: number
           home_base_icao?: string
           icao_code?: string
           id?: string
+          is_hiring?: boolean
           is_supporter?: boolean
           name?: string
           next_flight_sequence?: number
           prev_week_rank?: number | null
+          roster_commission_pct?: number
           user_id?: string
         }
         Relationships: [
@@ -666,29 +675,103 @@ export type Database = {
         }
         Relationships: []
       }
+      pilot_ledger: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string
+          entry_type: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          description: string
+          entry_type: string
+          id?: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string
+          entry_type?: string
+          id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pilot_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           acars_api_key: string
           acars_last_seen: string | null
+          callsign: string | null
+          career_role: string | null
           created_at: string
           id: string
+          last_position_at: string | null
+          pilot_home_icao: string | null
+          roster_company_id: string | null
+          roster_joined_at: string | null
           simbrief_username: string | null
+          type_ratings: number[]
         }
         Insert: {
           acars_api_key?: string
           acars_last_seen?: string | null
+          callsign?: string | null
+          career_role?: string | null
           created_at?: string
           id: string
+          last_position_at?: string | null
+          pilot_home_icao?: string | null
+          roster_company_id?: string | null
+          roster_joined_at?: string | null
           simbrief_username?: string | null
+          type_ratings?: number[]
         }
         Update: {
           acars_api_key?: string
           acars_last_seen?: string | null
+          callsign?: string | null
+          career_role?: string | null
           created_at?: string
           id?: string
+          last_position_at?: string | null
+          pilot_home_icao?: string | null
+          roster_company_id?: string | null
+          roster_joined_at?: string | null
           simbrief_username?: string | null
+          type_ratings?: number[]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_pilot_home_icao_fkey"
+            columns: ["pilot_home_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+          {
+            foreignKeyName: "profiles_roster_company_id_fkey"
+            columns: ["roster_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       registration_rules: {
         Row: {
@@ -780,7 +863,12 @@ export type Database = {
         Returns: number
       }
       assert_company_investment: { Args: never; Returns: undefined }
+      buy_type_rating: { Args: { p_group: string }; Returns: undefined }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
+      choose_pilot_career: {
+        Args: { p_callsign: string; p_home: string }
+        Returns: undefined
+      }
       company_balance: { Args: { p_company: string }; Returns: number }
       company_daily_results: {
         Args: never
@@ -817,9 +905,16 @@ export type Database = {
         Returns: {
           acars_api_key: string
           acars_last_seen: string | null
+          callsign: string | null
+          career_role: string | null
           created_at: string
           id: string
+          last_position_at: string | null
+          pilot_home_icao: string | null
+          roster_company_id: string | null
+          roster_joined_at: string | null
           simbrief_username: string | null
+          type_ratings: number[]
         }
         SetofOptions: {
           from: "*"
@@ -837,6 +932,17 @@ export type Database = {
         Returns: Json
       }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
+      get_pilot_leaderboard: {
+        Args: never
+        Returns: {
+          career_role: string
+          earned: number
+          flight_count: number
+          flight_hours: number
+          is_me: boolean
+          pilot_name: string
+        }[]
+      }
       get_public_leaderboard: {
         Args: never
         Returns: {
@@ -853,8 +959,21 @@ export type Database = {
           rank: number
         }[]
       }
+      hiring_companies: {
+        Args: never
+        Returns: {
+          company_id: string
+          fleet_count: number
+          freelance_commission_pct: number
+          home_base_icao: string
+          icao_code: string
+          name: string
+          roster_commission_pct: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
+      join_roster: { Args: { p_company: string }; Returns: undefined }
       leaderboard_totals: {
         Args: never
         Returns: {
@@ -871,6 +990,7 @@ export type Database = {
         }[]
       }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
+      leave_roster: { Args: never; Returns: undefined }
       manage_fob: {
         Args: {
           p_action: string
@@ -885,10 +1005,12 @@ export type Database = {
         Args: { p_action: string; p_aircraft: string; p_weeks?: number }
         Returns: string
       }
+      my_pilot_profile: { Args: never; Returns: Json }
       new_acars_key: { Args: never; Returns: string }
       next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
+      pilot_balance: { Args: { p_user: string }; Returns: number }
       process_due_obligations: { Args: never; Returns: undefined }
       purchase_aircraft: {
         Args: { p_registration?: string; p_type: string }
@@ -910,6 +1032,10 @@ export type Database = {
       regenerate_acars_key: { Args: never; Returns: string }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      set_company_hiring: {
+        Args: { p_freelance: number; p_hiring: boolean; p_roster: number }
+        Returns: undefined
+      }
       set_company_supporter: {
         Args: { p_company: string; p_supporter: boolean }
         Returns: undefined

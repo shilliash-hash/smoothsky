@@ -21,6 +21,7 @@ import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLogbookRouteImport } from './routes/_authenticated/logbook'
 import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
 import { Route as ApiPublicAcarsConnectRouteImport } from './routes/api/public/acars/connect'
 import { Route as ApiPublicAcarsPirepRouteImport } from './routes/api/public/acars/pirep'
@@ -86,6 +87,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRadarRoute = AuthenticatedRadarRouteImport.update({
   id: '/radar',
   path: '/radar',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/logbook': typeof AuthenticatedLogbookRoute
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/logbook': typeof AuthenticatedLogbookRoute
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/radar': typeof AuthenticatedRadarRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated/logbook': typeof AuthenticatedLogbookRoute
   '/_authenticated/market': typeof AuthenticatedMarketRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
   '/api/public/acars/connect': typeof ApiPublicAcarsConnectRoute
   '/api/public/acars/pirep': typeof ApiPublicAcarsPirepRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/logbook'
     | '/market'
     | '/onboarding'
+    | '/profile'
     | '/radar'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/logbook'
     | '/market'
     | '/onboarding'
+    | '/profile'
     | '/radar'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/logbook'
     | '/_authenticated/market'
     | '/_authenticated/onboarding'
+    | '/_authenticated/profile'
     | '/_authenticated/radar'
     | '/api/public/acars/connect'
     | '/api/public/acars/pirep'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/radar': {
       id: '/_authenticated/radar'
       path: '/radar'
@@ -351,6 +370,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLogbookRoute: typeof AuthenticatedLogbookRoute
   AuthenticatedMarketRoute: typeof AuthenticatedMarketRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
 }
 
@@ -363,6 +383,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLogbookRoute: AuthenticatedLogbookRoute,
   AuthenticatedMarketRoute: AuthenticatedMarketRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,
 }
 

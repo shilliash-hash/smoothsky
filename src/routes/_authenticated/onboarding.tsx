@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppShell } from "@/components/game/AppShell";
+import { useServerFn } from "@tanstack/react-start";
+import { choosePilotCareer, getCareer } from "@/lib/pilot.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   beforeLoad: async ({ context }) => {
@@ -32,6 +34,12 @@ function Onboarding() {
   const [search, setSearch] = useState("");
   const [home, setHome] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const careerFn = useServerFn(getCareer);
+  const pilotFn = useServerFn(choosePilotCareer);
+  const { data: career, isLoading: careerLoading } = useQuery({ queryKey: ["career"], queryFn: () => careerFn() });
+  const [mode, setMode] = useState<"choose" | "airline" | "pilot">("choose");
+  const [callsign, setCallsign] = useState("");
+  useEffect(() => { if (career?.career_role === "PILOT_ONLY") setMode("airline"); }, [career?.career_role]);
 
   useEffect(() => {
     setAvailable(null);
@@ -51,7 +59,16 @@ function Onboarding() {
   const homeAirport = airports.find((a) => a.icao === home);
   const ready = name.trim().length >= 3 && isValidCompanyCode(code) && available && home;
 
+  async function submitPilot() {
+    if (!home) return;
+    setBusy(true);
+    try { await pilotFn({ data: { callsign: callsign.trim(), home } }); await qc.invalidateQueries(); toast.success("Pilot career started with 0 SC. Find a roster contract in your profile."); navigate({ to: "/profile" }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Unable to start career"); }
+    finally { setBusy(false); }
+  }
+
   async function submit() {
+    if (mode === "pilot") return submitPilot();
     if (!ready || !home) return;
     setBusy(true);
     const { error } = await supabase.rpc("create_company", { p_name: name.trim(), p_icao_code: normalizeCompanyCode(code), p_home_base: home });
@@ -62,13 +79,37 @@ function Onboarding() {
     navigate({ to: "/dashboard" });
   }
 
+  if (mode === "choose" && !careerLoading) return (
+    <AppShell>
+      <p className="readout text-xs uppercase text-amber">Pre-flight · Career path</p>
+      <h1 className="mt-2 text-3xl font-semibold">How do you want to fly?</h1>
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <button type="button" onClick={() => setMode("airline")} className="instrument p-6 text-left hover:border-primary">
+          <p className="readout text-xs uppercase text-primary">Entrepreneur</p>
+          <p className="mt-2 text-xl font-semibold">Airline owner</p>
+          <p className="mt-2 text-sm text-muted-foreground">Found an airline with {formatCr(Number(economy?.['starting_capital'] ?? 30000))} starting capital, lease or buy aircraft, open bases and hire pilots.</p>
+        </button>
+        <button type="button" onClick={() => setMode("pilot")} className="instrument p-6 text-left hover:border-primary">
+          <p className="readout text-xs uppercase text-amber">Pilot only</p>
+          <p className="mt-2 text-xl font-semibold">Professional pilot</p>
+          <p className="mt-2 text-sm text-muted-foreground">Start with 0 SC and earn commission flying for airlines as a roster pilot or freelancer. You can found your own airline later.</p>
+        </button>
+      </div>
+    </AppShell>
+  );
+
+  const pilotReady = /^[A-Za-z0-9 _.-]{3,24}$/.test(callsign.trim()) && !!home;
   return (
     <AppShell>
-      <p className="readout text-xs uppercase text-amber">Pre-flight · Airline registration</p>
-      <h1 className="mt-2 text-3xl font-semibold">Create your airline</h1>
-      <p className="mt-2 text-muted-foreground">Your starting capital is {formatCr(Number(economy?.['starting_capital'] ?? 50000))}. Invest it wisely.</p>
+      <p className="readout text-xs uppercase text-amber">Pre-flight · {mode === "pilot" ? "Pilot registration" : "Airline registration"}</p>
+      <h1 className="mt-2 text-3xl font-semibold">{mode === "pilot" ? "Start your pilot career" : "Create your airline"}</h1>
+      <p className="mt-2 text-muted-foreground">{mode === "pilot" ? "Pilot-only careers start at 0 SC — no starting grant." : `Your starting capital is ${formatCr(Number(economy?.['starting_capital'] ?? 30000))}. Invest it wisely.`}{career?.career_role !== "PILOT_ONLY" && <button type="button" className="ml-2 text-primary underline" onClick={() => setMode("choose")}>Change path</button>}</p>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="space-y-5 py-2">
+          {mode === "pilot" ? <div className="space-y-2">
+            <Label htmlFor="callsign">Pilot callsign (shown on the leaderboard)</Label>
+            <Input id="callsign" maxLength={24} placeholder="e.g. Maverick" value={callsign} onChange={(e) => setCallsign(e.target.value)} />
+          </div> : <>
           <div className="space-y-2">
             <Label htmlFor="name">Airline name</Label>
             <Input id="name" maxLength={60} placeholder="e.g. SmoothSky Regional" value={name} onChange={(e) => setName(e.target.value)} />
@@ -81,13 +122,14 @@ function Onboarding() {
               {available === false && <span className="flex items-center gap-1 text-sm text-destructive"><X className="h-4 w-4" /> Taken</span>}
             </div>
           </div>
+          </>}
           <div className="rounded-sm border border-border p-4">
-            <p className="readout text-xs uppercase text-muted-foreground">Home base</p>
+            <p className="readout text-xs uppercase text-muted-foreground">{mode === "pilot" ? "Starting airport" : "Home base"}</p>
             {homeAirport ? (
               <p className="mt-1"><span className="readout text-primary">{homeAirport.icao}</span> · {homeAirport.name}, {homeAirport.city}</p>
             ) : <p className="mt-1 text-sm text-muted-foreground">Choose an airport.</p>}
           </div>
-          <Button className="w-full" size="lg" disabled={!ready || busy} onClick={submit}>Register airline</Button>
+          <Button className="w-full" size="lg" disabled={(mode === "pilot" ? !pilotReady : !ready) || busy} onClick={submit}>{mode === "pilot" ? "Start pilot career" : "Register airline"}</Button>
         </div>
         <div className="flex min-w-0 flex-col py-2">
           <Label htmlFor="apt">Search airports (ICAO, city, country)</Label>

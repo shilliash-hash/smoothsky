@@ -53,7 +53,7 @@ export async function acarsCall(request: Request, fn: Rpc, schema?: z.ZodTypeAny
   const args = fn === "acars_connect" ? { p_key: key } : { p_key: key, p: payload as never };
   const { data, error } = await db.rpc(fn, args as never);
   if (error) {
-    const status = error.code === "28000" ? 401 : error.code === "P0002" ? 404 : error.code === "P0409" ? 409 : 422;
+    const status = error.code === "28000" ? 401 : error.code === "P0002" ? 404 : error.code === "P0409" ? 409 : error.code === "P0429" ? 429 : 422;
     return json({ error: error.message }, status);
   }
   return json(data);

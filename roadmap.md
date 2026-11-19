@@ -64,3 +64,10 @@
 - [x] Add safe aggregate company leaderboard, net-worth valuation and previous-week rank movement (first-read UTC weekly snapshots).
 - [x] Add administrator-only supporter switch and public supporter badges.
 - [x] Verify ranking calculations against owner records, private-field exclusion, non-admin denial, supporter toggle/restore and desktop/mobile flows.
+- [x] /profile (ACARS key, SimBrief, career, type ratings, roster/recruitment); Dashboard ACARS card removed, status dot in top bar
+- [x] Career choice (Airline owner / Pilot only at 0 SC); Airlines/Pilots leaderboard tabs
+- [x] ACARS hardening: 3 s rate limit, position/fuel plausibility, duplicate PIREP rejection
+- [ ] Roster/freelance flying of airline aircraft with commission split in settlement + aircraft reservation per pilot
+- [ ] Freelance job board
+- [ ] Airline stakes (≤30%, 7-day lock) and weekly dividends
+- [ ] Personal hangar (one T1–3 aircraft, private charters)

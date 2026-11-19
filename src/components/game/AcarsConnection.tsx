@@ -62,7 +62,7 @@ export function AcarsConnection() {
                 <pre className="readout mt-1 overflow-x-auto rounded border border-border bg-background/40 p-2 text-xs">{body}</pre>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground">Phases: PREFLIGHT, TAXI, TAKEOFF, CLIMB, CRUISE, DESCENT, APPROACH, LANDING, TAXI_IN, PARKED. Units: US gal, ft, kt, degrees, fpm. Errors: 401 bad key, 404 no flight, 409 more than one active flight, 400 invalid payload.</p>
+            <p className="text-xs text-muted-foreground">Phases: PREFLIGHT, TAXI, TAKEOFF, CLIMB, CRUISE, DESCENT, APPROACH, LANDING, TAXI_IN, PARKED. Units: US gal, ft, kt, degrees, fpm. Errors: 401 bad key, 404 no flight, 409 more than one active flight or duplicate PIREP, 429 more than 1 position report per 3 s, 422 physically implausible position/fuel, 400 invalid payload.</p>
           </div>
         </DialogContent>
       </Dialog>

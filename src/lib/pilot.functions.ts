@@ -46,3 +46,76 @@ export const importSimbrief = createServerFn({ method: "POST" })
       generatedAt: ofp["params"]?.time_generated ? new Date(Number(ofp["params"].time_generated) * 1000).toISOString() : null,
     };
   });
+
+export type CareerProfile = {
+  career_role: "ENTREPRENEUR" | "PILOT_ONLY" | null;
+  callsign: string | null;
+  pilot_home_icao: string | null;
+  type_ratings: number[];
+  balance: number;
+  roster: { company_id: string; name: string; icao_code: string; commission_pct: number; joined_at: string } | null;
+  prices: { T3_4: number; T5: number; T6_7: number };
+};
+
+export const getCareer = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await context.supabase.rpc("ensure_my_profile");
+    const { data, error } = await context.supabase.rpc("my_pilot_profile");
+    if (error) throw new Error(error.message);
+    return data as unknown as CareerProfile;
+  });
+
+export const choosePilotCareer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ callsign: z.string().trim().regex(/^[A-Za-z0-9 _.-]{3,24}$/), home: z.string().trim().length(4) }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("choose_pilot_career", { p_callsign: data.callsign, p_home: data.home.toUpperCase() });
+    if (error) throw new Error(error.message);
+    return true;
+  });
+
+export const buyTypeRating = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ group: z.enum(["T3_4", "T5", "T6_7"]) }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("buy_type_rating", { p_group: data.group });
+    if (error) throw new Error(error.message);
+    return true;
+  });
+
+export const rosterAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ action: z.enum(["join", "leave"]), companyId: z.string().uuid().optional() }))
+  .handler(async ({ data, context }) => {
+    const { error } = data.action === "join"
+      ? await context.supabase.rpc("join_roster", { p_company: data.companyId! })
+      : await context.supabase.rpc("leave_roster");
+    if (error) throw new Error(error.message);
+    return true;
+  });
+
+export const getHiringCompanies = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("hiring_companies");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const setCompanyHiring = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ hiring: z.boolean(), roster: z.number().min(35).max(50), freelance: z.number().min(20).max(30) }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("set_company_hiring", { p_hiring: data.hiring, p_roster: data.roster, p_freelance: data.freelance });
+    if (error) throw new Error(error.message);
+    return true;
+  });
+
+export const getPilotLeaderboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("get_pilot_leaderboard");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });

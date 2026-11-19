@@ -1,6 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getPilotProfile } from "@/lib/pilot.functions";
+import { acarsOnline } from "@/lib/acars-status";
 import { LogOut, Shield } from "lucide-react";
 import { adminAccessQuery } from "@/lib/admin";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +22,11 @@ export function AppShell({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: isAdmin } = useQuery(adminAccessQuery);
+  const loadPilot = useServerFn(getPilotProfile);
+  const { data: pilot } = useQuery({ queryKey: ["pilot-profile"], queryFn: () => loadPilot(), refetchInterval: 30_000 });
+  const [now, setNow] = useState(0);
+  useEffect(() => { setNow(Date.now()); const t = setInterval(() => setNow(Date.now()), 15_000); return () => clearInterval(t); }, []);
+  const online = acarsOnline(pilot?.lastSeen, now);
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
@@ -66,6 +74,12 @@ export function AppShell({
                 <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
               </nav>
             )}
+            {!company && (
+              <nav className="flex flex-wrap gap-4 text-sm">
+                <Link to="/profile" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Profile</Link>
+                <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
+              </nav>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <GameInfo />
@@ -78,11 +92,10 @@ export function AppShell({
                 </Link>
               </Button>
             )}
-            {company && (
-              <span className="readout hidden rounded-sm border border-amber/40 px-2 py-0.5 text-xs text-amber sm:inline">
-                {company.icao_code}
-              </span>
-            )}
+            <Link to="/profile" title={`Pilot profile · ACARS ${online ? "online" : "offline"}`} className="readout flex items-center gap-1.5 rounded-sm border border-amber/40 px-2 py-0.5 text-xs text-amber hover:bg-amber/10" activeProps={{ className: "bg-amber/10" }}>
+              <span aria-label={online ? "ACARS online" : "ACARS offline"} className={`h-2 w-2 rounded-full ${online ? "animate-pulse bg-primary" : "bg-muted-foreground/50"}`} />
+              {company?.icao_code ?? "PROFILE"}
+            </Link>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4" /> Sign out
             </Button>

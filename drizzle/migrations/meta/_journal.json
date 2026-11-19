@@ -169,6 +169,13 @@
       "when": 1795086812132,
       "tag": "0023_acars_gateway_and_pilot_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795095423244,
+      "tag": "0024_pilot_careers_and_acars_hardening",
+      "breakpoints": true
     }
   ]
 }

@@ -57,3 +57,5 @@ use the editor.
 - Airport supply reset is admin-only and refuses active flights under a dispatch-blocking table lock — preserves transactional fuel reservations.
 - Leaderboard reads use an authenticated aggregate-only SQL function; net worth values active aircraft/deposits and FOB ledger investment, excluding retired assets, and UTC weekly snapshots are captured lazily to avoid external scheduling dependencies. Supporter badges are cosmetic and changed only by admin-checked SQL functions.
 - ACARS routes call key-checking SQL; positions overwrite flight telemetry; PIREPs reuse settle_flight; SimBrief only prefills dispatch — one settlement path.
+- Pilot careers live on profiles (role, callsign, type ratings, single roster contract) with a separate append-only pilot_ledger; Pilot Only careers never receive a starting grant and change only through SECURITY DEFINER functions — prevents multi-account cash farming.
+- ACARS position rate limits, plausibility checks and duplicate-PIREP rejection run inside the key-checking SQL functions, so every gateway path enforces them.
