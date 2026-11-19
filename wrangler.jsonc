@@ -6,5 +6,13 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".output/public", "binding": "ASSETS" },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+ "vars": {
+    "SUPABASE_PROJECT_ID": "pqofzefcjtqwrkgoggcg",
+    "VITE_SUPABASE_PROJECT_ID": "pqofzefcjtqwrkgoggcg",
+    "SUPABASE_URL": "https://pqofzefcjtqwrkgoggcg.supabase.co",
+    "VITE_SUPABASE_URL": "https://pqofzefcjtqwrkgoggcg.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_jphNS-PzkHcMK_9AivL1gw_F5CqPloi",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_jphNS-PzkHcMK_9AivL1gw_F5CqPloi"
+  }
 }
