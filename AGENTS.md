@@ -65,3 +65,4 @@ use the editor.
 - Cargo/missions pass options to flight_quote_cargo via a transaction-local setting; mission board refreshes lazily, late cuts apply in settle_flight — one settlement path.
 - Homepage reads only anon aggregate counts — no player data.
 - Used market: flights-completion trigger accrues airframe hours; SQL depreciated_value prices net worth, broker and P2P listings — one valuation rule.
+- Airport data is never loaded whole: radar/dispatch get size>=4 (limit 1500) plus player-touched and active-flight airports; searches are DB-side ilike + tier filter, limit 50, exact code then size DESC — scales to ~50k airports.

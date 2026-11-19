@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Play, Check, X, Radar } from "lucide-react";
@@ -17,6 +17,8 @@ import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
 import { useVisibleTiers, searchAirports } from "@/lib/airport-tiers";
+import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
+import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
 export const Route = createFileRoute("/_authenticated/dispatch")({
@@ -27,10 +29,10 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
     destination: typeof search["destination"] === "string" ? search["destination"] : undefined,
   }),
   loader: async ({ context }) => {
-    const d = await context.queryClient.ensureQueryData(operationsQuery);
-    await context.queryClient.ensureQueryData(fleetOverviewQuery);
-    if (!d.company) throw redirect({ to: "/onboarding" });
+    const [d] = await Promise.all([context.queryClient.ensureQueryData(operationsQuery), context.queryClient.ensureQueryData(fleetOverviewQuery)]);
+    if (!(d?.company ?? null)) throw redirect({ to: "/onboarding" });
   },
+  errorComponent: RouteError,
   head: () => ({
     meta: [
       { title: "Dispatch — SmoothSky" },
@@ -103,11 +105,20 @@ function Dispatch() {
       active = false;
     };
   }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo]);
+  const searching = filter.trim().length >= MIN_SEARCH_CHARS;
+  const found = useAirportSearch(filter, tiers);
+  const nearby = useQuery({
+    queryKey: ["airports-near", origin?.icao, selected?.type?.range_nm, [...tiers].sort().join("")],
+    queryFn: () => airportsNear(origin!, selected?.type?.range_nm ?? 0, tiers),
+    enabled: !!origin && !!selected?.type && !searching,
+    staleTime: 300_000,
+  });
+  const pool = searching ? (found.data ?? []) : searchAirports(nearby.data ?? [], "", tiers);
   const destinations = useMemo(
     () =>
       !origin || !selected?.type
         ? []
-        : searchAirports(d.airports, filter, tiers)
+        : pool
             .filter(
               (a) =>
                 a.icao !== origin.icao &&
@@ -118,7 +129,7 @@ function Dispatch() {
             .map((a) => ({ ...a, nm: distanceNm(origin, a) }))
             .sort((a, b) => (filter.trim() ? 0 : a.nm - b.nm))
             .slice(0, 100),
-    [d.airports, origin, selected, filter, tiers],
+    [pool, origin, selected, filter],
   );
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);

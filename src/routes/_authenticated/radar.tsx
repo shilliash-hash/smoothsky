@@ -14,13 +14,14 @@ import { airportCategories, airportMatches, type AirportCategory } from "@/lib/r
 import { Checkbox } from "@/components/ui/checkbox";
 import { useVisibleTiers } from "@/lib/airport-tiers";
 import { TierPills } from "@/components/game/TierPills";
+import { RouteError } from "@/components/game/RouteError";
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
-    const d = await context.queryClient.ensureQueryData(operationsQuery);
-    await context.queryClient.ensureQueryData(fleetOverviewQuery);
-    if (!d.company) throw redirect({ to: "/onboarding" });
+    const [d] = await Promise.all([context.queryClient.ensureQueryData(operationsQuery), context.queryClient.ensureQueryData(fleetOverviewQuery)]);
+    if (!(d?.company ?? null)) throw redirect({ to: "/onboarding" });
   },
+  errorComponent: RouteError,
   head: () => ({
     meta: [
       { title: "Operational radar — SmoothSky" },

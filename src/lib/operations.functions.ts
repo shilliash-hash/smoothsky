@@ -12,17 +12,6 @@ export const getOperations = createServerFn({ method: "GET" })
     if (settled.error) throw new Error(settled.error.message);
     const { data: company, error: ce } = await db.from("companies").select("*").eq("is_personal", false).maybeSingle();
     if (ce) throw ce;
-    const airports = [];
-    for (let offset = 0; ; offset += 1000) {
-      const { data, error } = await db
-        .from("airports")
-        .select("*")
-        .order("icao")
-        .range(offset, offset + 999);
-      if (error) throw error;
-      airports.push(...data);
-      if (data.length < 1000) break;
-    }
     const metrics = [];
     const pools = [];
     for (let offset = 0; ; offset += 1000) {
@@ -49,14 +38,31 @@ export const getOperations = createServerFn({ method: "GET" })
       db.from("company_fobs").select("*").is("closed_at", null),
     ]);
     for (const result of [r, f, l, t, n, bases]) if (result.error) throw result.error;
+    // Radar/dispatch never load the whole airport table: major ports plus every airport the player touches.
+    const active = await db.from("flights").select("origin_icao, destination_icao").in("status", ["DISPATCHED", "EN_ROUTE"]);
+    if (active.error) throw active.error;
+    const needed = new Set<string>();
+    for (const x of active.data ?? []) { needed.add(x.origin_icao); needed.add(x.destination_icao); }
+    for (const x of l.data ?? []) needed.add(x.location_icao);
+    for (const x of bases.data ?? []) needed.add(x.airport_icao);
+    if (company?.home_base_icao) needed.add(company.home_base_icao);
+    const [major, extra] = await Promise.all([
+      db.from("airports").select("*").gte("size", 4).order("size", { ascending: false }).limit(1500),
+      needed.size ? db.from("airports").select("*").in("icao", [...needed]) : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (major.error) throw major.error;
+    if (extra.error) throw extra.error;
+    const byIcao = new Map<string, NonNullable<typeof major.data>[number]>();
+    for (const a of [...(major.data ?? []), ...(extra.data ?? [])]) byIcao.set(a.icao, a);
+    const airports = [...byIcao.values()];
     return {
       nextFlightNumber: n.data,
       bases: bases.data ?? [],
       company,
       airports,
       rules: Object.fromEntries((r.data ?? []).map((x) => [x.key, x.value])),
-      pools,
-      metrics,
+      pools: pools.filter((x) => byIcao.has(x.airport_icao)),
+      metrics: metrics.filter((x) => byIcao.has(x.icao)),
       flights: f.data ?? [],
       fleet: l.data ?? [],
       balance: Number(t.data?.[0]?.balance_after ?? 0),

@@ -12,13 +12,16 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { basesQuery } from "@/lib/bases";
 import { baseAction } from "@/lib/bases.functions";
 import { canOpenBase, canInvest } from "@/lib/bases-rules";
-import { companyQuery, airportsQuery, economyQuery } from "@/lib/game";
+import { companyQuery, economyQuery } from "@/lib/game";
+import { useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
+import { RouteError } from "@/components/game/RouteError";
 import { formatCr } from "@/lib/rules";
-import { useVisibleTiers, searchAirports } from "@/lib/airport-tiers";
+import { useVisibleTiers } from "@/lib/airport-tiers";
 import { TierPills } from "@/components/game/TierPills";
 
 export const Route = createFileRoute("/_authenticated/bases")({
-  loader: async ({ context }) => { const company = await context.queryClient.ensureQueryData(companyQuery); if (!company) throw redirect({ to: "/onboarding" }); await Promise.all([context.queryClient.ensureQueryData(basesQuery), context.queryClient.ensureQueryData(airportsQuery), context.queryClient.ensureQueryData(economyQuery)]); },
+  loader: async ({ context }) => { const company = await context.queryClient.ensureQueryData(companyQuery); if (!company) throw redirect({ to: "/onboarding" }); await Promise.all([context.queryClient.ensureQueryData(basesQuery), context.queryClient.ensureQueryData(economyQuery)]); },
+  errorComponent: RouteError,
   head: () => ({ meta: [{ title: "Company bases — SmoothSky" }, { name: "description", content: "Manage your main and satellite SmoothSky bases, operating modules and weekly costs." }, { property: "og:title", content: "Company bases — SmoothSky" }, { property: "og:description", content: "Company FOB infrastructure, fuel contracts and operating discounts." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Bases,
 });
@@ -26,7 +29,6 @@ const modules = [ { key: "fuel", flag: "has_fuel_contract", label: "Fuel Contrac
 function Bases() {
   const { data: company } = useSuspenseQuery(companyQuery);
   const { data } = useSuspenseQuery(basesQuery);
-  const { data: airports } = useSuspenseQuery(airportsQuery);
   const { data: rules } = useSuspenseQuery(economyQuery);
   const action = useServerFn(baseAction);
   const qc = useQueryClient();
@@ -38,7 +40,8 @@ function Bases() {
   const invest = data.health ? canInvest(data.health.status) : false;
   const number = (key: string) => Number(rules[key] ?? 0);
   const [tiers, setTiers] = useVisibleTiers();
-  const matches = searchAirports(airports, filter, tiers).filter(a => !data.bases.some(b => b.airport_icao === a.icao)).slice(0, 50);
+  const found = useAirportSearch(filter, tiers);
+  const matches = (filter.trim().length >= MIN_SEARCH_CHARS ? found.data ?? [] : []).filter(a => !data.bases.some(b => b.airport_icao === a.icao)).slice(0, 50);
   async function execute() {
     if (!confirmation) return;
     setBusy(true);
@@ -55,7 +58,7 @@ function Bases() {
         <p className="readout mt-5 border-t border-border pt-3 text-sm">{formatCr(weekly)} / week</p><p className="mt-1 text-xs text-muted-foreground">Next payment · {new Date(b.next_payment_due).toLocaleDateString("en-US")}</p>
       </article>; })}
     </section>
-    <section className="mt-8 border-y border-border py-5"><h2 className="text-lg font-semibold">Open a FOB</h2><div className="mt-4 grid items-end gap-4 sm:grid-cols-2"><label className="text-sm">Base type<Select value={type} onValueChange={v => setType(v === "MAIN" ? "MAIN" : "SATELLITE")}><SelectTrigger aria-label="Base type" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="MAIN">Main FOB</SelectItem><SelectItem value="SATELLITE">Satellite FOB</SelectItem></SelectContent></Select></label><label className="text-sm">Airport search<Input aria-label="Search base airports" className="mt-2" placeholder="ICAO, airport or city" value={filter} onChange={e => setFilter(e.target.value)} /></label></div>
+    <section className="mt-8 border-y border-border py-5"><h2 className="text-lg font-semibold">Open a FOB</h2><div className="mt-4 grid items-end gap-4 sm:grid-cols-2"><label className="text-sm">Base type<Select value={type} onValueChange={v => setType(v === "MAIN" ? "MAIN" : "SATELLITE")}><SelectTrigger aria-label="Base type" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="MAIN">Main FOB</SelectItem><SelectItem value="SATELLITE">Satellite FOB</SelectItem></SelectContent></Select></label><label className="text-sm">Airport search<Input aria-label="Search base airports" className="mt-2" placeholder="Type 2+ letters: ICAO, airport or city" value={filter} onChange={e => setFilter(e.target.value)} /></label></div>
       <div className="mt-4"><TierPills tiers={tiers} onChange={setTiers} /></div><div className="mt-3 max-h-56 overflow-y-auto divide-y divide-border">{matches.map(a => <Button key={a.icao} variant="ghost" aria-pressed={airport === a.icao} className={`h-auto w-full justify-start gap-3 rounded-none py-3 whitespace-normal text-left ${airport === a.icao ? "bg-accent" : ""}`} onClick={() => setAirport(a.icao)}><span className="readout text-primary">{a.icao}</span><span className="text-xs text-muted-foreground">{a.name}</span></Button>)}</div>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4"><p className="readout text-sm">{airport || "Select airport"} · Setup {formatCr(number(`fob_${type.toLowerCase()}_setup`))} · {formatCr(number(`fob_${type.toLowerCase()}_upkeep`))}/week</p><Button disabled={busy || !invest || !airport || data.bases.some(b => b.airport_icao === airport) || !canOpenBase(type, data.bases) || (data.health?.balance ?? 0) < number(`fob_${type.toLowerCase()}_setup`)} onClick={() => setConfirmation({ action: "open", airport, type })}><Landmark className="h-4 w-4" />Open {type === "MAIN" ? "Main" : "Satellite"} FOB</Button></div>
     </section>
