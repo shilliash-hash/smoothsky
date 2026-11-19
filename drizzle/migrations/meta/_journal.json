@@ -183,6 +183,13 @@
       "when": 1795097246977,
       "tag": "0025_pilot_flights_stakes_personal_hangar",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795097567773,
+      "tag": "0026_pilot_rules_defaults",
+      "breakpoints": true
     }
   ]
 }
