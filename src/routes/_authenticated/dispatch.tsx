@@ -8,6 +8,7 @@ import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
 import { distanceNm, flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
@@ -60,23 +61,35 @@ function Dispatch() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const [simulation, setSimulation] = useState(true);
+  const [cargoKg, setCargoKg] = useState(0);
+  const [cargoQuoteKg, setCargoQuoteKg] = useState(0);
+  const [allCargo, setAllCargo] = useState(false);
   const simulationEnabled = simulation && d.rules["web_simulation_enabled"] === true;
   const [quoteError, setQuoteError] = useState("");
   const [now, setNow] = useState(d.serverTime);
   const selected =
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
-  const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
+  const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+  const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
+  const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
+  useEffect(() => {
+    if (cargoKg > cargoCapacity) setCargoKg(cargoCapacity);
+  }, [cargoCapacity, cargoKg]);
+  useEffect(() => {
+    const t = setTimeout(() => setCargoQuoteKg(cargoKg), 300);
+    return () => clearTimeout(t);
+  }, [cargoKg]);
   useEffect(() => {
     setQuote(null);
     setQuoteError("");
     if (!selected || !destination) return;
     let active = true;
-    action({ data: { action: "quote", aircraft: selected.id, destination } })
+    action({ data: { action: "quote", aircraft: selected.id, destination, cargoKg: cargoQuoteKg, allCargo } })
       .then((q) => {
         if (active) setQuote(q as Quote);
       })
@@ -86,7 +99,7 @@ function Dispatch() {
     return () => {
       active = false;
     };
-  }, [selected?.id, selected?.status, destination, action]);
+  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo]);
   const destinations = useMemo(
     () =>
       !origin || !selected?.type
@@ -110,9 +123,12 @@ function Dispatch() {
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { cargoKg: cargoQuoteKg, allCargo } : {}) } });
       if (kind === "dispatch") {
         setFlightNumber(null);
+        setCargoKg(0);
+        setCargoQuoteKg(0);
+        setAllCargo(false);
         setDestination("");
         setQuote(null);
       }
@@ -233,6 +249,20 @@ function Dispatch() {
               <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
               {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}
+              <div className="mb-5 border-y border-border py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label htmlFor="cargo-kg" className="text-xs uppercase text-muted-foreground">Cargo (kg)</label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch checked={allCargo} onCheckedChange={setAllCargo} disabled={!selected?.type?.cargo_kg} aria-label="All-Cargo flight (no passengers)" />
+                    All-Cargo (PAX = 0)
+                  </label>
+                </div>
+                <Slider id="cargo-kg" aria-label="Cargo (kg)" className="mt-4" min={0} max={Math.max(cargoCapacity, 0)} step={10} value={[cargoKg]} onValueChange={(v) => setCargoKg(v[0] ?? 0)} disabled={cargoCapacity === 0} />
+                <p className="readout mt-2 text-xs text-muted-foreground">
+                  {cargoKg} / {cargoCapacity} kg {allCargo ? `· All-Cargo: +${Math.round(cargoBonus * 100)}% capacity, −${Math.round(Number(overview.rules.cargo_airport_fee_discount ?? 0.4) * 100)}% airport fees` : "· Belly cargo"}
+                  {cargoCapacity === 0 && " · this aircraft carries no cargo"}
+                </p>
+              </div>
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
               <h2 className="mt-2 text-2xl">
                 {origin?.icao ?? "—"} → {destination || "—"}
@@ -245,12 +275,13 @@ function Dispatch() {
               {quote ? (
                 <>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {quote.passengers} passengers · {Math.round(quote.distance_nm)} NM ·{" "}
+                    {quote.passengers} passengers · {quote.cargo_kg ?? 0} kg cargo · {Math.round(quote.distance_nm)} NM ·{" "}
                     {Math.round(quote.minutes)} min
                   </p>
                   <dl className="readout mt-5 space-y-3">
                     {[
-                      ["Ticket revenue", quote.revenue],
+                      ["Ticket revenue", quote.ticket_revenue ?? quote.revenue],
+                      ...((quote.cargo_kg ?? 0) > 0 ? [[`Cargo revenue (${quote.cargo_kg} kg)`, quote.cargo_revenue ?? 0]] : []),
                       ["Fuel", -quote.fuel_cost],
                       ["Landing", -quote.landing_fee],
                       ["Handling (both airports)", -quote.handling_fee],
@@ -281,7 +312,7 @@ function Dispatch() {
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || quote.passengers === 0 || !simulationEnabled || !numberValid
+                      busy || (quote.passengers === 0 && (quote.cargo_kg ?? 0) === 0) || !simulationEnabled || !numberValid
                     }
                     onClick={() => run("dispatch")}
                   >
@@ -313,7 +344,7 @@ function Dispatch() {
                     {f.flight_number} · {f.aircraft?.registration ?? "—"} · {f.origin_icao} → {f.destination_icao}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {f.passengers} pax · {f.status.replace("_", " ")}
+                    {f.passengers} pax{Number((f.estimate as Quote | null)?.cargo_kg ?? 0) > 0 ? ` · ${(f.estimate as Quote).cargo_kg} kg cargo` : ""} · {f.status.replace("_", " ")}
                   </p>
                   {f.status === "EN_ROUTE" && (
                     <progress

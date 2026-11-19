@@ -72,6 +72,9 @@ export const flightAction = createServerFn({ method: "POST" })
       destination: z.string().optional(),
       flightNumber: flightNumberSchema.optional(),
       flight: z.string().uuid().optional(),
+      cargoKg: z.number().int().min(0).max(100000).optional(),
+      allCargo: z.boolean().optional(),
+      mission: z.string().uuid().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -81,10 +84,15 @@ export const flightAction = createServerFn({ method: "POST" })
     if (data.action === "quote" || data.action === "dispatch") {
       if (!data.aircraft || !data.destination) throw new Error("Aircraft and destination required");
       const { data: result, error } = await db.rpc(
-        data.action === "quote" ? "flight_quote" : "dispatch_flight",
-        { p_aircraft: data.aircraft, p_destination: data.destination,
+        data.action === "quote" ? "flight_quote_full" : "dispatch_flight_full",
+        {
+          p_aircraft: data.aircraft,
+          p_destination: data.destination,
+          p_cargo_kg: data.cargoKg ?? 0,
+          p_all_cargo: data.allCargo ?? false,
+          ...(data.mission ? { p_mission: data.mission } : {}),
           ...(data.action === "dispatch" ? { p_flight_number: data.flightNumber ?? "" } : {}),
-        },
+        } as never,
       );
       if (error) throw new Error(error.message);
       return result;

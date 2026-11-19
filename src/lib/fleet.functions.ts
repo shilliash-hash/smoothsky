@@ -43,7 +43,7 @@ export const getAircraftFinance = createServerFn({ method: "POST" })
   });
 export const saveOperatingRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ default_lease_weeks: z.number().int().min(1).max(52), renewal_discount: z.number().min(0).max(1), avgas_kg_per_litre: z.number().positive(), jeta_kg_per_litre: z.number().positive() }))
+  .inputValidator(z.object({ default_lease_weeks: z.number().int().min(1).max(52), renewal_discount: z.number().min(0).max(1), avgas_kg_per_litre: z.number().positive(), jeta_kg_per_litre: z.number().positive(), cargo_pax_rate_ratio: z.number().min(0).max(5), cargo_airport_fee_discount: z.number().min(0).max(1), all_cargo_capacity_bonus: z.number().min(0).max(5) }))
   .handler(async ({ data, context }) => {
     const access = await context.supabase.rpc("is_admin");
     if (access.error || !access.data) throw new Error("Administrator access required");

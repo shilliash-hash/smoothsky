@@ -74,6 +74,32 @@ export type Database = {
         }
         Relationships: []
       }
+      airport_cargo_pools: {
+        Row: {
+          airport_icao: string
+          cargo_pool_kg: number
+          updated_at: string
+        }
+        Insert: {
+          airport_icao: string
+          cargo_pool_kg?: number
+          updated_at?: string
+        }
+        Update: {
+          airport_icao?: string
+          cargo_pool_kg?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airport_cargo_pools_airport_icao_fkey"
+            columns: ["airport_icao"]
+            isOneToOne: true
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+        ]
+      }
       airport_fuel_pools: {
         Row: {
           airport_icao: string
@@ -731,21 +757,30 @@ export type Database = {
       }
       operating_rules: {
         Row: {
+          all_cargo_capacity_bonus: number
           avgas_kg_per_litre: number
+          cargo_airport_fee_discount: number
+          cargo_pax_rate_ratio: number
           default_lease_weeks: number
           jeta_kg_per_litre: number
           renewal_discount: number
           singleton: boolean
         }
         Insert: {
+          all_cargo_capacity_bonus?: number
           avgas_kg_per_litre?: number
+          cargo_airport_fee_discount?: number
+          cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
           jeta_kg_per_litre?: number
           renewal_discount?: number
           singleton?: boolean
         }
         Update: {
+          all_cargo_capacity_bonus?: number
           avgas_kg_per_litre?: number
+          cargo_airport_fee_discount?: number
+          cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
           jeta_kg_per_litre?: number
           renewal_discount?: number
@@ -878,6 +913,91 @@ export type Database = {
         }
         Relationships: []
       }
+      special_missions: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          cargo_kg: number
+          category: string
+          completed_at: string | null
+          created_at: string
+          deadline_at: string | null
+          deadline_hours: number
+          delivered_late: boolean
+          destination_icao: string
+          distance_nm: number
+          expires_at: string
+          final_payout: number | null
+          flight_id: string | null
+          id: string
+          origin_icao: string
+          payout: number
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cargo_kg: number
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          deadline_hours: number
+          delivered_late?: boolean
+          destination_icao: string
+          distance_nm: number
+          expires_at?: string
+          final_payout?: number | null
+          flight_id?: string | null
+          id?: string
+          origin_icao: string
+          payout: number
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          cargo_kg?: number
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          deadline_hours?: number
+          delivered_late?: boolean
+          destination_icao?: string
+          distance_nm?: number
+          expires_at?: string
+          final_payout?: number | null
+          flight_id?: string | null
+          id?: string
+          origin_icao?: string
+          payout?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_missions_destination_icao_fkey"
+            columns: ["destination_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+          {
+            foreignKeyName: "special_missions_flight_id_fkey"
+            columns: ["flight_id"]
+            isOneToOne: false
+            referencedRelation: "flights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "special_missions_origin_icao_fkey"
+            columns: ["origin_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           role: Database["public"]["Enums"]["app_role"]
@@ -906,6 +1026,10 @@ export type Database = {
       acars_pilot: { Args: { p_key: string }; Returns: string }
       acars_pirep: { Args: { p: Json; p_key: string }; Returns: Json }
       acars_position: { Args: { p: Json; p_key: string }; Returns: Json }
+      accept_special_mission: {
+        Args: { p_mission: string }
+        Returns: undefined
+      }
       act_as: { Args: { p_user: string }; Returns: string }
       admin_company_supporters: {
         Args: never
@@ -949,6 +1073,8 @@ export type Database = {
       buy_stake: { Args: { p_company: string; p_pct: number }; Returns: string }
       buy_type_rating: { Args: { p_group: string }; Returns: undefined }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
+      cargo_capacity: { Args: { p_airport: string }; Returns: number }
+      cargo_stock: { Args: { p_airport: string }; Returns: number }
       choose_pilot_career: {
         Args: { p_callsign: string; p_home: string }
         Returns: undefined
@@ -997,6 +1123,17 @@ export type Database = {
             }
             Returns: string
           }
+      dispatch_flight_full: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_flight_number: string
+          p_mission?: string
+        }
+        Returns: string
+      }
       economy_number: { Args: { p_key: string }; Returns: number }
       economy_number_or: {
         Args: { p_default: number; p_key: string }
@@ -1027,6 +1164,20 @@ export type Database = {
       }
       flight_quote: {
         Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
+      flight_quote_cargo: {
+        Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
+      flight_quote_full: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_mission?: string
+        }
         Returns: Json
       }
       flight_quote_without_fobs: {
@@ -1157,6 +1308,7 @@ export type Database = {
           pax_stock: number
         }[]
       }
+      refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
@@ -1232,6 +1384,7 @@ export type Database = {
           registration: string
         }[]
       }
+      world_telemetry: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

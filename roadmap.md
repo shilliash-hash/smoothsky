@@ -79,3 +79,6 @@
 - [x] Freelance job board (Crew ops)
 - [x] Airline stakes with 7-day lock and weekly dividends
 - [x] Personal hangar (one Tier 1–3 aircraft)
+- [x] Cargo (belly + All-Cargo), airport cargo pools, admin cargo rules
+- [x] Special Missions board (MEDEVAC / AOG) with deadlines and 50% late penalty
+- [x] Homepage guide with live world telemetry

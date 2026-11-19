@@ -190,6 +190,13 @@
       "when": 1795097567773,
       "tag": "0026_pilot_rules_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795106712952,
+      "tag": "0027_cargo_and_special_missions",
+      "breakpoints": true
     }
   ]
 }
