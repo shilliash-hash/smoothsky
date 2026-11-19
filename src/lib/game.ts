@@ -32,7 +32,7 @@ export const transactionHistoryQuery = (companyId: string, aircraftId: string | 
   queryOptions({
     queryKey: ["transaction-history", companyId, aircraftId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("transaction_history", {
+      const { data, error } = await supabase.rpc("transaction_history_numbered", {
         p_company: companyId,
         ...(aircraftId ? { p_aircraft: aircraftId } : {}),
       });

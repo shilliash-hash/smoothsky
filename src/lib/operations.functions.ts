@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { flightNumberSchema } from "./flight-number";
 export const getOperations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -39,14 +40,16 @@ export const getOperations = createServerFn({ method: "GET" })
       pools.push(...(p.data ?? []));
       if ((m.data?.length ?? 0) < 1000 && (p.data?.length ?? 0) < 1000) break;
     }
-    const [r, f, l, t] = await Promise.all([
+    const [r, f, l, t, n] = await Promise.all([
       db.from("economy_config").select("*"),
-      db.from("flights").select("*").order("created_at", { ascending: false }).limit(100),
+      db.from("flights").select("*, aircraft:fleet_aircraft(registration)").order("created_at", { ascending: false }).limit(100),
       db.from("fleet_aircraft").select("*, type:aircraft_types(*)").is("returned_at", null),
       db.from("company_ledger").select("*").order("id", { ascending: false }).limit(1),
+      db.rpc("next_flight_number"),
     ]);
-    for (const result of [r, f, l, t]) if (result.error) throw result.error;
+    for (const result of [r, f, l, t, n]) if (result.error) throw result.error;
     return {
+      nextFlightNumber: n.data,
       company,
       airports,
       rules: Object.fromEntries((r.data ?? []).map((x) => [x.key, x.value])),
@@ -65,6 +68,7 @@ export const flightAction = createServerFn({ method: "POST" })
       action: z.enum(["quote", "dispatch", "start", "settle", "cancel"]),
       aircraft: z.string().uuid().optional(),
       destination: z.string().optional(),
+      flightNumber: flightNumberSchema.optional(),
       flight: z.string().uuid().optional(),
     }),
   )
@@ -76,7 +80,9 @@ export const flightAction = createServerFn({ method: "POST" })
       if (!data.aircraft || !data.destination) throw new Error("Aircraft and destination required");
       const { data: result, error } = await db.rpc(
         data.action === "quote" ? "flight_quote" : "dispatch_flight",
-        { p_aircraft: data.aircraft, p_destination: data.destination },
+        { p_aircraft: data.aircraft, p_destination: data.destination,
+          ...(data.action === "dispatch" ? { p_flight_number: data.flightNumber ?? "" } : {}),
+        },
       );
       if (error) throw new Error(error.message);
       return result;

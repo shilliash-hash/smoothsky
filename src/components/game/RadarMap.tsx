@@ -197,7 +197,11 @@ export default function RadarMap({
             iconAnchor: [12, 12],
           }),
         })
-          .bindTooltip(`${f.origin_icao} → ${f.destination_icao}`)
+          .bindTooltip(() => {
+            const label = document.createElement("span");
+            label.textContent = `${f.flight_number} · ${f.aircraft?.registration ?? "—"} · ${f.origin_icao} → ${f.destination_icao}`;
+            return label;
+          })
           .on("click", () => onFlight(f))
           .addTo(layer);
       }
@@ -205,7 +209,7 @@ export default function RadarMap({
     draw();
     const timer = setInterval(draw, 1000);
     return () => clearInterval(timer);
-  }, [data.flights, data.airports, onFlight, layers.flights]);
+  }, [data.flights, data.fleet, data.airports, onFlight, layers.flights]);
   return (
     <div
       ref={div}

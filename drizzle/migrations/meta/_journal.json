@@ -127,6 +127,13 @@
       "when": 1795059195525,
       "tag": "0017_readable_flight_transaction_history",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795059509730,
+      "tag": "0018_add_company_flight_numbers",
+      "breakpoints": true
     }
   ]
 }

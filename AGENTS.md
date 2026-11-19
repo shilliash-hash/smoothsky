@@ -32,7 +32,8 @@ use the editor.
 ## Project rules
 - Money-changing actions run only in SECURITY DEFINER SQL functions (create_company, lease_aircraft, settle_flight); clients have SELECT-only access — keeps the ledger tamper-proof.
 - company_ledger is append-only (trigger blocks UPDATE/DELETE); balance = latest balance_after — full audit trail.
-- Transaction history resolves flight references with owner-scoped SECURITY INVOKER joins, filters before its row limit, and includes returned aircraft; settlement descriptions freeze aircraft registration and short flight ID without rewriting past ledger entries.
+- Transaction history resolves flight references with owner-scoped SECURITY INVOKER joins, filters before its row limit, and includes returned aircraft; settlement descriptions freeze flight number, registration and route without rewriting past ledger entries.
+- Flight numbers are allocated under a company-row lock from ICAO + a sequence starting at 101, unique per company, with an authenticated dispatch-time override; UUIDs remain internal references so readable identities do not affect ledger integrity.
 - Economy settings and aircraft specifications are read from database tables; flight quotes are calculated in SQL and frozen at dispatch — UI and settlement must share the same rules.
 - Charter rates use a seven-entry aircraft-tier array with one shared T5–7 rate; revenue breakdown reads the quote's frozen settings and total, avoiding drift from rounded display distances.
 - Protected operations use authenticated server functions and owner-scoped RLS; no privileged client queries — company data stays private.

@@ -238,6 +238,7 @@ export type Database = {
           icao_code: string
           id: string
           name: string
+          next_flight_sequence: number
           user_id: string
         }
         Insert: {
@@ -246,6 +247,7 @@ export type Database = {
           icao_code: string
           id?: string
           name: string
+          next_flight_sequence?: number
           user_id: string
         }
         Update: {
@@ -254,6 +256,7 @@ export type Database = {
           icao_code?: string
           id?: string
           name?: string
+          next_flight_sequence?: number
           user_id?: string
         }
         Relationships: [
@@ -419,6 +422,7 @@ export type Database = {
           estimate: Json
           estimated_minutes: number
           execution_source: string
+          flight_number: string | null
           id: string
           origin_icao: string
           passengers: number
@@ -438,6 +442,7 @@ export type Database = {
           estimate: Json
           estimated_minutes: number
           execution_source?: string
+          flight_number?: string | null
           id?: string
           origin_icao: string
           passengers: number
@@ -457,6 +462,7 @@ export type Database = {
           estimate?: Json
           estimated_minutes?: number
           execution_source?: string
+          flight_number?: string | null
           id?: string
           origin_icao?: string
           passengers?: number
@@ -664,10 +670,19 @@ export type Database = {
         Returns: string
       }
       csv_fields: { Args: { line: string }; Returns: string[] }
-      dispatch_flight: {
-        Args: { p_aircraft: string; p_destination: string }
-        Returns: string
-      }
+      dispatch_flight:
+        | {
+            Args: { p_aircraft: string; p_destination: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_aircraft: string
+              p_destination: string
+              p_flight_number: string
+            }
+            Returns: string
+          }
       economy_number: { Args: { p_key: string }; Returns: number }
       flight_quote: {
         Args: { p_aircraft: string; p_destination: string }
@@ -680,6 +695,7 @@ export type Database = {
         Args: { p_action: string; p_aircraft: string; p_weeks?: number }
         Returns: string
       }
+      next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
       purchase_aircraft: {
@@ -723,6 +739,26 @@ export type Database = {
           destination_icao: string
           entry_type: string
           flight_id: string
+          id: number
+          origin_icao: string
+          reference: string
+          registration: string
+        }[]
+      }
+      transaction_history_numbered: {
+        Args: { p_aircraft?: string; p_company: string }
+        Returns: {
+          aircraft_id: string
+          balance_after: number
+          company_delta: number
+          created_at: string
+          credit_account: string
+          debit_account: string
+          description: string
+          destination_icao: string
+          entry_type: string
+          flight_id: string
+          flight_number: string
           id: number
           origin_icao: string
           reference: string

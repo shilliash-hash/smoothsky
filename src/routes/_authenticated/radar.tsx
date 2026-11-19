@@ -184,7 +184,7 @@ function Radar() {
             <h2 className="text-xl font-semibold">
               {airport
                 ? `${airport.icao} · ${airport.name}`
-                : `${flight?.origin_icao} → ${flight?.destination_icao}`}
+                : `${flight?.flight_number} · ${flight?.aircraft?.registration ?? "—"} · ${flight?.origin_icao} → ${flight?.destination_icao}`}
             </h2>
             <Button
               variant="ghost"

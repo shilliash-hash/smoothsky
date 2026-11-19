@@ -14,6 +14,7 @@ import { distanceNm, flightProgress, ticketRevenueBreakdown } from "@/lib/dispat
 import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
+import { flightNumberSchema } from "@/lib/flight-number";
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -52,6 +53,8 @@ function Dispatch() {
   const search = Route.useSearch();
   const [aircraft, setAircraft] = useState(search["aircraft"] ?? "");
   const [destination, setDestination] = useState(search["destination"] ?? "");
+  const [flightNumber, setFlightNumber] = useState<string | null>(null);
+  const numberValid = flightNumberSchema.safeParse(flightNumber ?? "").success;
   const [filter, setFilter] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,8 +109,9 @@ function Dispatch() {
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? "") : undefined } });
       if (kind === "dispatch") {
+        setFlightNumber(null);
         setDestination("");
         setQuote(null);
       }
@@ -216,6 +220,9 @@ function Dispatch() {
               </div>
             </section>
             <section className="border-t border-border pt-4 lg:border-t-0">
+              <label htmlFor="flight-number" className="text-xs uppercase text-muted-foreground">Flight number</label>
+              <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
+              {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
               <h2 className="mt-2 text-2xl">
                 {origin?.icao ?? "—"} → {destination || "—"}
@@ -263,7 +270,7 @@ function Dispatch() {
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || quote.passengers === 0 || !simulationEnabled
+                      busy || quote.passengers === 0 || !simulationEnabled || !numberValid
                     }
                     onClick={() => run("dispatch")}
                   >
@@ -292,10 +299,10 @@ function Dispatch() {
               <div key={f.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
                 <div>
                   <p className="readout text-primary">
-                    {f.origin_icao} → {f.destination_icao}
+                    {f.flight_number} · {f.aircraft?.registration ?? "—"} · {f.origin_icao} → {f.destination_icao}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {f.passengers} pax · {f.status.replace("_", " ")} · {f.id.slice(0, 8)}
+                    {f.passengers} pax · {f.status.replace("_", " ")}
                   </p>
                   {f.status === "EN_ROUTE" && (
                     <progress

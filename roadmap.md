@@ -40,3 +40,8 @@
 - [x] Add registration, route and short flight ID to new settlements and resolve historical flight references without editing the ledger.
 - [x] Add aircraft filtering including returned aircraft, applied before the transaction limit.
 - [x] Verify signed-in history, filtering, mobile overflow and settlement description definition; identity tests passed.
+
+## Flight numbers
+- [x] Add company-sequenced flight numbers, backfill previous flights and accept a player override at dispatch.
+- [x] Show flight number, registration and route in operations, radar and transaction history.
+- [x] Verify numbering, dispatch overrides, settlement history and signed-in views.
