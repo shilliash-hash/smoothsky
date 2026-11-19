@@ -16,7 +16,7 @@ import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
-import { useVisibleTiers, searchAirports } from "@/lib/airport-tiers";
+import { useVisibleTiers } from "@/lib/airport-tiers";
 import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
 import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
@@ -113,7 +113,7 @@ function Dispatch() {
     enabled: !!origin && !!selected?.type && !searching,
     staleTime: 300_000,
   });
-  const pool = searching ? (found.data ?? []) : searchAirports(nearby.data ?? [], "", tiers);
+  const pool = searching ? (found.data ?? []) : (nearby.data ?? []);
   const destinations = useMemo(
     () =>
       !origin || !selected?.type

@@ -2,7 +2,11 @@ import { queryOptions } from "@tanstack/react-query";
 import { getOperations } from "./operations.functions";
 export const operationsQuery = queryOptions({
   queryKey: ["operations"],
-  queryFn: () => getOperations(),
+  queryFn: async () => {
+    const r = await getOperations();
+    if (!r) throw new Error("Operations data unavailable");
+    return r;
+  },
   staleTime: 15000,
   refetchInterval: 15000,
 });
