@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { fuelProjection, fuelCapacity, validateEconomyValue, aircraftSchema } from "./admin-rules";
 describe("airport fuel and admin validation", () => {
+  it("FOB discounts cannot exceed 100%", () => {
+    for (const key of ["fob_fuel_discount", "fob_handling_discount", "fob_maintenance_discount"]) {
+      expect(() => validateEconomyValue(key, 1.1)).toThrow();
+      expect(validateEconomyValue(key, 0.2)).toBe(0.2);
+    }
+  });
   it("accepts all seven configured charter rates", () =>
     expect(validateEconomyValue("charter_by_tier", [65, 50, 35, 20, 0, 0, 0])).toEqual([65, 50, 35, 20, 0, 0, 0]));
   it("rejects the obsolete four-tier charter configuration", () =>

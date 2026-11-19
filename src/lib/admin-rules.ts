@@ -38,12 +38,15 @@ export function validateEconomyValue(key: string, value: unknown) {
       "natural_cap",
       "dissolve_min",
       "dissolve_max",
+      "fob_fuel_discount",
+      "fob_handling_discount",
+      "fob_maintenance_discount",
     ].includes(key) &&
     number > 1
   )
     throw new Error("Fraction must be between 0 and 1");
   if (
-    ["max_active_leases", "simulation_time_scale"].includes(key) &&
+    ["max_active_leases", "simulation_time_scale", "liquidity_buffer_weeks"].includes(key) &&
     (!Number.isInteger(number) || number < 1)
   )
     throw new Error("A positive integer is required");

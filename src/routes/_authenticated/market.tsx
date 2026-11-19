@@ -13,13 +13,15 @@ import { economyQuery } from "@/lib/game";
 import { canAffordLease, formatCr, leaseUpfrontCost } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/game/AppShell";
+import { basesQuery } from "@/lib/bases";
+import { canInvest } from "@/lib/bases-rules";
 
 export const Route = createFileRoute("/_authenticated/market")({
   beforeLoad: async ({ context }) => {
     const c = await context.queryClient.fetchQuery(companyQuery);
     if (!c) throw redirect({ to: "/onboarding" });
   },
-  loader: async ({ context }) => { await Promise.all([context.queryClient.ensureQueryData(fleetOverviewQuery), context.queryClient.ensureQueryData(registrationRulesQuery)]); },
+  loader: async ({ context }) => { await Promise.all([context.queryClient.ensureQueryData(fleetOverviewQuery), context.queryClient.ensureQueryData(registrationRulesQuery), context.queryClient.ensureQueryData(basesQuery)]); },
   head: () => ({ meta: [{ title: "Aircraft market — SmoothSky" }, { name: "description", content: "Buy or lease aircraft for your SmoothSky fleet." }, { property: "og:title", content: "Aircraft market — SmoothSky" }, { property: "og:description", content: "Buy or lease aircraft for your SmoothSky fleet." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Market,
 });
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/market")({
 function Market() {
   const qc = useQueryClient();
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const { data: bases } = useSuspenseQuery(basesQuery);
+  const invest = bases.health ? canInvest(bases.health.status) : false;
   const action = useServerFn(leaseAction);
   const buy = useServerFn(purchaseAircraft);
   const { data: registrationRules } = useSuspenseQuery(registrationRulesQuery);
@@ -41,7 +45,7 @@ function Market() {
   const { data: ledger = [] } = useQuery(ledgerQuery(c?.id ?? ""));
   const { data: fleet = [] } = useQuery(fleetQuery(c?.id ?? ""));
   const [busy, setBusy] = useState<string | null>(null);
-  const balance = ledger[0]?.balance_after ?? 0;
+  const balance = bases.health?.balance ?? ledger[0]?.balance_after ?? 0;
   const full = fleet.filter(f=>f.ownership === "LEASED").length >= Number(economy?.['max_active_leases'] ?? 3);
 
   if (!c) return null;
@@ -79,6 +83,7 @@ function Market() {
         </div>
       </div>
       <Tabs value={mode} onValueChange={setMode} className="mt-6"><TabsList><TabsTrigger value="lease">Lease</TabsTrigger><TabsTrigger value="buy">Buy aircraft</TabsTrigger></TabsList></Tabs>
+      {!invest && <p role="alert" className="mt-4 text-destructive">Outstanding obligations · Aircraft acquisitions suspended</p>}
       {mode === "lease" && <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
         <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />
       </label>}
@@ -105,9 +110,9 @@ function Market() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Weekly rate</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Upfront total</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
               </div> : <div className="readout mt-4 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Purchase price · no weekly lease</p><p className="mt-2 text-xl text-primary">{formatCr(t.purchase_price)}</p></div>}
-              {mode === "lease" ? <Button className="mt-5" disabled={!afford || full || busy !== null || !Number.isInteger(weeks) || weeks < 1 || weeks > 52 || !rule} onClick={() => lease(t.id)}>
+              {mode === "lease" ? <Button className="mt-5" disabled={!invest || !afford || full || busy !== null || !Number.isInteger(weeks) || weeks < 1 || weeks > 52 || !rule} onClick={() => lease(t.id)}>
                 {full ? "Fleet limit reached" : !afford ? "Insufficient funds" : busy === t.id ? "Signing…" : "Lease aircraft"}
-              </Button> : <Button className="mt-5" disabled={busy !== null || !rule || t.purchase_price <= 0 || balance < t.purchase_price} onClick={() => {setPurchasing(t.id); setRegistration("");}}>{t.purchase_price <= 0 ? "Not for sale" : balance < t.purchase_price ? "Insufficient funds" : "Buy aircraft"}</Button>}
+              </Button> : <Button className="mt-5" disabled={!invest || busy !== null || !rule || t.purchase_price <= 0 || balance < t.purchase_price} onClick={() => {setPurchasing(t.id); setRegistration("");}}>{t.purchase_price <= 0 ? "Not for sale" : balance < t.purchase_price ? "Insufficient funds" : "Buy aircraft"}</Button>}
             </div>
           );
         })}

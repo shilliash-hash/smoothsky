@@ -59,6 +59,7 @@ export function AppShell({
                 >
                   Radar
                 </Link>
+                <Link to="/bases" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Bases</Link>
               </nav>
             )}
           </div>

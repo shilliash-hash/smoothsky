@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { adminAccessQuery, adminDataQuery } from "@/lib/admin";
-import { saveAdminData } from "@/lib/admin.functions";
+import { saveAdminData, resetAirports } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import type { AircraftEdit } from "@/lib/admin-rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { saveOperatingRules } from "@/lib/fleet.functions";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   loader: async ({ context }) => {
@@ -71,6 +72,9 @@ function Admin() {
   const [editing, setEditing] = useState<AircraftEdit | null>(null);
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
+  const reset = useServerFn(resetAirports);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetConfirmation, setResetConfirmation] = useState("");
   async function persist(payload: Parameters<typeof save>[0]) {
     setBusy(true);
     try {
@@ -138,6 +142,8 @@ function Admin() {
               </tbody>
             </table>
           </div>
+          <section className="mt-8 border-y border-border py-5"><h2 className="text-xl font-semibold">World supplies</h2><p className="mt-2 text-sm text-muted-foreground">Restore every airport to the configured initial passenger stock and full simulated fuel capacity. Active flights must be completed or cancelled first.</p><Button variant="destructive" className="mt-4" disabled={busy} onClick={() => setResetOpen(true)}>Reset airports (Passengers & Fuel)</Button></section>
+          <Dialog open={resetOpen} onOpenChange={open => { if (!busy) setResetOpen(open); }}><DialogContent><DialogTitle>Reset world airport supplies?</DialogTitle><DialogDescription>This affects all players. Passenger pools return to the configured starting level; both fuel types return to full capacity. Airport data, companies, flights and financial histories remain unchanged.</DialogDescription><label className="text-sm">Type RESET AIRPORTS to confirm<Input aria-label="Airport reset confirmation" className="mt-2" value={resetConfirmation} onChange={e => setResetConfirmation(e.target.value)} /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setResetOpen(false)}>Cancel</Button><Button variant="destructive" disabled={busy || resetConfirmation !== "RESET AIRPORTS"} onClick={async () => { setBusy(true); try { await reset({ data: { confirmation: "RESET AIRPORTS" } }); setResetOpen(false); setResetConfirmation(""); await qc.invalidateQueries(); toast.success("Airport passenger and fuel supplies reset"); } catch (e) { toast.error(e instanceof Error ? e.message : "Reset failed"); } finally { setBusy(false); } }}>Confirm airport reset</Button></div></DialogContent></Dialog>
         </TabsContent>
         <TabsContent value="fleet" className="mt-6">
           <div className="flex justify-between gap-3">

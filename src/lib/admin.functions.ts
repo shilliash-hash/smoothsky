@@ -10,6 +10,14 @@ export const getAdminAccess = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return Boolean(data);
   });
+export const resetAirports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ confirmation: z.literal("RESET AIRPORTS") }))
+  .handler(async ({ context }) => {
+    const result = await context.supabase.rpc("reset_airports_state");
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
 export const getAdminData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

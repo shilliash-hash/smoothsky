@@ -6,7 +6,7 @@ export const getOperations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = context.supabase;
-    const sync = await db.rpc("sync_lease_payments");
+    const sync = await db.rpc("process_due_obligations");
     if (sync.error) throw new Error(sync.error.message);
     const settled = await db.rpc("settle_due_test_flights");
     if (settled.error) throw new Error(settled.error.message);
@@ -40,16 +40,18 @@ export const getOperations = createServerFn({ method: "GET" })
       pools.push(...(p.data ?? []));
       if ((m.data?.length ?? 0) < 1000 && (p.data?.length ?? 0) < 1000) break;
     }
-    const [r, f, l, t, n] = await Promise.all([
+    const [r, f, l, t, n, bases] = await Promise.all([
       db.from("economy_config").select("*"),
       db.from("flights").select("*, aircraft:fleet_aircraft(registration)").order("created_at", { ascending: false }).limit(100),
       db.from("fleet_aircraft").select("*, type:aircraft_types(*)").is("returned_at", null),
       db.from("company_ledger").select("*").order("id", { ascending: false }).limit(1),
       db.rpc("next_flight_number"),
+      db.from("company_fobs").select("*").is("closed_at", null),
     ]);
-    for (const result of [r, f, l, t, n]) if (result.error) throw result.error;
+    for (const result of [r, f, l, t, n, bases]) if (result.error) throw result.error;
     return {
       nextFlightNumber: n.data,
+      bases: bases.data ?? [],
       company,
       airports,
       rules: Object.fromEntries((r.data ?? []).map((x) => [x.key, x.value])),
@@ -74,7 +76,7 @@ export const flightAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = context.supabase;
-    const sync = await db.rpc("sync_lease_payments");
+    const sync = await db.rpc("process_due_obligations");
     if (sync.error) throw new Error(sync.error.message);
     if (data.action === "quote" || data.action === "dispatch") {
       if (!data.aircraft || !data.destination) throw new Error("Aircraft and destination required");

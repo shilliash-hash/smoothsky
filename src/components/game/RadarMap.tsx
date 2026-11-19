@@ -153,12 +153,17 @@ export default function RadarMap({
         }).bindTooltip(`${a.icao} · ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))} passengers`).bindPopup(popup).on("click", () => onAirport(a)).addTo(layer);
       }
       marker.getElement()?.setAttribute("aria-label", `${a.icao} airport`);
+      const base = data.bases.find(b => b.airport_icao === a.icao);
+      if (base) {
+        L.marker([a.lat, a.lon], { icon: L.divIcon({ className: "radar-fob-marker", iconSize: [26, 26], iconAnchor: [13, 40], html: '<span class="flex h-6 w-6 items-center justify-center border border-amber bg-panel text-amber">⚑</span>' }) }).bindTooltip(`${base.base_type} FOB · ${a.icao}`).bindPopup(popup).on("click", () => onAirport(a)).addTo(layer);
+      }
     }
   }, [
     data.airports,
     airportFilter,
     data.fleet,
     data.metrics,
+    data.bases,
     selected,
     rangeOnly,
     layers.pax,

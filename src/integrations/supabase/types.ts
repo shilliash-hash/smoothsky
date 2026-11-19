@@ -269,6 +269,60 @@ export type Database = {
           },
         ]
       }
+      company_fobs: {
+        Row: {
+          airport_icao: string
+          base_type: string
+          closed_at: string | null
+          company_id: string
+          created_at: string
+          has_fuel_contract: boolean
+          has_handling_desk: boolean
+          has_maintenance_bay: boolean
+          id: string
+          next_payment_due: string
+        }
+        Insert: {
+          airport_icao: string
+          base_type: string
+          closed_at?: string | null
+          company_id: string
+          created_at?: string
+          has_fuel_contract?: boolean
+          has_handling_desk?: boolean
+          has_maintenance_bay?: boolean
+          id?: string
+          next_payment_due?: string
+        }
+        Update: {
+          airport_icao?: string
+          base_type?: string
+          closed_at?: string | null
+          company_id?: string
+          created_at?: string
+          has_fuel_contract?: boolean
+          has_handling_desk?: boolean
+          has_maintenance_bay?: boolean
+          id?: string
+          next_payment_due?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_fobs_airport_icao_fkey"
+            columns: ["airport_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+          {
+            foreignKeyName: "company_fobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_ledger: {
         Row: {
           amount: number
@@ -653,6 +707,7 @@ export type Database = {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
       }
+      assert_company_investment: { Args: never; Returns: undefined }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       company_balance: { Args: { p_company: string }; Returns: number }
       company_daily_results: {
@@ -665,6 +720,7 @@ export type Database = {
           revenue: number
         }[]
       }
+      company_financial_health: { Args: never; Returns: Json }
       create_company: {
         Args: { p_home_base: string; p_icao_code: string; p_name: string }
         Returns: string
@@ -688,9 +744,24 @@ export type Database = {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
       }
+      flight_quote_without_fobs: {
+        Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
+      fob_weekly_cost: { Args: { p_base: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
+      manage_fob: {
+        Args: {
+          p_action: string
+          p_airport?: string
+          p_base?: string
+          p_module?: string
+          p_type?: string
+        }
+        Returns: string
+      }
       manage_lease: {
         Args: { p_action: string; p_aircraft: string; p_weeks?: number }
         Returns: string
@@ -698,6 +769,7 @@ export type Database = {
       next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
+      process_due_obligations: { Args: never; Returns: undefined }
       purchase_aircraft: {
         Args: { p_registration?: string; p_type: string }
         Returns: string
@@ -715,6 +787,8 @@ export type Database = {
           pax_stock: number
         }[]
       }
+      reset_airports_state: { Args: never; Returns: Json }
+      restructure_company: { Args: never; Returns: undefined }
       settle_due_test_flights: { Args: never; Returns: undefined }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }

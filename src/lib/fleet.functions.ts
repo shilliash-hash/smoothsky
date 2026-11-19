@@ -6,7 +6,7 @@ export const getFleetOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = context.supabase;
-    const sync = await db.rpc("sync_lease_payments");
+    const sync = await db.rpc("process_due_obligations");
     if (sync.error) throw new Error(sync.error.message);
     const [fleet, contracts, rules] = await Promise.all([
       db.from("fleet_aircraft").select("*, type:aircraft_types(*)").order("leased_at"),

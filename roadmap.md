@@ -45,3 +45,11 @@
 - [x] Add company-sequenced flight numbers, backfill previous flights and accept a player override at dispatch.
 - [x] Show flight number, registration and route in operations, radar and transaction history.
 - [x] Verify numbering, dispatch overrides, settlement history and signed-in views.
+
+## FOBs & financial obligations
+- [x] Align Dispatch destination and flight-number fields.
+- [x] Main and up to two satellite FOBs, paid modules and frozen operational discounts.
+- [x] Weekly obligations, financial health, acquisition restrictions and controlled restructuring.
+- [x] Bases page, dashboard status and radar base markers.
+- [x] Editable FOB/health settings and confirmed admin airport stock reset; non-admin denial and active-flight guard verified without resetting the shared world.
+- [x] Verify signed-in investment, discounted flight settlement, billing idempotency, insolvency recovery, permissions and mobile views.

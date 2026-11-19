@@ -21,4 +21,5 @@ export type Quote = {
   handling_fee: number;
   maintenance: number;
   net: number;
+  fob_discounts?: { fuel: number; landing: number; handling_origin: number; handling_destination: number; maintenance: number; savings: number };
 };

@@ -50,3 +50,6 @@ use the editor.
 - Country registration rules live in a read-only catalogue; acquisition serializes allocation and enforces a global normalized unique index, preserving old registrations for ledger references.
 - Owned aircraft use a transactional purchase ledger entry and price snapshot, bypass lease expiry checks, and do not count toward lease limits; acquisition is an asset, not an operating expense.
 - Daily results aggregate the complete owner ledger and prorated contract accrual in SQL; web-test arrivals settle idempotently on authenticated operational refresh, never as ACARS evidence.
+- FOB investments and obligations serialize on the owner company row; SQL freezes airport-specific discounts into quotes and settlement consumes those quotes — prevents double billing and quote drift.
+- Financial debt is the negative ledger cash balance after obligations; recovery closes infrastructure and liquidates aircraft via new ledger entries without deleting history — preserves auditability.
+- Airport supply reset is admin-only and refuses active flights under a dispatch-blocking table lock — preserves transactional fuel reservations.

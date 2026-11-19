@@ -54,7 +54,7 @@ function Dispatch() {
   const [aircraft, setAircraft] = useState(search["aircraft"] ?? "");
   const [destination, setDestination] = useState(search["destination"] ?? "");
   const [flightNumber, setFlightNumber] = useState<string | null>(null);
-  const numberValid = flightNumberSchema.safeParse(flightNumber ?? "").success;
+  const numberValid = flightNumberSchema.safeParse(flightNumber ?? d.nextFlightNumber ?? "").success;
   const [filter, setFilter] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
@@ -109,7 +109,7 @@ function Dispatch() {
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? "") : undefined } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined } });
       if (kind === "dispatch") {
         setFlightNumber(null);
         setDestination("");
@@ -189,8 +189,9 @@ function Dispatch() {
         selected?.status === "AVAILABLE" && (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
             <section>
-              <h2 className="mb-3 text-lg font-semibold">Destinations</h2>
+              <label htmlFor="destination-search" className="mb-2 block text-xs uppercase text-muted-foreground">Destinations</label>
               <Input
+                id="destination-search"
                 aria-label="Search destinations"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -219,8 +220,8 @@ function Dispatch() {
                 )}
               </div>
             </section>
-            <section className="border-t border-border pt-4 lg:border-t-0">
-              <label htmlFor="flight-number" className="text-xs uppercase text-muted-foreground">Flight number</label>
+            <section className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
+              <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
               {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
@@ -267,6 +268,7 @@ function Dispatch() {
                     {String(d.rules["fuel_reserve_minutes"])} min · excludes weekly lease
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">Planned fuel incl. reserve: {fuelLabel(quote.fuel_gal + Number(d.rules["fuel_reserve_minutes"]) / 60 * Number(selected?.type?.fuel_burn_gph ?? 0), Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre))}</p>
+                   {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FOB savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
                   <Button
                     className="mt-5 w-full"
                     disabled={
