@@ -62,5 +62,5 @@ use the editor.
 - ACARS position rate limits, plausibility checks and duplicate-PIREP rejection run inside the key-checking SQL functions, so every gateway path enforces them.
 - Pilot flights use pilot_flight_action acting as aircraft owner; flights triggers attach pilot context, enforce reservations and split commission/payout to pilot_ledger — one settlement path.
 - Personal aircraft sit in a hidden is_personal company of the pilot (filter is_personal=false in company reads); stakes ≤30% priced from net worth, 7-day lock, weekly dividends from operating profit.
-- Cargo and special missions extend quotes via flight_quote_full/dispatch_flight_full, which pass options through a transaction-local setting to flight_quote_cargo inside the unchanged dispatch/settle path; missions are a shared board refreshed lazily under an advisory lock and late-delivery cuts apply in settle_flight — one settlement path, no scheduler.
-- The public homepage reads only aggregate counts through an anon-executable SECURITY DEFINER function via a server publishable client — no player data is exposed.
+- Cargo/missions pass options to flight_quote_cargo via a transaction-local setting; mission board refreshes lazily, late cuts apply in settle_flight — one settlement path.
+- Homepage reads only anon aggregate counts — no player data.
