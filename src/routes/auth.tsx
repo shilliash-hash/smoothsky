@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/game/Logo";
 import { GoogleButton } from "@/components/game/GoogleButton";
+import { accountHome } from "@/lib/account-home";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/dashboard" });
+    if (data.session) throw redirect({ to: await accountHome(data.session.user.id) });
   },
   head: () => ({
     meta: [
@@ -37,7 +38,9 @@ function AuthPage() {
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/dashboard", replace: true });
+      if (session) void accountHome(session.user.id)
+        .then((to) => navigate({ to, replace: true }))
+        .catch(() => toast.error("Unable to open your account. Please try again."));
     });
     return () => data.subscription.unsubscribe();
   }, [navigate]);

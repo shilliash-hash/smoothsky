@@ -1,5 +1,8 @@
 # Roadmap
 
+## PILOT_ONLY account handling
+- [x] Verify optional company reads, career-aware home/sign-in routing and admin navigation without an airline (signed-in PILOT_ONLY admin; 68 tests passed).
+
 ## Flight Logbook
 - [x] Add completed-flight page and navigation with aircraft filtering, including retired aircraft, without database changes.
 - [x] Verify settled results, flight-hour conversion, signed-in filtering and mobile layout.

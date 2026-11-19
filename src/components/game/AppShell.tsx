@@ -6,6 +6,7 @@ import { getPilotProfile } from "@/lib/pilot.functions";
 import { acarsOnline } from "@/lib/acars-status";
 import { LogOut, Shield } from "lucide-react";
 import { adminAccessQuery } from "@/lib/admin";
+import { companyQuery } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
@@ -14,13 +15,16 @@ import { SupporterBadge } from "./SupporterBadge";
 
 export function AppShell({
   children,
-  company,
+  company: suppliedCompany,
 }: {
   children: ReactNode;
   company?: { icao_code: string; name: string; is_supporter?: boolean } | null;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { data: ownCompany } = useQuery({ ...companyQuery, enabled: suppliedCompany === undefined });
+  const company = suppliedCompany === undefined ? ownCompany : suppliedCompany;
+  // Authorization comes from user_roles, never from company ownership.
   const { data: isAdmin } = useQuery(adminAccessQuery);
   const loadPilot = useServerFn(getPilotProfile);
   const { data: pilot } = useQuery({ queryKey: ["pilot-profile"], queryFn: () => loadPilot(), refetchInterval: 30_000 });

@@ -30,6 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Account entry points use nullable owner-scoped company/profile reads and career-aware destinations; admin access is company-independent — supports pilot-only accounts.
 - Flight Logbook reads all completed owner flights with paginated RLS-scoped queries, includes retired aircraft, and uses settled net/minutes rather than current quotes or accelerated elapsed time — preserves historical results without schema changes.
 - Money-changing actions run only in SECURITY DEFINER SQL functions (create_company, lease_aircraft, settle_flight); clients have SELECT-only access — keeps the ledger tamper-proof.
 - company_ledger is append-only (trigger blocks UPDATE/DELETE); balance = latest balance_after — full audit trail.

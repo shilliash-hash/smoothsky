@@ -1,4 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { accountHome } from "@/lib/account-home";
 import { Plane, Landmark, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/game/Logo";
@@ -24,6 +27,24 @@ const features = [
 ];
 
 function Index() {
+  const navigate = useNavigate();
+  const [entryError, setEntryError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    async function enterAccount() {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!data.session) return;
+        const to = await accountHome(data.session.user.id);
+        if (active) await navigate({ to, replace: true });
+      } catch {
+        if (active) setEntryError(true);
+      }
+    }
+    void enterAccount();
+    return () => { active = false; };
+  }, [navigate]);
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -31,6 +52,7 @@ function Index() {
         <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
       </header>
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-16">
+        {entryError && <p role="alert" className="mb-4 text-destructive">Unable to open your account. Please try signing in again.</p>}
         <p className="readout text-xs uppercase text-amber">● Phase 1 · Ground operations</p>
         <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight md:text-6xl">
           Smooth<span className="text-primary">Sky</span>
