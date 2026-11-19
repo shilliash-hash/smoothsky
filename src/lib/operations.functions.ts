@@ -5,6 +5,8 @@ export const getOperations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = context.supabase;
+    const sync = await db.rpc("sync_lease_payments");
+    if (sync.error) throw new Error(sync.error.message);
     const { data: company, error: ce } = await db.from("companies").select("*").maybeSingle();
     if (ce) throw ce;
     const airports = [];
@@ -38,7 +40,7 @@ export const getOperations = createServerFn({ method: "GET" })
     const [r, f, l, t] = await Promise.all([
       db.from("economy_config").select("*"),
       db.from("flights").select("*").order("created_at", { ascending: false }).limit(100),
-      db.from("fleet_aircraft").select("*, type:aircraft_types(*)"),
+      db.from("fleet_aircraft").select("*, type:aircraft_types(*)").is("returned_at", null),
       db.from("company_ledger").select("*").order("id", { ascending: false }).limit(1),
     ]);
     for (const result of [r, f, l, t]) if (result.error) throw result.error;
@@ -66,6 +68,8 @@ export const flightAction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = context.supabase;
+    const sync = await db.rpc("sync_lease_payments");
+    if (sync.error) throw new Error(sync.error.message);
     if (data.action === "quote" || data.action === "dispatch") {
       if (!data.aircraft || !data.destination) throw new Error("Aircraft and destination required");
       const { data: result, error } = await db.rpc(

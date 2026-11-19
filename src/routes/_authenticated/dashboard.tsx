@@ -1,12 +1,15 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { Plane, MapPin, Wallet } from "lucide-react";
+import { Plane, MapPin } from "lucide-react";
 import { companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
 import { economyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
 import { SmoothCoin } from "@/components/game/SmoothCoin";
 import { AppShell } from "@/components/game/AppShell";
+import { useState } from "react";
+import { fleetOverviewQuery } from "@/lib/fleet";
+import { AircraftDetails } from "@/components/game/AircraftDetails";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -14,12 +17,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     if (!c) throw redirect({ to: "/onboarding" });
   },
   head: () => ({ meta: [{ title: "Dashboard — SmoothSky" }, { name: "description", content: "Your SmoothSky airline balance, fleet, home base and transaction history." }, { property: "og:title", content: "Dashboard — SmoothSky" }, { property: "og:description", content: "Your SmoothSky airline balance, fleet, home base and transaction history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(fleetOverviewQuery),
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
+  const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const [selected, setSelected] = useState<string | null>(null);
   const { data: company } = useSuspenseQuery(companyQuery);
   const { data: economy } = useQuery(economyQuery);
   const c = company;
@@ -64,7 +70,7 @@ function Dashboard() {
         ) : (
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             {fleet.map((f) => (
-              <div key={f.id} className="instrument p-4">
+              <Button key={f.id} variant="outline" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => setSelected(f.id)} className="instrument block h-auto w-full p-4 text-left font-normal whitespace-normal">
                 <div className="flex items-center justify-between">
                   <span className="readout text-lg text-primary">{f.registration}</span>
                   <span className="rounded-sm bg-success/15 px-2 py-0.5 text-xs text-success">{f.status === "AVAILABLE" ? "Available" : f.status}</span>
@@ -73,9 +79,10 @@ function Dashboard() {
                 <dl className="readout mt-3 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                   <dt>Location</dt><dd className="text-right text-foreground">{f.location_icao}</dd>
                   <dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
+                  <dt>Contract ends</dt><dd className="text-right text-foreground">{new Date(overview.contracts.find(k => k.aircraft_id === f.id)?.ends_at ?? f.next_payment_due).toLocaleDateString("en-US")}</dd>
                   <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd>
                 </dl>
-              </div>
+              </Button>
             ))}
           </div>
         )}
@@ -103,6 +110,7 @@ function Dashboard() {
           </table>
         </div>
       </section>
+      {selected && (() => { const f = overview.fleet.find(f => f.id === selected); return f ? <AircraftDetails aircraft={f.id} registration={f.registration} baseRate={Number(f.type?.weekly_rate ?? f.weekly_rate)} renewalDiscount={Number(overview.rules.renewal_discount)} onClose={() => setSelected(null)} /> : null; })()}
     </AppShell>
   );
 }

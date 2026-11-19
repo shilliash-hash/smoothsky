@@ -11,6 +11,8 @@ import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
 import { distanceNm, flightProgress } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
+import { fleetOverviewQuery } from "@/lib/fleet";
+import { fuelLabel } from "@/lib/fleet-rules";
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -20,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
   }),
   loader: async ({ context }) => {
     const d = await context.queryClient.ensureQueryData(operationsQuery);
+    await context.queryClient.ensureQueryData(fleetOverviewQuery);
     if (!d.company) throw redirect({ to: "/onboarding" });
   },
   head: () => ({
@@ -42,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
 });
 function Dispatch() {
   const { data: d } = useSuspenseQuery(operationsQuery);
+  const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const qc = useQueryClient();
   const action = useServerFn(flightAction);
   const search = Route.useSearch();
@@ -240,9 +244,10 @@ function Dispatch() {
                     </div>
                   </dl>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    {quote.fuel_gal.toFixed(1)} US gal consumed · reserve{" "}
+                    {fuelLabel(quote.fuel_gal, Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre))} consumed · reserve{" "}
                     {String(d.rules["fuel_reserve_minutes"])} min · excludes weekly lease
                   </p>
+                  <p className="mt-2 text-xs text-muted-foreground">Planned fuel incl. reserve: {fuelLabel(quote.fuel_gal + Number(d.rules["fuel_reserve_minutes"]) / 60 * Number(selected?.type?.fuel_burn_gph ?? 0), Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre))}</p>
                   <Button
                     className="mt-5 w-full"
                     disabled={

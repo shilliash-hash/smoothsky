@@ -14,6 +14,8 @@ import { saveAdminData } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import type { AircraftEdit } from "@/lib/admin-rules";
+import { fleetOverviewQuery } from "@/lib/fleet";
+import { saveOperatingRules } from "@/lib/fleet.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   loader: async ({ context }) => {
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     await Promise.all([
       context.queryClient.ensureQueryData(adminDataQuery),
       context.queryClient.ensureQueryData(companyQuery),
+      context.queryClient.ensureQueryData(fleetOverviewQuery),
     ]);
   },
   head: () => ({
@@ -97,6 +100,7 @@ function Admin() {
           <TabsTrigger value="users">Users & companies</TabsTrigger>
         </TabsList>
         <TabsContent value="economy" className="mt-6">
+          <OperatingRulesEditor />
           <div className="divide-y divide-border">
             {data.economy.map((row) => (
               <EconomyRow
@@ -224,7 +228,7 @@ function Admin() {
                           "fuel_burn_gph",
                           "fuel_capacity_gal",
                         ].includes(key)
-                          ? "0.01"
+                          ? "0.1"
                           : "1"
                       }
                       required
@@ -412,7 +416,7 @@ function EconomyRow({
                 aria-label={`${row.key.replaceAll("_", " ")} ${index + 1}`}
                 type="number"
                 min="0"
-                step="any"
+                step={Number.isInteger(Number(row.value instanceof Array ? row.value[index] : item)) ? "1" : "0.1"}
                 className="readout mt-1 px-2"
                 value={item}
                 onChange={(e) => {
@@ -429,7 +433,7 @@ function EconomyRow({
           id={row.key}
           aria-label={row.key.replaceAll("_", " ")}
           type="number"
-          step="any"
+          step={Number.isInteger(Number(row.value)) ? "1" : "0.1"}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className="readout"
@@ -480,7 +484,7 @@ function FuelRow({
             aria-label={`Size ${rule.size} ${rule.fuel_type} ${key}`}
             type="number"
             min="0"
-            step="any"
+            step="0.1"
             value={edit[key]}
             onChange={(e) => setEdit({ ...edit, [key]: Number(e.target.value) })}
           />
@@ -499,4 +503,24 @@ function FuelRow({
       </td>
     </tr>
   );
+}
+
+function OperatingRulesEditor() {
+  const { data } = useSuspenseQuery(fleetOverviewQuery);
+  const [edit, setEdit] = useState(data.rules);
+  const [busy, setBusy] = useState(false);
+  const save = useServerFn(saveOperatingRules);
+  const qc = useQueryClient();
+  return <form className="mb-6 border-b border-border pb-5" onSubmit={async e => {
+    e.preventDefault(); setBusy(true);
+    try { await save({ data: edit }); await qc.invalidateQueries(); toast.success('Operating rules saved'); }
+    catch(e) { toast.error(e instanceof Error ? e.message : 'Save failed'); }
+    finally { setBusy(false); }
+  }}>
+    <h2 className="mb-4 text-lg font-semibold">Lease contracts & fuel units</h2>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {([['default_lease_weeks','Default lease (weeks)'],['renewal_discount','Renewal discount (fraction)'],['avgas_kg_per_litre','100LL density (kg/L)'],['jeta_kg_per_litre','Jet-A1 density (kg/L)']] as const).map(([key,label]) => <label key={key} className="text-sm">{label}<Input aria-label={label} className="mt-1" required type="number" min={key === 'renewal_discount' ? 0 : 0.01} max={key === 'default_lease_weeks' ? 52 : key === 'renewal_discount' ? 1 : undefined} step={key === 'default_lease_weeks' ? 1 : 0.01} value={edit[key]} onChange={e => setEdit({...edit,[key]:Number(e.target.value)})} /></label>)}
+    </div>
+    <Button className="mt-4" variant="outline" disabled={busy}><Save className="h-4 w-4"/>Save operating rules</Button>
+  </form>;
 }

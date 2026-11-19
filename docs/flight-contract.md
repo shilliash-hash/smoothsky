@@ -12,6 +12,7 @@ Web test flights reserve passengers, take off, advance along a Great Circle at a
 - Telemetry version 1: source, flight ID, sequence, UTC captured time, latitude, longitude, altitude_ft, ground_speed_kts, heading_deg, on_ground, engine_running, fuel_used_gal, landing_rate_fpm. SI/aviation units must be documented per adapter.
 
 ## Future ACARS implementation (not shipped)
+Fuel display includes US gal, lb and kg using editable fuel-specific kg/L densities. Planned loading includes the configured reserve, separately from expected burn. An ACARS adapter must report tank quantity before departure and actual consumption, normalize units, and verify loading against the frozen dispatch requirement with adapter-specific tolerances. Display conversions alone are not simulator evidence.
 An external Windows client can read SimConnect for MSFS; X-Plane needs a separate adapter. OAuth/device pairing, scoped revocable tokens, sequence/replay validation and endpoint rate limits are prerequisites. A TanStack public server route must verify the token, company, assigned aircraft, flight state and plausibility before recording telemetry or permitting SQL settlement. Never accept caller-supplied revenue/costs or an `execution_source` override.
 Actual telemetry drives the radar; Great Circle remains a labelled estimate, not proof of a real flight. Only validated landing/engine-off evidence can complete a real flight. Missing/reordered events must not double-post the ledger. Desktop packaging and simulator testing are separate milestones.
 
