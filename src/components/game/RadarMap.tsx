@@ -32,6 +32,8 @@ export default function RadarMap({
   const map = useRef<L.Map | null>(null);
   const airportLayer = useRef<L.LayerGroup | null>(null);
   const flightLayer = useRef<L.LayerGroup | null>(null);
+  const airportPopup = useRef<L.Popup | null>(null);
+  const popupAirport = useRef<string | null>(null);
   const center = useRef("");
   const [zoom, setZoom] = useState(5);
   const [view, setView] = useState(0);
@@ -39,6 +41,7 @@ export default function RadarMap({
     if (!div.current) return;
     const m = L.map(div.current, { preferCanvas: false }).setView([50, 15], 5);
     map.current = m;
+    airportPopup.current = L.popup();
     m.on("zoomend", () => setZoom(m.getZoom()));
     m.on("moveend", () => setView(v => v + 1));
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -53,6 +56,7 @@ export default function RadarMap({
       resize.disconnect();
       m.remove();
       map.current = null;
+      airportPopup.current = null;
     };
   }, []);
   useEffect(() => {
@@ -112,6 +116,14 @@ export default function RadarMap({
         line.textContent = text;
         popup.append(line);
       }
+      if (popupAirport.current === a.icao && airportPopup.current?.isOpen()) {
+        airportPopup.current.setContent(popup);
+      }
+      const openAirport = () => {
+        popupAirport.current = a.icao;
+        airportPopup.current?.setLatLng([a.lat, a.lon]).setContent(popup).openOn(m);
+        onAirport(a);
+      };
       const marker = L.circleMarker([a.lat, a.lon], {
         radius: grounded
           ? 7
@@ -127,8 +139,7 @@ export default function RadarMap({
         className: "",
       })
         .bindTooltip(`${a.icao} · ${a.name}`, { direction: "top" })
-        .bindPopup(popup)
-        .on("click", () => onAirport(a))
+        .on("click", openAirport)
         .addTo(layer);
       if (layers.activity && ops > 0) {
         L.circleMarker([a.lat, a.lon], {
@@ -150,12 +161,12 @@ export default function RadarMap({
           icon: L.divIcon({ className: "radar-pax-gauge", iconSize: [48, 48], iconAnchor: [24, 24],
             html: `<svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Passenger pool ${Math.round(ratio * 100)} percent"><circle class="gauge-track" cx="24" cy="24" r="19" stroke-width="4"/><circle class="gauge-value" cx="24" cy="24" r="19" stroke-width="4" stroke-dasharray="${ratio * circumference} ${circumference}" transform="rotate(-90 24 24)"/><text x="24" y="28">${Math.round(ratio * 100)}%</text></svg>` }),
           opacity: reachable ? 1 : 0.25,
-        }).bindTooltip(`${a.icao} · ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))} passengers`).bindPopup(popup).on("click", () => onAirport(a)).addTo(layer);
+        }).bindTooltip(`${a.icao} · ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))} passengers`).on("click", openAirport).addTo(layer);
       }
       marker.getElement()?.setAttribute("aria-label", `${a.icao} airport`);
       const base = data.bases.find(b => b.airport_icao === a.icao);
       if (base) {
-        L.marker([a.lat, a.lon], { icon: L.divIcon({ className: "radar-fob-marker", iconSize: [26, 26], iconAnchor: [13, 40], html: '<span class="flex h-6 w-6 items-center justify-center border border-amber bg-panel text-amber">⚑</span>' }) }).bindTooltip(`${base.base_type} FOB · ${a.icao}`).bindPopup(popup).on("click", () => onAirport(a)).addTo(layer);
+        L.marker([a.lat, a.lon], { icon: L.divIcon({ className: "radar-fob-marker", iconSize: [26, 26], iconAnchor: [13, 40], html: '<span class="flex h-6 w-6 items-center justify-center border border-amber bg-panel text-amber">⚑</span>' }) }).bindTooltip(`${base.base_type} FOB · ${a.icao}`).on("click", openAirport).addTo(layer);
       }
     }
   }, [

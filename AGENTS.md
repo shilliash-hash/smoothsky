@@ -40,6 +40,7 @@ use the editor.
 - Protected operations use authenticated server functions and owner-scoped RLS; no privileged client queries — company data stays private.
 - Web simulation and future ACARS share flight records and settlement; ACARS writes require a separately verified ingestion adapter — manual data cannot impersonate simulator evidence.
 - Radar dynamically imports Leaflet and uses Turf nautical-mile/geodesic calculations — avoids SSR browser imports and hand-rolled map geometry.
+- Radar airport popups live on the map, not replaceable marker layers; memoize airport filters so clock ticks do not rebuild markers — keeps airport details open during refresh and panning.
 - Airport imports retain source provenance, provisional size classification and nullable fuel/runway data — missing information must not be fabricated.
 - Administrator authorization lives in protected user_roles and is checked by authenticated server functions and RLS; profile metadata never grants privileges.
 - Simulated airport fuel is separate from nullable real-world availability; dispatch reserves stock transactionally and cancellation returns it exactly once.

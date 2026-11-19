@@ -1,6 +1,6 @@
 import { createFileRoute, ClientOnly, Link, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { Plane, X } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,8 @@ function Radar() {
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
   const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
   const [tiers, setTiers] = useState<number[]>([1,2,3,4,5,6,7]);
-  const visible = d.airports.filter(a => airportMatches(a, categories, tiers));
+  const visible = useMemo(() => d.airports.filter(a => airportMatches(a, categories, tiers)), [d.airports, categories, tiers]);
+  const airportFilter = useMemo(() => visible.map(a => a.icao), [visible]);
   const onAirport = useCallback((a: Airport) => {
     setAirport(a);
     setFlight(null);
@@ -146,7 +147,7 @@ function Radar() {
           <Suspense fallback={<div className="h-[600px]">Loading map…</div>}>
             <RadarMap
               data={d}
-              airportFilter={visible.map(a=>a.icao)}
+              airportFilter={airportFilter}
               selected={chosen}
               rangeOnly={rangeOnly}
               layers={layers}
