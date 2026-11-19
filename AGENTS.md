@@ -40,3 +40,4 @@ use the editor.
 - Administrator authorization lives in protected user_roles and is checked by authenticated server functions and RLS; profile metadata never grants privileges.
 - Simulated airport fuel is separate from nullable real-world availability; dispatch reserves stock transactionally and cancellation returns it exactly once.
 - Radar metrics expose only aggregate airport activity and stock, never other companies' flight details; pagination covers the entire network.
+- Compute radar-wide supplies with set-based joins and one economy-settings read, not per-airport helper calls; this avoids statement timeouts across the full network.
