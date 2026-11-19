@@ -1,8 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { BookOpen } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { companyQuery } from "@/lib/game";
 import { logbookQuery, logbookResult } from "@/lib/logbook";
@@ -24,7 +25,30 @@ export const Route = createFileRoute("/_authenticated/logbook")({
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
   component: Logbook,
+  errorComponent: LogbookError,
 });
+
+function LogbookError({ reset }: ErrorComponentProps) {
+  const router = useRouter();
+  const qc = router.options.context.queryClient;
+  const company = qc.getQueryData(companyQuery.queryKey);
+  const [retrying, setRetrying] = useState(false);
+  return <AppShell company={company ?? null}>
+    <h1 className="text-3xl font-semibold">Flight Logbook</h1>
+    <div role="alert" className="mt-6 border-y border-border py-8">
+      <p className="font-semibold">Unable to load flights</p>
+      <p className="mt-2 text-sm text-muted-foreground">Check your connection and try again. Your flight records have not been changed.</p>
+      <Button className="mt-4" disabled={retrying} onClick={async () => {
+        setRetrying(true);
+        try {
+          await qc.resetQueries({ queryKey: ["flight-logbook"] });
+          await router.invalidate();
+          reset();
+        } finally { setRetrying(false); }
+      }}>{retrying ? "Retrying…" : "Try again"}</Button>
+    </div>
+  </AppShell>;
+}
 
 function Logbook() {
   const { companyId } = Route.useLoaderData();
