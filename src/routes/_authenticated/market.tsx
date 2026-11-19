@@ -2,7 +2,10 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { fleetOverviewQuery } from "@/lib/fleet";
+import { leaseAction } from "@/lib/fleet.functions";
+import { Input } from "@/components/ui/input";
 import { aircraftTypesQuery, companyQuery, fleetQuery, ledgerQuery } from "@/lib/game";
 import { economyQuery } from "@/lib/game";
 import { canAffordLease, formatCr, leaseUpfrontCost } from "@/lib/rules";
@@ -14,12 +17,16 @@ export const Route = createFileRoute("/_authenticated/market")({
     const c = await context.queryClient.fetchQuery(companyQuery);
     if (!c) throw redirect({ to: "/onboarding" });
   },
+  loader: ({ context }) => context.queryClient.ensureQueryData(fleetOverviewQuery),
   head: () => ({ meta: [{ title: "Lease market — SmoothSky" }, { name: "description", content: "Compare and lease T1–T3 aircraft for your SmoothSky fleet." }, { property: "og:title", content: "Lease market — SmoothSky" }, { property: "og:description", content: "Compare and lease T1–T3 aircraft for your SmoothSky fleet." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Market,
 });
 
 function Market() {
   const qc = useQueryClient();
+  const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const action = useServerFn(leaseAction);
+  const [weeks, setWeeks] = useState(overview.rules.default_lease_weeks);
   const { data: economy } = useQuery(economyQuery);
   const { data: company } = useSuspenseQuery(companyQuery);
   const c = company;
@@ -34,12 +41,12 @@ function Market() {
 
   async function lease(id: string) {
     setBusy(id);
-    const { error } = await supabase.rpc("lease_aircraft", { p_type: id });
-    setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Aircraft added to your fleet at your home base");
-    qc.invalidateQueries({ queryKey: ["ledger"] });
-    qc.invalidateQueries({ queryKey: ["fleet"] });
+    try {
+      await action({ data: { action: "sign", type: id, weeks } });
+      await qc.invalidateQueries();
+      toast.success("Lease signed — aircraft at your home base");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Lease failed"); }
+    finally { setBusy(null); }
   }
 
   return (
@@ -55,6 +62,9 @@ function Market() {
           <p className="readout text-xl text-primary">{formatCr(balance)}</p>
         </div>
       </div>
+      <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
+        <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />
+      </label>
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {types.filter(t=>t.active).map((t) => {
           const afford = canAffordLease(balance, t);
@@ -73,11 +83,12 @@ function Market() {
                 <dt className="text-muted-foreground">Cruise</dt><dd className="text-right">{t.cruise_kts} kt</dd>
               </dl>
               <div className="readout mt-4 space-y-1 border-t border-border pt-4 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Contract total (excl. deposit)</span><span>{formatCr(t.weekly_rate * weeks)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Deposit</span><span>{formatCr(t.security_deposit)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Weekly rate</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Upfront total</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
               </div>
-              <Button className="mt-5" disabled={!afford || full || busy !== null} onClick={() => lease(t.id)}>
+              <Button className="mt-5" disabled={!afford || full || busy !== null || !Number.isInteger(weeks) || weeks < 1 || weeks > 52} onClick={() => lease(t.id)}>
                 {full ? "Fleet limit reached" : !afford ? "Insufficient funds" : busy === t.id ? "Signing…" : "Lease aircraft"}
               </Button>
             </div>

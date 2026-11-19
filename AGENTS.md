@@ -41,3 +41,6 @@ use the editor.
 - Simulated airport fuel is separate from nullable real-world availability; dispatch reserves stock transactionally and cancellation returns it exactly once.
 - Radar metrics expose only aggregate airport activity and stock, never other companies' flight details; pagination covers the entire network.
 - Compute radar-wide supplies with set-based joins and one economy-settings read, not per-airport helper calls; this avoids statement timeouts across the full network.
+- Lease contracts store term/rate snapshots; authenticated SQL synchronizes due weekly ledger payments before operations, caps billing at expiry and excludes returned aircraft from active fleet limits.
+- Aircraft P&L aggregates the complete owner ledger by registration/flight reference and accrues lease cost across contract periods; refundable deposits are assets, not expenses.
+- Fuel mass uses editable fuel-specific densities and exact US-gallon/litre and pound/kg conversion constants; planned reserve is separate from billed consumption and never constitutes ACARS validation.

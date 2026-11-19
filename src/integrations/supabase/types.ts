@@ -344,6 +344,7 @@ export type Database = {
           location_icao: string
           next_payment_due: string
           registration: string
+          returned_at: string | null
           status: string
           weekly_rate: number
         }
@@ -356,6 +357,7 @@ export type Database = {
           location_icao: string
           next_payment_due: string
           registration: string
+          returned_at?: string | null
           status?: string
           weekly_rate: number
         }
@@ -368,6 +370,7 @@ export type Database = {
           location_icao?: string
           next_payment_due?: string
           registration?: string
+          returned_at?: string | null
           status?: string
           weekly_rate?: number
         }
@@ -484,6 +487,84 @@ export type Database = {
           },
         ]
       }
+      lease_contracts: {
+        Row: {
+          aircraft_id: string
+          base_weekly_rate: number
+          company_id: string
+          ends_at: string
+          id: string
+          paid_weeks: number
+          renewal: boolean
+          starts_at: string
+          term_weeks: number
+          weekly_rate: number
+        }
+        Insert: {
+          aircraft_id: string
+          base_weekly_rate: number
+          company_id: string
+          ends_at: string
+          id?: string
+          paid_weeks?: number
+          renewal?: boolean
+          starts_at: string
+          term_weeks: number
+          weekly_rate: number
+        }
+        Update: {
+          aircraft_id?: string
+          base_weekly_rate?: number
+          company_id?: string
+          ends_at?: string
+          id?: string
+          paid_weeks?: number
+          renewal?: boolean
+          starts_at?: string
+          term_weeks?: number
+          weekly_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_contracts_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operating_rules: {
+        Row: {
+          avgas_kg_per_litre: number
+          default_lease_weeks: number
+          jeta_kg_per_litre: number
+          renewal_discount: number
+          singleton: boolean
+        }
+        Insert: {
+          avgas_kg_per_litre?: number
+          default_lease_weeks?: number
+          jeta_kg_per_litre?: number
+          renewal_discount?: number
+          singleton?: boolean
+        }
+        Update: {
+          avgas_kg_per_litre?: number
+          default_lease_weeks?: number
+          jeta_kg_per_litre?: number
+          renewal_discount?: number
+          singleton?: boolean
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           role: Database["public"]["Enums"]["app_role"]
@@ -517,6 +598,7 @@ export type Database = {
           username: string
         }[]
       }
+      aircraft_finance: { Args: { p_aircraft: string }; Returns: Json }
       airport_fuel_capacity: {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
@@ -544,6 +626,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
+      manage_lease: {
+        Args: { p_action: string; p_aircraft: string; p_weeks?: number }
+        Returns: string
+      }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
       radar_airport_metrics: {
@@ -563,7 +649,12 @@ export type Database = {
         Args: { p_flight: string; p_telemetry?: Json }
         Returns: Json
       }
+      sign_lease: {
+        Args: { p_type: string; p_weeks?: number }
+        Returns: string
+      }
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
+      sync_lease_payments: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { Operations, Airport, Flight } from "@/lib/operations";
+import { fuelLabel } from "@/lib/fleet-rules";
 import {
   distanceNm,
   flightPosition,
@@ -13,6 +14,7 @@ export default function RadarMap({
   selected,
   rangeOnly,
   layers,
+  densities,
   onAirport,
   onFlight,
 }: {
@@ -20,6 +22,7 @@ export default function RadarMap({
   selected: string;
   rangeOnly: boolean;
   layers: { pax: boolean; activity: boolean; flights: boolean };
+  densities: { avgas: number; jeta: number };
   onAirport: (a: Airport) => void;
   onFlight: (f: Flight) => void;
 }) {
@@ -29,11 +32,13 @@ export default function RadarMap({
   const flightLayer = useRef<L.LayerGroup | null>(null);
   const center = useRef("");
   const [zoom, setZoom] = useState(5);
+  const [view, setView] = useState(0);
   useEffect(() => {
     if (!div.current) return;
     const m = L.map(div.current, { preferCanvas: false }).setView([50, 15], 5);
     map.current = m;
     m.on("zoomend", () => setZoom(m.getZoom()));
+    m.on("moveend", () => setView(v => v + 1));
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 18,
@@ -55,7 +60,9 @@ export default function RadarMap({
     layer.clearLayers();
     const root = getComputedStyle(document.documentElement);
     const primary = root.getPropertyValue("--primary").trim(),
-      amber = root.getPropertyValue("--amber").trim();
+      amber = root.getPropertyValue("--amber").trim(),
+      range = root.getPropertyValue("--radar-range").trim(),
+      activity = root.getPropertyValue("--radar-activity").trim();
     const metrics = new Map(data.metrics.map((x) => [x.icao, x]));
     const f = data.fleet.find((f) => f.id === selected);
     const origin = data.airports.find((a) => a.icao === f?.location_icao);
@@ -66,9 +73,16 @@ export default function RadarMap({
     }
     if (origin && radius > 0)
       L.geoJSON(rangeRing(origin, radius), {
-        style: { color: primary, weight: 1, fillOpacity: 0.04, dashArray: "5 6" },
+        style: { color: range, weight: 2, fillOpacity: 0.04, dashArray: "5 6" },
       }).addTo(layer);
-    for (const a of data.airports) {
+    const gaugePositions: L.Point[] = [];
+    const airports = [...data.airports].sort((a, b) => {
+      const aGrounded = data.fleet.some(f => f.location_icao === a.icao);
+      const bGrounded = data.fleet.some(f => f.location_icao === b.icao);
+      return Number(bGrounded) - Number(aGrounded) || b.size - a.size || a.icao.localeCompare(b.icao);
+    });
+    for (const a of airports) {
+      if (!m.getBounds().pad(0.1).contains([a.lat, a.lon])) continue;
       const reachable = !origin || distanceNm(origin, a) <= radius;
       if (rangeOnly && !reachable) continue;
       const grounded = data.fleet.some(
@@ -87,8 +101,8 @@ export default function RadarMap({
       for (const text of [
         `Size ${a.size} · Dev ${a.development_level} · Runway ${a.longest_runway_ft ?? "Unknown"} ft`,
         `Passengers: ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))}`,
-        `100LL: ${Math.floor(Number(metric?.avgas_stock ?? 0)).toLocaleString()} / ${Math.round(Number(metric?.avgas_capacity ?? 0)).toLocaleString()} gal`,
-        `Jet-A1: ${Math.floor(Number(metric?.jeta_stock ?? 0)).toLocaleString()} / ${Math.round(Number(metric?.jeta_capacity ?? 0)).toLocaleString()} gal`,
+        `100LL stock: ${fuelLabel(Number(metric?.avgas_stock ?? 0), densities.avgas)}`,
+        `Jet-A1 stock: ${fuelLabel(Number(metric?.jeta_stock ?? 0), densities.jeta)}`,
         `${ops} operations · last 7 days`,
       ]) {
         const line = document.createElement("div");
@@ -107,22 +121,33 @@ export default function RadarMap({
         weight: 1,
         fillOpacity: reachable ? 0.45 : 0.08,
         opacity: reachable ? 0.9 : 0.2,
-        className: layers.activity && ops > 0 ? "radar-hotspot" : "",
+        className: "",
       })
         .bindTooltip(`${a.icao} · ${a.name}`, { direction: "top" })
         .bindPopup(popup)
         .on("click", () => onAirport(a))
         .addTo(layer);
-      if (layers.pax && zoom >= 7) {
+      if (layers.activity && ops > 0) {
         L.circleMarker([a.lat, a.lon], {
-          radius: 5 + ratio * 7,
-          color: primary,
+          radius: zoom >= 7 && layers.pax ? 28 : 11,
+          color: activity,
           weight: 2,
           fill: false,
           opacity: reachable ? 0.8 : 0.15,
-          dashArray: `${Math.max(0.1, ratio * 60)} ${Math.max(0.1, (1 - ratio) * 60)}`,
           interactive: false,
+          className: "radar-hotspot",
         }).addTo(layer);
+      }
+      const point = m.latLngToContainerPoint([a.lat, a.lon]);
+      const hasGaugeSpace = gaugePositions.every(previous => previous.distanceTo(point) >= 56);
+      if (layers.pax && (zoom >= 7 || grounded) && hasGaugeSpace) {
+        gaugePositions.push(point);
+        const circumference = 2 * Math.PI * 19;
+        L.marker([a.lat, a.lon], {
+          icon: L.divIcon({ className: "radar-pax-gauge", iconSize: [48, 48], iconAnchor: [24, 24],
+            html: `<svg width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="Passenger pool ${Math.round(ratio * 100)} percent"><circle class="gauge-track" cx="24" cy="24" r="19" stroke-width="4"/><circle class="gauge-value" cx="24" cy="24" r="19" stroke-width="4" stroke-dasharray="${ratio * circumference} ${circumference}" transform="rotate(-90 24 24)"/><text x="24" y="28">${Math.round(ratio * 100)}%</text></svg>` }),
+          opacity: reachable ? 1 : 0.25,
+        }).bindTooltip(`${a.icao} · ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))} passengers`).bindPopup(popup).on("click", () => onAirport(a)).addTo(layer);
       }
       marker.getElement()?.setAttribute("aria-label", `${a.icao} airport`);
     }
@@ -136,6 +161,9 @@ export default function RadarMap({
     layers.activity,
     onAirport,
     zoom,
+    view,
+    densities.avgas,
+    densities.jeta,
   ]);
   useEffect(() => {
     const layer = flightLayer.current;

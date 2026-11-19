@@ -36,6 +36,7 @@ export const fleetQuery = (companyId: string) =>
         .from("fleet_aircraft")
         .select("*, type:aircraft_types(*)")
         .eq("company_id", companyId)
+        .is("returned_at", null)
         .order("leased_at");
       if (error) throw error;
       return data;

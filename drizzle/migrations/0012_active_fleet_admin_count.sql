@@ -1,0 +1,1 @@
+DO $$ DECLARE d text; BEGIN SELECT pg_get_functiondef('public.admin_players()'::regprocedure) INTO d; d:=replace(d,'WHERE f.company_id=c.id)','WHERE f.company_id=c.id AND f.returned_at IS NULL)'); EXECUTE d; END $$;

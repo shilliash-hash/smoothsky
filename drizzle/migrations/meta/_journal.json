@@ -71,6 +71,27 @@
       "when": 1795054279413,
       "tag": "0009_optimize_radar_metrics",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795055451252,
+      "tag": "0010_fixed_term_leasing_and_aircraft_finance",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795055815874,
+      "tag": "0011_harden_lease_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795056026420,
+      "tag": "0012_active_fleet_admin_count",
+      "breakpoints": true
     }
   ]
 }

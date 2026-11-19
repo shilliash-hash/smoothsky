@@ -72,6 +72,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-amber: var(--amber);
+  --color-radar-pax: var(--radar-pax);
+  --color-radar-range: var(--radar-range);
+  --color-radar-activity: var(--radar-activity);
   --color-amber-foreground: var(--amber-foreground);
   --color-success: var(--success);
   --color-panel: var(--panel);
@@ -88,6 +91,9 @@
 .dark {
   --radius: 0.375rem;
   --radar-tile-filter: grayscale(1) invert(1) brightness(0.75);
+  --radar-pax: oklch(0.85 0.15 95);
+  --radar-range: oklch(0.77 0.13 230);
+  --radar-activity: oklch(0.72 0.19 20);
   --provider: oklch(1 0 0);
   --provider-foreground: oklch(0.24 0 0);
   --provider-border: oklch(0.57 0.005 150);
@@ -199,9 +205,14 @@
   line-height: 1.8;
 }
 .radar-hotspot {
-  stroke: var(--amber);
+  stroke: var(--radar-activity);
   animation: radar-pulse 2.4s ease-in-out infinite;
 }
+.radar-pax-gauge { background: none; border: none; }
+.radar-pax-gauge svg { display: block; overflow: visible; }
+.radar-pax-gauge .gauge-track { stroke: var(--muted); fill: var(--panel); }
+.radar-pax-gauge .gauge-value { stroke: var(--radar-pax); fill: none; }
+.radar-pax-gauge text { fill: var(--foreground); font-family: var(--font-mono); font-size: 10px; text-anchor: middle; }
 @keyframes radar-pulse {
   0%,
   100% {

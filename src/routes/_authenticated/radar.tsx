@@ -8,10 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { operationsQuery, type Airport, type Flight } from "@/lib/operations";
 import { projectedPassengers, flightProgress, type Economy } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
+import { fleetOverviewQuery } from "@/lib/fleet";
+import { fuelLabel } from "@/lib/fleet-rules";
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
     const d = await context.queryClient.ensureQueryData(operationsQuery);
+    await context.queryClient.ensureQueryData(fleetOverviewQuery);
     if (!d.company) throw redirect({ to: "/onboarding" });
   },
   head: () => ({
@@ -34,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/radar")({
 });
 function Radar() {
   const { data: d } = useSuspenseQuery(operationsQuery);
+  const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const [selected, setSelected] = useState("__default");
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);
@@ -130,6 +134,7 @@ function Radar() {
               selected={chosen}
               rangeOnly={rangeOnly}
               layers={layers}
+              densities={{ avgas: Number(overview.rules.avgas_kg_per_litre), jeta: Number(overview.rules.jeta_kg_per_litre) }}
               onAirport={onAirport}
               onFlight={onFlight}
             />
@@ -145,8 +150,9 @@ function Radar() {
             <i className="h-2 w-2 rounded-full bg-amber" />
             Ground fleet / airborne
           </span>
-          <span className="text-primary">◔ Empty → Full ◕ · Passenger ring</span>
-          <span className="text-amber">◎ Pulse · Active airport (7 days)</span>
+          <span className="text-radar-pax">◔ Passenger pool · % full</span>
+          <span className="text-radar-range">◯ Aircraft range</span>
+          <span className="text-radar-activity">◎ Pulse · Active airport (7 days)</span>
         </div>
       </div>
       <p className="mt-1 text-right text-[10px] text-muted-foreground">
@@ -203,7 +209,8 @@ function Radar() {
                   <dt className="text-muted-foreground">100LL · simulated supply</dt>
                   <dd>
                     {Math.floor(Number(metric?.avgas_stock ?? 0)).toLocaleString()} /{" "}
-                    {Math.round(Number(metric?.avgas_capacity ?? 0)).toLocaleString()} gal
+                    {Math.round(Number(metric?.avgas_capacity ?? 0)).toLocaleString()} US gal
+                    <div className="text-xs text-muted-foreground">{fuelLabel(Number(metric?.avgas_stock ?? 0), Number(overview.rules.avgas_kg_per_litre))}</div>
                   </dd>
                 </div>
                 <div>
@@ -216,7 +223,8 @@ function Radar() {
                   <dt className="text-muted-foreground">Jet-A1 · simulated supply</dt>
                   <dd>
                     {Math.floor(Number(metric?.jeta_stock ?? 0)).toLocaleString()} /{" "}
-                    {Math.round(Number(metric?.jeta_capacity ?? 0)).toLocaleString()} gal
+                    {Math.round(Number(metric?.jeta_capacity ?? 0)).toLocaleString()} US gal
+                    <div className="text-xs text-muted-foreground">{fuelLabel(Number(metric?.jeta_stock ?? 0), Number(overview.rules.jeta_kg_per_litre))}</div>
                   </dd>
                 </div>
               </dl>
