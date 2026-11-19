@@ -6,13 +6,15 @@ import { adminAccessQuery } from "@/lib/admin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
+import { GameInfo } from "./GameInfo";
+import { SupporterBadge } from "./SupporterBadge";
 
 export function AppShell({
   children,
   company,
 }: {
   children: ReactNode;
-  company?: { icao_code: string; name: string } | null;
+  company?: { icao_code: string; name: string; is_supporter?: boolean } | null;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -60,10 +62,13 @@ export function AppShell({
                   Radar
                 </Link>
                 <Link to="/bases" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Bases</Link>
+                <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
               </nav>
             )}
           </div>
           <div className="flex items-center gap-3">
+            <GameInfo />
+            {company?.is_supporter && <SupporterBadge />}
             {isAdmin && (
               <Button asChild variant="ghost" size="sm">
                 <Link to="/admin">

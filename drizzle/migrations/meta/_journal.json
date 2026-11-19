@@ -148,6 +148,20 @@
       "when": 1795060279018,
       "tag": "0020_fob_quotes_investment_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795061457620,
+      "tag": "0021_company_leaderboard_and_supporters",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795061695219,
+      "tag": "0022_scope_weekly_rank_snapshot_update",
+      "breakpoints": true
     }
   ]
 }

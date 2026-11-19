@@ -17,6 +17,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedBasesRouteImport } from './routes/_authenticated/bases'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedRadarRouteImport } from './routes/_authenticated/radar'
@@ -60,6 +61,12 @@ const AuthenticatedDispatchRoute = AuthenticatedDispatchRouteImport.update({
   path: '/dispatch',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMarketRoute = AuthenticatedMarketRouteImport.update({
   id: '/market',
   path: '/market',
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/bases': typeof AuthenticatedBasesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -96,6 +104,7 @@ export interface FileRoutesByTo {
   '/bases': typeof AuthenticatedBasesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/market': typeof AuthenticatedMarketRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/radar': typeof AuthenticatedRadarRoute
@@ -110,6 +119,7 @@ export interface FileRoutesById {
   '/_authenticated/bases': typeof AuthenticatedBasesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/market': typeof AuthenticatedMarketRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/radar': typeof AuthenticatedRadarRoute
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/bases'
     | '/dashboard'
     | '/dispatch'
+    | '/leaderboard'
     | '/market'
     | '/onboarding'
     | '/radar'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/bases'
     | '/dashboard'
     | '/dispatch'
+    | '/leaderboard'
     | '/market'
     | '/onboarding'
     | '/radar'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bases'
     | '/_authenticated/dashboard'
     | '/_authenticated/dispatch'
+    | '/_authenticated/leaderboard'
     | '/_authenticated/market'
     | '/_authenticated/onboarding'
     | '/_authenticated/radar'
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDispatchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/market': {
       id: '/_authenticated/market'
       path: '/market'
@@ -248,6 +268,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBasesRoute: typeof AuthenticatedBasesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedMarketRoute: typeof AuthenticatedMarketRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedRadarRoute: typeof AuthenticatedRadarRoute
@@ -258,6 +279,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBasesRoute: AuthenticatedBasesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedMarketRoute: AuthenticatedMarketRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedRadarRoute: AuthenticatedRadarRoute,

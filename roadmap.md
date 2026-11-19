@@ -53,3 +53,10 @@
 - [x] Bases page, dashboard status and radar base markers.
 - [x] Editable FOB/health settings and confirmed admin airport stock reset; non-admin denial and active-flight guard verified without resetting the shared world.
 - [x] Verify signed-in investment, discounted flight settlement, billing idempotency, insolvency recovery, permissions and mobile views.
+
+## Rules & company leaderboard
+- [x] Add English rules modal and discreet donation control.
+- [ ] Activate donation link — waiting for the user's payment/support destination.
+- [x] Add safe aggregate company leaderboard, net-worth valuation and previous-week rank movement (first-read UTC weekly snapshots).
+- [x] Add administrator-only supporter switch and public supporter badges.
+- [x] Verify ranking calculations against owner records, private-field exclusion, non-admin denial, supporter toggle/restore and desktop/mobile flows.

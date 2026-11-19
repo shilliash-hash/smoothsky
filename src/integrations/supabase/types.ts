@@ -237,8 +237,10 @@ export type Database = {
           home_base_icao: string
           icao_code: string
           id: string
+          is_supporter: boolean
           name: string
           next_flight_sequence: number
+          prev_week_rank: number | null
           user_id: string
         }
         Insert: {
@@ -246,8 +248,10 @@ export type Database = {
           home_base_icao: string
           icao_code: string
           id?: string
+          is_supporter?: boolean
           name: string
           next_flight_sequence?: number
+          prev_week_rank?: number | null
           user_id: string
         }
         Update: {
@@ -255,8 +259,10 @@ export type Database = {
           home_base_icao?: string
           icao_code?: string
           id?: string
+          is_supporter?: boolean
           name?: string
           next_flight_sequence?: number
+          prev_week_rank?: number | null
           user_id?: string
         }
         Relationships: [
@@ -556,6 +562,32 @@ export type Database = {
           },
         ]
       }
+      leaderboard_weekly_snapshots: {
+        Row: {
+          company_id: string
+          rank: number
+          week_start: string
+        }
+        Insert: {
+          company_id: string
+          rank: number
+          week_start: string
+        }
+        Update: {
+          company_id?: string
+          rank?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_weekly_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lease_contracts: {
         Row: {
           aircraft_id: string
@@ -681,6 +713,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_company_supporters: {
+        Args: never
+        Returns: {
+          company_id: string
+          is_supporter: boolean
+          user_id: string
+        }[]
+      }
       admin_players: {
         Args: never
         Returns: {
@@ -749,8 +789,39 @@ export type Database = {
         Returns: Json
       }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
+      get_public_leaderboard: {
+        Args: never
+        Returns: {
+          company_name: string
+          flight_count: number
+          flight_hours: number
+          home_base_icao: string
+          home_base_name: string
+          icao_code: string
+          is_supporter: boolean
+          net_worth: number
+          passengers: number
+          prev_week_rank: number
+          rank: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
+      leaderboard_totals: {
+        Args: never
+        Returns: {
+          company_id: string
+          company_name: string
+          flight_count: number
+          flight_hours: number
+          home_base_icao: string
+          home_base_name: string
+          icao_code: string
+          is_supporter: boolean
+          net_worth: number
+          passengers: number
+        }[]
+      }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
       manage_fob: {
         Args: {
@@ -789,6 +860,10 @@ export type Database = {
       }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      set_company_supporter: {
+        Args: { p_company: string; p_supporter: boolean }
+        Returns: undefined
+      }
       settle_due_test_flights: { Args: never; Returns: undefined }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }

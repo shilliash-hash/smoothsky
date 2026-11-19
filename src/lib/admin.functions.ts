@@ -24,18 +24,22 @@ export const getAdminData = createServerFn({ method: "GET" })
     const db = context.supabase;
     const access = await db.rpc("is_admin");
     if (access.error || !access.data) throw new Error("Administrator access required");
-    const [economy, aircraft, users, fuel] = await Promise.all([
+    const [economy, aircraft, users, fuel, supporters] = await Promise.all([
       db.from("economy_config").select("*").order("key"),
       db.from("aircraft_types").select("*").order("tier").order("id"),
       db.rpc("admin_players"),
       db.from("airport_fuel_rules").select("*").order("size").order("fuel_type"),
+      db.rpc("admin_company_supporters"),
     ]);
-    for (const result of [economy, aircraft, users, fuel])
+    for (const result of [economy, aircraft, users, fuel, supporters])
       if (result.error) throw new Error(result.error.message);
     return {
       economy: economy.data ?? [],
       aircraft: aircraft.data ?? [],
-      users: users.data ?? [],
+      users: (users.data ?? []).map(user => {
+        const company = supporters.data?.find(row => row.user_id === user.user_id);
+        return { ...user, company_id: company?.company_id, is_supporter: company?.is_supporter ?? false };
+      }),
       fuel: fuel.data ?? [],
     };
   });
@@ -46,6 +50,7 @@ export const saveAdminData = createServerFn({ method: "POST" })
       z.object({ kind: z.literal("economy"), key: z.string(), value: z.unknown() }),
       z.object({ kind: z.literal("aircraft"), create: z.boolean(), aircraft: aircraftSchema }),
       z.object({ kind: z.literal("fuel"), rule: fuelRuleSchema }),
+      z.object({ kind: z.literal("supporter"), company: z.string().uuid(), supporter: z.boolean() }),
     ]),
   )
   .handler(async ({ data, context }) => {
@@ -84,6 +89,9 @@ export const saveAdminData = createServerFn({ method: "POST" })
             .eq("id", data.aircraft.id)
             .select("id")
             .single();
+      if (result.error) throw new Error(result.error.message);
+    } else if (data.kind === "supporter") {
+      const result = await db.rpc("set_company_supporter", { p_company: data.company, p_supporter: data.supporter });
       if (result.error) throw new Error(result.error.message);
     } else {
       const result = await db

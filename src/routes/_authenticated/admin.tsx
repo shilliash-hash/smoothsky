@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Plus, Save, Shield, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
+import { SupporterBadge } from "@/components/game/SupporterBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -347,6 +348,7 @@ function Admin() {
                   <th>Balance</th>
                   <th>Fleet</th>
                   <th>Joined</th>
+                  <th className="px-3">Supporter</th>
                 </tr>
               </thead>
               <tbody>
@@ -369,6 +371,7 @@ function Admin() {
                       <td className="whitespace-nowrap">
                         {new Date(u.joined_at).toLocaleDateString("en-US")}
                       </td>
+                      <td className="px-3"><div className="flex items-center gap-2"><Switch aria-label={`Supporter ${u.icao_code ?? u.username}`} checked={u.is_supporter} disabled={busy || !u.company_id} onCheckedChange={supporter => { if (u.company_id) void persist({ data: { kind: "supporter", company: u.company_id, supporter } }); }} />{u.is_supporter && <SupporterBadge />}</div></td>
                     </tr>
                   ))}
               </tbody>
