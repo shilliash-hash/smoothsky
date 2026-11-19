@@ -26,11 +26,11 @@ function ResetPassword() {
   const [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) return toast.error("Hasło musi mieć co najmniej 8 znaków");
+    if (password.length < 8) { toast.error("Hasło musi mieć co najmniej 8 znaków"); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Hasło zmienione");
     navigate({ to: "/dashboard" });
   }

@@ -50,16 +50,16 @@ function AuthPage() {
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) return toast.error("Hasło musi mieć co najmniej 8 znaków");
+    if (password.length < 8) { toast.error("Hasło musi mieć co najmniej 8 znaków"); return; }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/auth" } });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (!data.session) setSent(true);
   }
 
   async function forgot() {
-    if (!email) return toast.error("Wpisz najpierw adres email");
+    if (!email) { toast.error("Wpisz najpierw adres email"); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/reset-password" });
     if (error) toast.error(error.message);
     else toast.success("Wysłaliśmy link do zmiany hasła");

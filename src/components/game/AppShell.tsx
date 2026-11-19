@@ -1,0 +1,40 @@
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Logo } from "./Logo";
+
+export function AppShell({ children, company }: { children: ReactNode; company?: { icao_code: string; name: string } | null }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
+  return (
+    <div className="min-h-screen">
+      <header className="border-b border-border bg-panel/70 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+          <div className="flex items-center gap-6">
+            <Logo />
+            {company && (
+              <nav className="flex gap-4 text-sm">
+                <Link to="/dashboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Dashboard</Link>
+                <Link to="/market" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Rynek leasingu</Link>
+              </nav>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {company && <span className="readout hidden rounded-sm border border-amber/40 px-2 py-0.5 text-xs text-amber sm:inline">{company.icao_code}</span>}
+            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /> Wyloguj</Button>
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+    </div>
+  );
+}
