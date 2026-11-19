@@ -71,6 +71,59 @@ export type Database = {
         }
         Relationships: []
       }
+      airport_fuel_pools: {
+        Row: {
+          airport_icao: string
+          fuel_type: string
+          stock_gal: number
+          updated_at: string
+        }
+        Insert: {
+          airport_icao: string
+          fuel_type: string
+          stock_gal?: number
+          updated_at?: string
+        }
+        Update: {
+          airport_icao?: string
+          fuel_type?: string
+          stock_gal?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airport_fuel_pools_airport_icao_fkey"
+            columns: ["airport_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+        ]
+      }
+      airport_fuel_rules: {
+        Row: {
+          capacity_gal: number
+          development_multiplier: number
+          fuel_type: string
+          refill_per_hour: number
+          size: number
+        }
+        Insert: {
+          capacity_gal: number
+          development_multiplier?: number
+          fuel_type: string
+          refill_per_hour?: number
+          size: number
+        }
+        Update: {
+          capacity_gal?: number
+          development_multiplier?: number
+          fuel_type?: string
+          refill_per_hour?: number
+          size?: number
+        }
+        Relationships: []
+      }
       airport_import_sources: {
         Row: {
           request_id: number | null
@@ -431,11 +484,47 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_players: {
+        Args: never
+        Returns: {
+          balance: number
+          company_name: string
+          email: string
+          fleet_count: number
+          icao_code: string
+          joined_at: string
+          user_id: string
+          username: string
+        }[]
+      }
+      airport_fuel_capacity: {
+        Args: { p_airport: string; p_fuel: string }
+        Returns: number
+      }
+      airport_fuel_stock: {
+        Args: { p_airport: string; p_fuel: string }
+        Returns: number
+      }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       company_balance: { Args: { p_company: string }; Returns: number }
       create_company: {
@@ -452,10 +541,24 @@ export type Database = {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
       }
+      is_admin: { Args: never; Returns: boolean }
       is_company_code_available: { Args: { p_code: string }; Returns: boolean }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
+      radar_airport_metrics: {
+        Args: never
+        Returns: {
+          avgas_capacity: number
+          avgas_stock: number
+          icao: string
+          jeta_capacity: number
+          jeta_stock: number
+          operations_7d: number
+          pax_capacity: number
+          pax_stock: number
+        }[]
+      }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }
         Returns: Json
@@ -463,7 +566,7 @@ export type Database = {
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -590,6 +693,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

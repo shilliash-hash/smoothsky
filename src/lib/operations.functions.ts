@@ -18,19 +18,36 @@ export const getOperations = createServerFn({ method: "GET" })
       airports.push(...data);
       if (data.length < 1000) break;
     }
-    const [r, p, f, l, t] = await Promise.all([
+    const metrics = [];
+    const pools = [];
+    for (let offset = 0; ; offset += 1000) {
+      const [m, p] = await Promise.all([
+        db.rpc("radar_airport_metrics").range(offset, offset + 999),
+        db
+          .from("airport_passenger_pools")
+          .select("*")
+          .order("airport_icao")
+          .range(offset, offset + 999),
+      ]);
+      if (m.error) throw m.error;
+      if (p.error) throw p.error;
+      metrics.push(...(m.data ?? []));
+      pools.push(...(p.data ?? []));
+      if ((m.data?.length ?? 0) < 1000 && (p.data?.length ?? 0) < 1000) break;
+    }
+    const [r, f, l, t] = await Promise.all([
       db.from("economy_config").select("*"),
-      db.from("airport_passenger_pools").select("*").limit(10000),
       db.from("flights").select("*").order("created_at", { ascending: false }).limit(100),
       db.from("fleet_aircraft").select("*, type:aircraft_types(*)"),
       db.from("company_ledger").select("*").order("id", { ascending: false }).limit(1),
     ]);
-    for (const result of [r, p, f, l, t]) if (result.error) throw result.error;
+    for (const result of [r, f, l, t]) if (result.error) throw result.error;
     return {
       company,
       airports,
       rules: Object.fromEntries((r.data ?? []).map((x) => [x.key, x.value])),
-      pools: p.data ?? [],
+      pools,
+      metrics,
       flights: f.data ?? [],
       fleet: l.data ?? [],
       balance: Number(t.data?.[0]?.balance_after ?? 0),

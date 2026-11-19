@@ -37,3 +37,6 @@ use the editor.
 - Web simulation and future ACARS share flight records and settlement; ACARS writes require a separately verified ingestion adapter — manual data cannot impersonate simulator evidence.
 - Radar dynamically imports Leaflet and uses Turf nautical-mile/geodesic calculations — avoids SSR browser imports and hand-rolled map geometry.
 - Airport imports retain source provenance, provisional size classification and nullable fuel/runway data — missing information must not be fabricated.
+- Administrator authorization lives in protected user_roles and is checked by authenticated server functions and RLS; profile metadata never grants privileges.
+- Simulated airport fuel is separate from nullable real-world availability; dispatch reserves stock transactionally and cancellation returns it exactly once.
+- Radar metrics expose only aggregate airport activity and stock, never other companies' flight details; pagination covers the entire network.

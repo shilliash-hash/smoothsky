@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { Operations, Airport, Flight } from "@/lib/operations";
 import {
@@ -12,12 +12,14 @@ export default function RadarMap({
   data,
   selected,
   rangeOnly,
+  layers,
   onAirport,
   onFlight,
 }: {
   data: Operations;
   selected: string;
   rangeOnly: boolean;
+  layers: { pax: boolean; activity: boolean; flights: boolean };
   onAirport: (a: Airport) => void;
   onFlight: (f: Flight) => void;
 }) {
@@ -26,10 +28,12 @@ export default function RadarMap({
   const airportLayer = useRef<L.LayerGroup | null>(null);
   const flightLayer = useRef<L.LayerGroup | null>(null);
   const center = useRef("");
+  const [zoom, setZoom] = useState(5);
   useEffect(() => {
     if (!div.current) return;
     const m = L.map(div.current, { preferCanvas: false }).setView([50, 15], 5);
     map.current = m;
+    m.on("zoomend", () => setZoom(m.getZoom()));
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 18,
@@ -52,6 +56,7 @@ export default function RadarMap({
     const root = getComputedStyle(document.documentElement);
     const primary = root.getPropertyValue("--primary").trim(),
       amber = root.getPropertyValue("--amber").trim();
+    const metrics = new Map(data.metrics.map((x) => [x.icao, x]));
     const f = data.fleet.find((f) => f.id === selected);
     const origin = data.airports.find((a) => a.icao === f?.location_icao);
     const radius = f?.type?.range_nm ?? 0;
@@ -69,28 +74,75 @@ export default function RadarMap({
       const grounded = data.fleet.some(
         (f) => f.location_icao === a.icao && f.status !== "EN_ROUTE",
       );
-      L.circleMarker([a.lat, a.lon], {
-        radius: grounded ? 7 : Math.max(2, a.size / 1.5),
+      const metric = metrics.get(a.icao);
+      const ratio = Math.min(
+        1,
+        Number(metric?.pax_stock ?? 0) / Math.max(1, Number(metric?.pax_capacity ?? 1)),
+      );
+      const ops = Number(metric?.operations_7d ?? 0);
+      const popup = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = `${a.icao} · ${a.name}`;
+      popup.append(title);
+      for (const text of [
+        `Size ${a.size} · Dev ${a.development_level} · Runway ${a.longest_runway_ft ?? "Unknown"} ft`,
+        `Passengers: ${Math.floor(Number(metric?.pax_stock ?? 0))} / ${Math.round(Number(metric?.pax_capacity ?? 0))}`,
+        `100LL: ${Math.floor(Number(metric?.avgas_stock ?? 0)).toLocaleString()} / ${Math.round(Number(metric?.avgas_capacity ?? 0)).toLocaleString()} gal`,
+        `Jet-A1: ${Math.floor(Number(metric?.jeta_stock ?? 0)).toLocaleString()} / ${Math.round(Number(metric?.jeta_capacity ?? 0)).toLocaleString()} gal`,
+        `${ops} operations · last 7 days`,
+      ]) {
+        const line = document.createElement("div");
+        line.textContent = text;
+        popup.append(line);
+      }
+      const marker = L.circleMarker([a.lat, a.lon], {
+        radius: grounded
+          ? 7
+          : zoom < 7
+            ? Math.max(1.5, a.size / 2)
+            : layers.pax
+              ? 3 + ratio * 5
+              : Math.max(2, a.size / 1.5),
         color: grounded ? amber : primary,
         weight: 1,
-        fillOpacity: reachable ? 0.7 : 0.12,
+        fillOpacity: reachable ? 0.45 : 0.08,
         opacity: reachable ? 0.9 : 0.2,
+        className: layers.activity && ops > 0 ? "radar-hotspot" : "",
       })
         .bindTooltip(`${a.icao} · ${a.name}`, { direction: "top" })
-        .on("click", () => {
-          onAirport(a);
-          const content = document.createElement("div");
-          content.textContent = `${a.icao} · ${a.name}`;
-          L.popup().setLatLng([a.lat, a.lon]).setContent(content).openOn(m);
-        })
+        .bindPopup(popup)
+        .on("click", () => onAirport(a))
         .addTo(layer);
+      if (layers.pax && zoom >= 7) {
+        L.circleMarker([a.lat, a.lon], {
+          radius: 5 + ratio * 7,
+          color: primary,
+          weight: 2,
+          fill: false,
+          opacity: reachable ? 0.8 : 0.15,
+          dashArray: `${Math.max(0.1, ratio * 60)} ${Math.max(0.1, (1 - ratio) * 60)}`,
+          interactive: false,
+        }).addTo(layer);
+      }
+      marker.getElement()?.setAttribute("aria-label", `${a.icao} airport`);
     }
-  }, [data.airports, data.fleet, selected, rangeOnly, onAirport]);
+  }, [
+    data.airports,
+    data.fleet,
+    data.metrics,
+    selected,
+    rangeOnly,
+    layers.pax,
+    layers.activity,
+    onAirport,
+    zoom,
+  ]);
   useEffect(() => {
     const layer = flightLayer.current;
     if (!layer) return;
     const draw = () => {
       layer.clearLayers();
+      if (!layers.flights) return;
       const root = getComputedStyle(document.documentElement);
       for (const f of data.flights.filter((f) => f.status === "EN_ROUTE")) {
         const a = data.airports.find((a) => a.icao === f.origin_icao),
@@ -121,7 +173,7 @@ export default function RadarMap({
     draw();
     const timer = setInterval(draw, 1000);
     return () => clearInterval(timer);
-  }, [data.flights, data.airports, onFlight]);
+  }, [data.flights, data.airports, onFlight, layers.flights]);
   return (
     <div
       ref={div}

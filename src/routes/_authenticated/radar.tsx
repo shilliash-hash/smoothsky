@@ -1,6 +1,6 @@
 import { createFileRoute, ClientOnly, Link, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { Plane, X } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,16 @@ function Radar() {
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
+  const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
+  const onAirport = useCallback((a: Airport) => {
+    setAirport(a);
+    setFlight(null);
+  }, []);
+  const onFlight = useCallback((f: Flight) => {
+    setFlight(f);
+    setAirport(null);
+  }, []);
+  const metric = d.metrics.find((m) => m.icao === airport?.icao);
   const [now, setNow] = useState(d.serverTime);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -96,7 +106,15 @@ function Radar() {
           <Switch checked={rangeOnly} onCheckedChange={setRangeOnly} disabled={!chosen} />
           Within aircraft range
         </label>
-        <span className="ml-auto text-xs text-muted-foreground">Mint: airports · Amber: fleet</span>
+        {(["pax", "activity", "flights"] as const).map((key) => (
+          <label key={key} className="flex items-center gap-2 text-sm">
+            <Switch
+              checked={layers[key]}
+              onCheckedChange={(value) => setLayers((current) => ({ ...current, [key]: value }))}
+            />
+            {key === "pax" ? "Passenger rings" : key === "activity" ? "Activity" : "Airborne"}
+          </label>
+        ))}
       </div>
       <div className="relative border-y border-border">
         <ClientOnly
@@ -111,18 +129,29 @@ function Radar() {
               data={d}
               selected={chosen}
               rangeOnly={rangeOnly}
-              onAirport={(a) => {
-                setAirport(a);
-                setFlight(null);
-              }}
-              onFlight={(f) => {
-                setFlight(f);
-                setAirport(null);
-              }}
+              layers={layers}
+              onAirport={onAirport}
+              onFlight={onFlight}
             />
           </Suspense>
         </ClientOnly>
+        <div className="radar-legend flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border bg-panel px-4 py-3 text-xs">
+          <span className="readout uppercase text-muted-foreground">Legend</span>
+          <span className="flex items-center gap-2">
+            <i className="h-2 w-2 rounded-full bg-primary" />
+            Airport
+          </span>
+          <span className="flex items-center gap-2">
+            <i className="h-2 w-2 rounded-full bg-amber" />
+            Ground fleet / airborne
+          </span>
+          <span className="text-primary">◔ Empty → Full ◕ · Passenger ring</span>
+          <span className="text-amber">◎ Pulse · Active airport (7 days)</span>
+        </div>
       </div>
+      <p className="mt-1 text-right text-[10px] text-muted-foreground">
+        Airports & runways: OurAirports · provisional classification · fuel: SmoothSky simulation
+      </p>
       {(airport || flight) && (
         <section
           role="dialog"
@@ -171,19 +200,10 @@ function Radar() {
                   <dd>{airport.elevation_ft ?? "Unknown"} ft</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">100LL / Jet-A</dt>
+                  <dt className="text-muted-foreground">100LL · simulated supply</dt>
                   <dd>
-                    {airport.fuel_100ll_available === null
-                      ? "Unknown"
-                      : airport.fuel_100ll_available
-                        ? "Available"
-                        : "Unavailable"}{" "}
-                    /{" "}
-                    {airport.fuel_jeta_available === null
-                      ? "Unknown"
-                      : airport.fuel_jeta_available
-                        ? "Available"
-                        : "Unavailable"}
+                    {Math.floor(Number(metric?.avgas_stock ?? 0)).toLocaleString()} /{" "}
+                    {Math.round(Number(metric?.avgas_capacity ?? 0)).toLocaleString()} gal
                   </dd>
                 </div>
                 <div>
@@ -193,8 +213,11 @@ function Radar() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Source</dt>
-                  <dd>{airport.data_source}</dd>
+                  <dt className="text-muted-foreground">Jet-A1 · simulated supply</dt>
+                  <dd>
+                    {Math.floor(Number(metric?.jeta_stock ?? 0)).toLocaleString()} /{" "}
+                    {Math.round(Number(metric?.jeta_capacity ?? 0)).toLocaleString()} gal
+                  </dd>
                 </div>
               </dl>
               {d.fleet

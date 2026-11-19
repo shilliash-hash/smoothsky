@@ -84,7 +84,8 @@
 }
 
 /* Flight Deck: bottle-green instruments, mint accents, amber readouts. */
-:root, .dark {
+:root,
+.dark {
   --radius: 0.375rem;
   --radar-tile-filter: grayscale(1) invert(1) brightness(0.75);
   --provider: oklch(1 0 0);
@@ -141,7 +142,10 @@
 }
 
 @layer base {
-  body { font-family: var(--font-sans); letter-spacing: 0; }
+  body {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
 }
 
 @utility instrument {
@@ -157,9 +161,60 @@
   letter-spacing: 0;
 }
 
-.leaflet-container { background: var(--panel); font-family: var(--font-sans); }
-.leaflet-popup-content-wrapper, .leaflet-popup-tip { background:var(--popover); color:var(--foreground); }
-.leaflet-control-zoom a { background:var(--secondary); color:var(--foreground); border-color:var(--border); }
-.radar-airport { color:var(--primary); background:var(--panel); border:1px solid var(--primary); border-radius:50%; }
-.radar-plane { color:var(--amber); font-size:24px; line-height:24px; }
-.leaflet-tile-pane { filter: var(--radar-tile-filter); }
+.leaflet-container {
+  background: var(--panel);
+  font-family: var(--font-sans);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--popover);
+  color: var(--foreground);
+}
+.leaflet-control-zoom a {
+  background: var(--secondary);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.radar-airport {
+  color: var(--primary);
+  background: var(--panel);
+  border: 1px solid var(--primary);
+  border-radius: 50%;
+}
+.radar-plane {
+  color: var(--amber);
+  font-size: 24px;
+  line-height: 24px;
+}
+.leaflet-tile-pane {
+  filter: var(--radar-tile-filter);
+}
+.leaflet-tooltip {
+  background: var(--panel);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.leaflet-popup-content {
+  min-width: 240px;
+  line-height: 1.8;
+}
+.radar-hotspot {
+  stroke: var(--amber);
+  animation: radar-pulse 2.4s ease-in-out infinite;
+}
+@keyframes radar-pulse {
+  0%,
+  100% {
+    stroke-width: 1;
+    stroke-opacity: 0.9;
+  }
+  50% {
+    stroke-width: 7;
+    stroke-opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-hotspot {
+    animation: none;
+  }
+}

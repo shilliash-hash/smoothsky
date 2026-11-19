@@ -50,6 +50,20 @@
       "when": 1795051730409,
       "tag": "0006_flight_ledger_entry_types",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795053418746,
+      "tag": "0007_admin_and_airport_fuel",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795053696273,
+      "tag": "0008_quote_simulated_airport_fuel",
+      "breakpoints": true
     }
   ]
 }
