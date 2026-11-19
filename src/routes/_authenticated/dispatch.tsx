@@ -324,7 +324,8 @@ function Dispatch() {
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || (quote.passengers === 0 && (quote.cargo_kg ?? 0) === 0) || !simulationEnabled || !numberValid
+                      busy || (quote.passengers === 0 && (quote.cargo_kg ?? 0) === 0) || !numberValid
+
                     }
                     onClick={() => run("dispatch")}
                   >
