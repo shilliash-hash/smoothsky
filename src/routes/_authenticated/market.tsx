@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -83,6 +83,7 @@ function Market() {
         </div>
       </div>
       <Tabs value={mode} onValueChange={setMode} className="mt-6"><TabsList><TabsTrigger value="lease">Lease</TabsTrigger><TabsTrigger value="buy">Buy aircraft</TabsTrigger></TabsList></Tabs>
+      <Link to="/used-market" className="mt-3 inline-block text-sm text-primary underline-offset-4 hover:underline">Used market · pre-owned aircraft from brokers & players →</Link>
       {!invest && <p role="alert" className="mt-4 text-destructive">Outstanding obligations · Aircraft acquisitions suspended</p>}
       {mode === "lease" && <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
         <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />

@@ -498,6 +498,7 @@ export type Database = {
       fleet_aircraft: {
         Row: {
           aircraft_type_id: string
+          airframe_hours: number
           company_id: string
           id: string
           lease_deposit: number
@@ -515,6 +516,7 @@ export type Database = {
         }
         Insert: {
           aircraft_type_id: string
+          airframe_hours?: number
           company_id: string
           id?: string
           lease_deposit: number
@@ -532,6 +534,7 @@ export type Database = {
         }
         Update: {
           aircraft_type_id?: string
+          airframe_hours?: number
           company_id?: string
           id?: string
           lease_deposit?: number
@@ -762,6 +765,8 @@ export type Database = {
           cargo_airport_fee_discount: number
           cargo_pax_rate_ratio: number
           default_lease_weeks: number
+          depreciation_floor_pct: number
+          depreciation_pct_per_100h: number
           jeta_kg_per_litre: number
           renewal_discount: number
           singleton: boolean
@@ -772,6 +777,8 @@ export type Database = {
           cargo_airport_fee_discount?: number
           cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
+          depreciation_floor_pct?: number
+          depreciation_pct_per_100h?: number
           jeta_kg_per_litre?: number
           renewal_discount?: number
           singleton?: boolean
@@ -782,6 +789,8 @@ export type Database = {
           cargo_airport_fee_discount?: number
           cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
+          depreciation_floor_pct?: number
+          depreciation_pct_per_100h?: number
           jeta_kg_per_litre?: number
           renewal_discount?: number
           singleton?: boolean
@@ -998,6 +1007,96 @@ export type Database = {
           },
         ]
       }
+      used_aircraft_listings: {
+        Row: {
+          aircraft_type_id: string
+          airframe_hours: number
+          asking_price: number
+          buyer_company_id: string | null
+          catalog_price: number
+          closed_at: string | null
+          created_at: string
+          depreciated_value: number
+          fleet_aircraft_id: string | null
+          id: string
+          is_broker: boolean
+          location_icao: string
+          registration: string
+          seller_company_id: string | null
+          status: string
+        }
+        Insert: {
+          aircraft_type_id: string
+          airframe_hours: number
+          asking_price: number
+          buyer_company_id?: string | null
+          catalog_price: number
+          closed_at?: string | null
+          created_at?: string
+          depreciated_value: number
+          fleet_aircraft_id?: string | null
+          id?: string
+          is_broker?: boolean
+          location_icao: string
+          registration: string
+          seller_company_id?: string | null
+          status?: string
+        }
+        Update: {
+          aircraft_type_id?: string
+          airframe_hours?: number
+          asking_price?: number
+          buyer_company_id?: string | null
+          catalog_price?: number
+          closed_at?: string | null
+          created_at?: string
+          depreciated_value?: number
+          fleet_aircraft_id?: string | null
+          id?: string
+          is_broker?: boolean
+          location_icao?: string
+          registration?: string
+          seller_company_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "used_aircraft_listings_aircraft_type_id_fkey"
+            columns: ["aircraft_type_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "used_aircraft_listings_buyer_company_id_fkey"
+            columns: ["buyer_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "used_aircraft_listings_fleet_aircraft_id_fkey"
+            columns: ["fleet_aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "used_aircraft_listings_location_icao_fkey"
+            columns: ["location_icao"]
+            isOneToOne: false
+            referencedRelation: "airports"
+            referencedColumns: ["icao"]
+          },
+          {
+            foreignKeyName: "used_aircraft_listings_seller_company_id_fkey"
+            columns: ["seller_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           role: Database["public"]["Enums"]["app_role"]
@@ -1072,7 +1171,9 @@ export type Database = {
       }
       buy_stake: { Args: { p_company: string; p_pct: number }; Returns: string }
       buy_type_rating: { Args: { p_group: string }; Returns: undefined }
+      buy_used_aircraft: { Args: { p_listing: string }; Returns: string }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
+      cancel_used_listing: { Args: { p_listing: string }; Returns: undefined }
       cargo_capacity: { Args: { p_airport: string }; Returns: number }
       cargo_stock: { Args: { p_airport: string }; Returns: number }
       choose_pilot_career: {
@@ -1110,6 +1211,10 @@ export type Database = {
         Returns: string
       }
       csv_fields: { Args: { line: string }; Returns: string[] }
+      depreciated_value: {
+        Args: { p_hours: number; p_price: number }
+        Returns: number
+      }
       dispatch_flight:
         | {
             Args: { p_aircraft: string; p_destination: string }
@@ -1244,6 +1349,10 @@ export type Database = {
       }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
       leave_roster: { Args: never; Returns: undefined }
+      list_used_aircraft: {
+        Args: { p_aircraft: string; p_price: number }
+        Returns: string
+      }
       manage_fob: {
         Args: {
           p_action: string
@@ -1310,6 +1419,7 @@ export type Database = {
       }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
+      replenish_broker_market: { Args: never; Returns: undefined }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
       sell_stake: { Args: { p_stake: string }; Returns: number }
@@ -1382,6 +1492,27 @@ export type Database = {
           origin_icao: string
           reference: string
           registration: string
+        }[]
+      }
+      used_market: {
+        Args: never
+        Returns: {
+          aircraft_type_id: string
+          airframe_hours: number
+          airport_name: string
+          asking_price: number
+          catalog_price: number
+          created_at: string
+          depreciated_value: number
+          id: string
+          is_broker: boolean
+          is_mine: boolean
+          location_icao: string
+          manufacturer: string
+          model: string
+          registration: string
+          seller_name: string
+          tier: number
         }[]
       }
       world_telemetry: { Args: never; Returns: Json }

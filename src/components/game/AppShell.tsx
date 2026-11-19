@@ -83,6 +83,7 @@ export function AppShell({
               <nav className="flex flex-wrap gap-4 text-sm">
                 <Link to="/profile" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Profile</Link>
                 <Link to="/crew" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Crew ops</Link>
+                <Link to="/used-market" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Used market</Link>
                 <Link to="/missions" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Missions</Link>
                 <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Leaderboard</Link>
               </nav>

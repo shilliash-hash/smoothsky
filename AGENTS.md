@@ -64,3 +64,4 @@ use the editor.
 - Personal aircraft sit in a hidden is_personal company of the pilot (filter is_personal=false in company reads); stakes ≤30% priced from net worth, 7-day lock, weekly dividends from operating profit.
 - Cargo/missions pass options to flight_quote_cargo via a transaction-local setting; mission board refreshes lazily, late cuts apply in settle_flight — one settlement path.
 - Homepage reads only anon aggregate counts — no player data.
+- Used aircraft market: airframe hours accrue via a flights COMPLETED trigger fired by settle_flight; SQL depreciated_value (operating_rules) prices net worth, broker listings and the 75–125% P2P band; buy/list/cancel run only in SECURITY DEFINER functions with ledger entries — one valuation rule for UI and settlement.
