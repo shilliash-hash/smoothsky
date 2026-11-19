@@ -371,7 +371,7 @@ function Dispatch() {
                 <div className="flex flex-wrap gap-2">
                   {f.status === "DISPATCHED" && (
                     <>
-                      <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} onClick={() => run("start", f.id)}>
+                      <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} title={!simulationEnabled ? "Web simulation disabled — fly via ACARS" : undefined} onClick={() => run("start", f.id)}>
                         <Play className="h-4 w-4" />
                         Start test flight · {String(d.rules["simulation_time_scale"])}×
                       </Button>
