@@ -16,6 +16,7 @@ import { AppShell } from "@/components/game/AppShell";
 import { basesQuery } from "@/lib/bases";
 import { canInvest } from "@/lib/bases-rules";
 import { acquisitionBlock } from '@/lib/market-rules';
+import { registrationRule } from '@/lib/registration-rules';
 
 export const Route = createFileRoute("/_authenticated/market")({
   beforeLoad: async ({ context }) => {
@@ -50,8 +51,8 @@ function Market() {
   const full = fleet.filter(f=>f.ownership === "LEASED").length >= Number(economy?.['max_active_leases'] ?? 3);
 
   if (!c) return null;
-  const rule = registrationRules.find(r=>r.country === c.home_base?.country);
-  const block = acquisitionBlock({ health: bases.health, registrationAvailable: Boolean(rule), ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
+  const rule = registrationRule(registrationRules, c.home_base?.country);
+  const block = acquisitionBlock({ health: bases.health, ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
   const purchaseType = types.find(t=>t.id===purchasing);
   async function purchase() {
     if (!purchaseType) return;

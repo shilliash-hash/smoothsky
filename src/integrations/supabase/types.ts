@@ -1516,6 +1516,17 @@ export type Database = {
           tier: number
         }[]
       }
+      world_registration_defaults: {
+        Args: never
+        Returns: {
+          alphabet: string
+          country: string
+          prefix: string
+          source: string
+          suffix_length: number
+          suffix_pattern: string
+        }[]
+      }
       world_telemetry: { Args: never; Returns: Json }
     }
     Enums: {
