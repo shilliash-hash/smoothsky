@@ -246,6 +246,20 @@
       "when": 1795161608801,
       "tag": "0034_configurable_recruitment_commissions",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795171518451,
+      "tag": "0035_single_flight_rentals",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795171660680,
+      "tag": "0036_rental_crew_and_profit_integration",
+      "breakpoints": true
     }
   ]
 }

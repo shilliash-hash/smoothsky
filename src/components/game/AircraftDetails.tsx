@@ -27,18 +27,19 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Lease action failed'); }
     finally { setBusy(false); }
   }
-  const operating = f ? Number(f.fuel) + Number(f.airport) + Number(f.handling) + Number(f.maintenance) : 0;
+  const operating = f ? Number(f.fuel) + Number(f.airport) + Number(f.handling) + Number(f.maintenance) + Number(f.rental_paid ?? 0) : 0;
   const profit = f ? aircraftProfit(Number(f.revenue), operating, Number(f.lease_accrued)) : 0;
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogTitle>{registration}</DialogTitle>
-      <DialogDescription>Aircraft financial performance & lease</DialogDescription>
+      <DialogDescription>Aircraft financial performance & agreement</DialogDescription>
       {isPending && <p>Loading aircraft accounts…</p>}
       {error && <p role="alert" className="text-destructive">{error.message}</p>}
       {f && <>
         <p className="text-sm text-muted-foreground">{f.flights} completed flights · Lifetime totals</p>
         <dl className="readout space-y-2 text-sm">
           {[["Ticket revenue", f.revenue], ["Fuel", -Number(f.fuel)], ["Airport fees", -Number(f.airport)], ["Handling", -Number(f.handling)], ["Maintenance reserve", -Number(f.maintenance)], ["Lease expense accrued", -Number(f.lease_accrued)], ["Total costs accrued", -(operating + Number(f.lease_accrued))]].map(([label, value]) => <div key={String(label)} className="flex justify-between gap-4"><dt>{label}</dt><dd className="shrink-0">{formatCr(Number(value))}</dd></div>)}
+          {f.ownership === 'RENTAL' && <div className="flex justify-between gap-4"><dt>Single-flight rental</dt><dd>{formatCr(-Number(f.rental_paid ?? 0))}</dd></div>}
           <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold"><dt>Net profit / loss</dt><dd className={profit >= 0 ? 'text-primary' : 'text-destructive'}>{formatCr(profit)}</dd></div>
         </dl>
         <dl className="readout grid grid-cols-2 gap-2 border-t border-border pt-4 text-xs">
@@ -46,10 +47,10 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
           <dt>Lease payments posted</dt><dd className="text-right">{formatCr(Number(f.lease_paid))}</dd>
           <dt>Cash result (excl. deposit)</dt><dd className="text-right">{formatCr(Number(f.revenue) - operating - Number(f.lease_paid))}</dd>
           <dt>{f.returned_at ? 'Deposit refunded' : 'Refundable deposit held'}</dt><dd className="text-right">{formatCr(Number(f.deposit))}</dd>
-          {f.ownership === "OWNED" ? <><dt>Owned aircraft · asset value</dt><dd className="text-right">{formatCr(Number(f.asset_value))}</dd></> : <><dt>Contract term</dt><dd className="text-right">{f.term_weeks} weeks</dd>
+          {f.ownership === 'RENTAL' ? <><dt>Agreement</dt><dd className="text-right text-amber">SPOT RENTAL · 1 FLIGHT</dd></> : f.ownership === "OWNED" ? <><dt>Owned aircraft · asset value</dt><dd className="text-right">{formatCr(Number(f.asset_value))}</dd></> : <><dt>Contract term</dt><dd className="text-right">{f.term_weeks} weeks</dd>
           <dt>Contract ends</dt><dd className="text-right">{new Date(f.ends_at).toLocaleString('en-US')}</dd></>}
         </dl>
-        {f.ownership === "OWNED" ? <p className="text-xs text-primary">Owned outright · no lease payments</p> : f.returned_at ? <p className="text-muted-foreground">Aircraft returned</p> : Date.now() >= Date.parse(f.ends_at) ? <div className="space-y-3 border-t border-border pt-4">
+        {f.ownership === 'RENTAL' ? <p className="text-xs text-amber">{f.returned_at ? 'Rental returned' : 'Automatically returned after completion or cancellation'} · no weekly payments</p> : f.ownership === "OWNED" ? <p className="text-xs text-primary">Owned outright · no lease payments</p> : f.returned_at ? <p className="text-muted-foreground">Aircraft returned</p> : Date.now() >= Date.parse(f.ends_at) ? <div className="space-y-3 border-t border-border pt-4">
           <p className="text-sm text-amber">Contract expired · Dispatch suspended</p>
           <label className="flex items-center justify-between gap-4 text-sm">Renewal term (weeks)<Input aria-label="Renewal term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" /></label>
           <p className="readout text-xs">Renewal: {formatCr(renewalRate(baseRate, renewalDiscount))} / week · {(renewalDiscount * 100).toFixed(0)}% discount</p>

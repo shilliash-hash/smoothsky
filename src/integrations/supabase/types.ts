@@ -1421,6 +1421,10 @@ export type Database = {
       recruitment_commission_settings: { Args: never; Returns: Json }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
+      rent_aircraft: {
+        Args: { p_registration?: string; p_type: string }
+        Returns: string
+      }
       replenish_broker_market: { Args: never; Returns: undefined }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
@@ -1443,6 +1447,7 @@ export type Database = {
         Args: { p_type: string; p_weeks?: number }
         Returns: string
       }
+      spot_rental_price: { Args: { p_weekly: number }; Returns: number }
       stake_market: {
         Args: never
         Returns: {

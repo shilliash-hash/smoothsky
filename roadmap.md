@@ -1,5 +1,10 @@
 # Roadmap
 
+## Single-flight rentals and acquisition confirmations
+- [x] Add atomic tier-checked rentals at 37% of weekly rate, no deposit/weekly billing, retirement after settlement or cancellation.
+- [x] Add shared Lease/Rent/Buy confirmation, rental fleet labels and accurate rental operating expenses.
+- [x] Verify 20 tests, signed-in rental acquisition, missing-licence rejection, cancellation at origin and completion at destination, retained logbook/ledger, desktop/mobile confirmation; deployment variables unchanged. Real ACARS PIREP and isolated production not exercised.
+
 ## Fuel guidance and global radar activity
 - [x] Explain pay-as-you-burn and live configured reserve in Dispatch without changing settlement; refresh quote when reserve changes.
 - [x] Include all globally active airports in bounded catalogue batches; keep other companies' flight details private.

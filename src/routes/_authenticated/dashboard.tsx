@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { FOB_SETUP: "FOB setup", FOB_MODULE: "FOB module", FOB_UPKEEP: "FOB upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { SPOT_RENTAL: "Single-flight rental", FOB_SETUP: "FOB setup", FOB_MODULE: "FOB module", FOB_UPKEEP: "FOB upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
   const { data: bases } = useSuspenseQuery(basesQuery);
@@ -82,7 +82,7 @@ function Dashboard() {
 
       <section className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Fleet <span className="text-xs text-muted-foreground">{fleet.filter(f=>f.ownership === "LEASED").length} / {Number(economy?.["max_active_leases"] ?? 3)} leased · {fleet.filter(f=>f.ownership === "OWNED").length} owned</span></h2>
+          <h2 className="text-lg font-semibold">Fleet <span className="text-xs text-muted-foreground">{fleet.filter(f=>f.ownership === "LEASED").length} / {Number(economy?.["max_active_leases"] ?? 3)} leased · {fleet.filter(f=>f.ownership === "OWNED").length} owned · {fleet.filter(f=>f.ownership === "RENTAL").length} rentals</span></h2>
           <Button asChild size="sm" variant="outline"><Link to="/market">Aircraft market</Link></Button>
         </div>
         {fleet.length === 0 ? (

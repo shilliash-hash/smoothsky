@@ -48,7 +48,7 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect }: { com
           <p className="mt-1 text-sm">{f.type?.manufacturer} {f.type?.model}</p>
           <dl className="readout mt-3 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             <dt>Location</dt><dd className="text-right text-foreground">{f.location_icao}</dd>
-            {f.ownership === "OWNED" ? <><dt>Ownership</dt><dd className="text-right text-primary">Owned</dd><dt>Asset value</dt><dd className="text-right">{formatCr(f.purchase_price ?? 0)}</dd></> : <><dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
+            {f.ownership === "RENTAL" ? <><dt className="col-span-2 text-amber">SPOT RENTAL · 1 FLIGHT</dt><dt>Weekly commitments</dt><dd className="text-right">None</dd></> : f.ownership === "OWNED" ? <><dt>Ownership</dt><dd className="text-right text-primary">Owned</dd><dt>Asset value</dt><dd className="text-right">{formatCr(f.purchase_price ?? 0)}</dd></> : <><dt>Weekly rate</dt><dd className="text-right text-amber">{formatCr(f.weekly_rate)}</dd>
               <dt>Contract ends</dt><dd className="text-right text-foreground">{new Date(contractEnd(f.id) ?? f.next_payment_due).toLocaleDateString("en-US")}</dd>
               <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
           </dl>
