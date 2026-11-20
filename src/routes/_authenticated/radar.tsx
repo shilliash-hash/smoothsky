@@ -6,7 +6,7 @@ import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { operationsQuery, type Airport } from "@/lib/operations";
-import { getRadarAirports } from "@/lib/operations.functions";
+import { radarWorldQuery, radarTierQuery, radarContextQuery, radarPortCodes } from "@/lib/radar-world";
 import { projectedPassengers, type Economy } from "@/lib/dispatch-engine";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
@@ -45,25 +45,21 @@ function Radar() {
   const { data: ownerData } = useSuspenseQuery(operationsQuery);
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const { data: liveFlights, isRefetchError, dataUpdatedAt } = useSuspenseQuery(liveRadarQuery);
-  const endpointCodes = [...new Set(liveFlights.flatMap(f => [f.origin_icao, f.destination_icao]))].sort();
-  const { data: endpoints } = useQuery({
-    queryKey: ["radar-airport-context", endpointCodes],
-    queryFn: async () => {
-      const chunks = [];
-      for (let offset = 0; offset < endpointCodes.length; offset += 200) chunks.push(endpointCodes.slice(offset, offset + 200));
-      const results = await Promise.all(chunks.map(codes => getRadarAirports({ data: { codes } })));
-      return { airports: results.flatMap(r => r.airports), metrics: results.flatMap(r => r.metrics), pools: results.flatMap(r => r.pools) };
-    },
-    enabled: endpointCodes.length > 0,
-    staleTime: 15_000,
-    refetchInterval: 15_000,
-  });
+  const [tiers, setTiers] = useVisibleTiers();
+  const { data: worldActivity = [], isError: worldError } = useQuery(radarWorldQuery);
+  const { data: tierAirports = [], isError: tierError } = useQuery(radarTierQuery(tiers));
+  const priorityCodes = useMemo(() => radarPortCodes(ownerData.airports.map(a => a.icao), [
+    ...liveFlights.flatMap(f => [f.origin_icao, f.destination_icao]),
+    ...worldActivity.map(a => a.icao),
+  ]), [ownerData.airports, liveFlights, worldActivity]);
+  const contextCodes = useMemo(() => radarPortCodes(tierAirports.map(a => a.icao), priorityCodes), [tierAirports, priorityCodes]);
+  const { data: endpoints, isError: contextError } = useQuery(radarContextQuery(contextCodes));
   const d = useMemo(() => ({
     ...ownerData,
-    airports: [...new Map([...ownerData.airports, ...(endpoints?.airports ?? [])].map(a => [a.icao, a])).values()],
+    airports: [...new Map([...ownerData.airports, ...tierAirports, ...(endpoints?.airports ?? [])].map(a => [a.icao, a])).values()],
     metrics: [...new Map([...ownerData.metrics, ...(endpoints?.metrics ?? [])].map(a => [a.icao, a])).values()],
     pools: [...new Map([...ownerData.pools, ...(endpoints?.pools ?? [])].map(a => [a.airport_icao, a])).values()],
-  }), [ownerData, endpoints]);
+  }), [ownerData, tierAirports, endpoints]);
   const [selected, setSelected] = useState("__default");
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);
@@ -71,8 +67,10 @@ function Radar() {
   const currentFlight = liveFlights.find(f => f.id === flight?.id) ?? null;
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
   const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
-  const [tiers, setTiers] = useVisibleTiers();
-  const visible = useMemo(() => d.airports.filter(a => airportMatches(a, categories, tiers)), [d.airports, categories, tiers]);
+  const visible = useMemo(() => {
+    const priority = new Set(priorityCodes);
+    return d.airports.filter(a => priority.has(a.icao) || airportMatches(a, categories, tiers));
+  }, [d.airports, categories, tiers, priorityCodes]);
   const airportFilter = useMemo(() => visible.map(a => a.icao), [visible]);
   const onAirport = useCallback((a: Airport) => {
     setAirport(a);
@@ -151,6 +149,7 @@ function Radar() {
         ))}
       </div>
       <div className="relative border-y border-border">
+        {(worldError || tierError || contextError) && <p role="alert" className="py-2 text-sm text-amber">Airport update unavailable — retrying with last received data.</p>}
         <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-border py-4">
           <fieldset className="flex flex-wrap items-center gap-4"><legend className="mb-2 text-xs uppercase text-muted-foreground">Airport categories</legend>
             <Button size="sm" variant="outline" onClick={() => setCategories([...airportCategories])}>All categories</Button>
@@ -169,6 +168,7 @@ function Radar() {
             <RadarMap
               data={d}
               flights={liveFlights}
+              worldActivity={worldActivity}
               focusedFlight={flight?.id ?? null}
               airportFilter={airportFilter}
               selected={chosen}

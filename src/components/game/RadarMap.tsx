@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { Operations, Airport } from "@/lib/operations";
 import { liveRadarPosition, type LiveRadarFlight } from '@/lib/live-radar';
+import type { WorldActivity } from '@/lib/radar-world';
 import { fuelLabel } from "@/lib/fleet-rules";
 import {
   distanceNm,
@@ -11,6 +12,7 @@ import {
 export default function RadarMap({
   data,
   flights,
+  worldActivity,
   focusedFlight,
   airportFilter,
   selected,
@@ -22,6 +24,7 @@ export default function RadarMap({
 }: {
   data: Operations;
   flights: LiveRadarFlight[];
+  worldActivity: WorldActivity[];
   focusedFlight: string | null;
   airportFilter: string[];
   selected: string;
@@ -79,6 +82,10 @@ export default function RadarMap({
       range = root.getPropertyValue("--radar-range").trim(),
       activity = root.getPropertyValue("--radar-activity").trim();
     const metrics = new Map(data.metrics.map((x) => [x.icao, x]));
+    const world = new Map(worldActivity.map(x => [x.icao, x]));
+    const groundPorts = new Set(data.fleet.filter(f => f.status !== 'EN_ROUTE').map(f => f.location_icao));
+    for (const row of worldActivity) if (row.grounded_aircraft_count > 0) groundPorts.add(row.icao);
+    const allowedPorts = new Set(airportFilter);
     const f = data.fleet.find((f) => f.id === selected);
     const origin = data.airports.find((a) => a.icao === f?.location_icao);
     const radius = f?.type?.range_nm ?? 0;
@@ -92,24 +99,22 @@ export default function RadarMap({
       }).addTo(layer);
     const gaugePositions: L.Point[] = [];
     const airports = [...data.airports].sort((a, b) => {
-      const aGrounded = data.fleet.some(f => f.location_icao === a.icao);
-      const bGrounded = data.fleet.some(f => f.location_icao === b.icao);
+      const aGrounded = groundPorts.has(a.icao);
+      const bGrounded = groundPorts.has(b.icao);
       return Number(bGrounded) - Number(aGrounded) || b.size - a.size || a.icao.localeCompare(b.icao);
     });
     for (const a of airports) {
-      if (!airportFilter.includes(a.icao)) continue;
+      if (!allowedPorts.has(a.icao)) continue;
       if (!m.getBounds().pad(0.1).contains([a.lat, a.lon])) continue;
       const reachable = !origin || distanceNm(origin, a) <= radius;
       if (rangeOnly && !reachable) continue;
-      const grounded = data.fleet.some(
-        (f) => f.location_icao === a.icao && f.status !== "EN_ROUTE",
-      );
+      const grounded = groundPorts.has(a.icao);
       const metric = metrics.get(a.icao);
       const ratio = Math.min(
         1,
         Number(metric?.pax_stock ?? 0) / Math.max(1, Number(metric?.pax_capacity ?? 1)),
       );
-      const ops = Number(metric?.operations_7d ?? 0);
+      const ops = Number(world.get(a.icao)?.flights_7d ?? metric?.operations_7d ?? 0);
       const popup = document.createElement("div");
       const title = document.createElement("strong");
       title.textContent = `${a.icao} · ${a.name}`;
@@ -120,6 +125,7 @@ export default function RadarMap({
         `100LL stock: ${fuelLabel(Number(metric?.avgas_stock ?? 0), densities.avgas)}`,
         `Jet-A1 stock: ${fuelLabel(Number(metric?.jeta_stock ?? 0), densities.jeta)}`,
         `${ops} operations · last 7 days`,
+        `${world.get(a.icao)?.grounded_aircraft_count ?? 0} aircraft on ground worldwide`,
       ]) {
         const line = document.createElement("div");
         line.textContent = text;
@@ -180,6 +186,7 @@ export default function RadarMap({
     }
   }, [
     data.airports,
+    worldActivity,
     airportFilter,
     data.fleet,
     data.metrics,

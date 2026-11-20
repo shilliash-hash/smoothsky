@@ -1380,6 +1380,14 @@ export type Database = {
           rank: number
         }[]
       }
+      get_radar_world_activity: {
+        Args: never
+        Returns: {
+          flights_7d: number
+          grounded_aircraft_count: number
+          icao: string
+        }[]
+      }
       hiring_companies: {
         Args: never
         Returns: {

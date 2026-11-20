@@ -1,5 +1,10 @@
 # Roadmap
 
+## World radar activity and tier catalogue
+- [ ] Add safe paginated worldwide ground/activity aggregates without changing private flight access.
+- [ ] Load up to 500 tier airports plus all priority ports, scoped supplies, and global ground/activity markers; preserve Dispatch and deployment variables.
+- [ ] Run SQL/regression tests and signed-in desktop/mobile radar checks; measure rather than guarantee sub-0.3-second loading.
+
 ## Bounded dispatch and radar airport loading
 - [x] Add nearby-airport RPC (60 maximum, reachable own FBO priority) and indexed exact-code/distance search (40 maximum, 250 ms debounce); default T1 exclusion only for aircraft T3–7, explicit filters retained.
 - [x] Remove worldwide catalogue/supply pagination and major-port preload; operations load owner-touched airports, radar adds active-flight endpoints in batches of 200 with scoped aggregate supplies.
