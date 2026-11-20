@@ -1,5 +1,10 @@
 # Roadmap
 
+## Fuel guidance and global radar activity
+- [x] Explain pay-as-you-burn and live configured reserve in Dispatch without changing settlement; refresh quote when reserve changes.
+- [x] Include all globally active airports in bounded catalogue batches; keep other companies' flight details private.
+- [x] Verify 11 tests, signed-in route quote and mobile note (no overflow), and EPBY global count (6 operations including another company); build OK, deployment variables unchanged. Isolated production database not accessible for verification.
+
 ## Recruitment commission settings
 - [x] Add admin-editable roster/freelance default rates and ranges, shared with recruitment validation; preserve dispatched-flight commission snapshots.
 - [x] Verify signed-in admin save/readback and recruitment range updates; 16 tests passed, admin-only economy INSERT/UPDATE policies checked, original values restored.

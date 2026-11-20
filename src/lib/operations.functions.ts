@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { flightNumberSchema } from "./flight-number";
+import { operationalAirportCodes } from "./operations-airports";
 export const getOperations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -16,7 +17,7 @@ export const getOperations = createServerFn({ method: "GET" })
     const pools = [];
     for (let offset = 0; ; offset += 1000) {
       const [m, p] = await Promise.all([
-        db.rpc("radar_airport_metrics").range(offset, offset + 999),
+        db.rpc("radar_airport_metrics").order("icao").range(offset, offset + 999),
         db
           .from("airport_passenger_pools")
           .select("*")
@@ -38,7 +39,7 @@ export const getOperations = createServerFn({ method: "GET" })
       db.from("company_fobs").select("*").is("closed_at", null),
     ]);
     for (const result of [r, f, l, t, n, bases]) if (result.error) throw result.error;
-    // Radar/dispatch never load the whole airport table: major ports plus every airport the player touches.
+    // Lightweight catalogue: major ports, owner-touched airports and global aggregate hotspots.
     const active = await db.from("flights").select("origin_icao, destination_icao").in("status", ["DISPATCHED", "EN_ROUTE"]);
     if (active.error) throw active.error;
     const needed = new Set<string>();
@@ -46,14 +47,24 @@ export const getOperations = createServerFn({ method: "GET" })
     for (const x of l.data ?? []) needed.add(x.location_icao);
     for (const x of bases.data ?? []) needed.add(x.airport_icao);
     if (company?.home_base_icao) needed.add(company.home_base_icao);
+    const extraCodes = operationalAirportCodes(metrics, needed);
+    const loadExtra = async () => {
+      const airports = [];
+      // Bound IN-query URLs and avoid the Data API's per-response row cap.
+      for (let offset = 0; offset < extraCodes.length; offset += 200) {
+        const result = await db.from("airports").select("*").in("icao", extraCodes.slice(offset, offset + 200));
+        if (result.error) throw result.error;
+        airports.push(...(result.data ?? []));
+      }
+      return airports;
+    };
     const [major, extra] = await Promise.all([
       db.from("airports").select("*").gte("size", 4).order("size", { ascending: false }).limit(1500),
-      needed.size ? db.from("airports").select("*").in("icao", [...needed]) : Promise.resolve({ data: [], error: null }),
+      loadExtra(),
     ]);
     if (major.error) throw major.error;
-    if (extra.error) throw extra.error;
     const byIcao = new Map<string, NonNullable<typeof major.data>[number]>();
-    for (const a of [...(major.data ?? []), ...(extra.data ?? [])]) byIcao.set(a.icao, a);
+    for (const a of [...(major.data ?? []), ...extra]) byIcao.set(a.icao, a);
     const airports = [...byIcao.values()];
     return {
       nextFlightNumber: n.data,

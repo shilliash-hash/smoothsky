@@ -14,7 +14,7 @@ import { flightAction } from "@/lib/operations.functions";
 import { distanceNm, flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
-import { fuelLabel } from "@/lib/fleet-rules";
+import { fuelLabel, plannedFuel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
 import { useVisibleTiers } from "@/lib/airport-tiers";
 import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
@@ -81,6 +81,9 @@ function Dispatch() {
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
+  const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
+  const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
+  const fuelPlan = quote ? plannedFuel(quote.fuel_gal, reserveMinutes, Number(selected?.type?.fuel_burn_gph ?? 0)) : null;
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -109,7 +112,7 @@ function Dispatch() {
     return () => {
       active = false;
     };
-  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo]);
+  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo, reserveMinutes]);
   const searching = filter.trim().length >= MIN_SEARCH_CHARS;
   const found = useAirportSearch(filter, tiers);
   const nearby = useQuery({
@@ -320,11 +323,17 @@ function Dispatch() {
                       </dd>
                     </div>
                   </dl>
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    {fuelLabel(quote.fuel_gal, Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre))} consumed · reserve{" "}
-                    {String(d.rules["fuel_reserve_minutes"])} min · excludes weekly lease
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">Planned fuel incl. reserve: {fuelLabel(quote.fuel_gal + Number(d.rules["fuel_reserve_minutes"]) / 60 * Number(selected?.type?.fuel_burn_gph ?? 0), Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre))}</p>
+                  {fuelPlan && <aside aria-label="Fuel planning and billing" className="mt-4 border-y border-border bg-panel px-3 py-4 text-sm">
+                    <p className="readout text-xs uppercase text-primary">Fuel · Pay-as-you-burn</p>
+                    <p className="mt-2 text-muted-foreground">Only trip consumption is billed at settlement; the safety reserve is not charged. Unused fuel is not carried over or credited towards the next flight in SmoothSky.</p>
+                    <dl className="mt-3 space-y-2 text-xs">
+                      <div><dt className="text-muted-foreground">Estimated trip consumption</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.tripGallons, fuelDensity)}</dd></div>
+                      <div><dt className="text-muted-foreground">Required reserve · {reserveMinutes} min</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.reserveGallons, fuelDensity)}</dd></div>
+                      <div><dt className="text-primary">Planned fuel including reserve</dt><dd className="readout mt-1 text-primary">{fuelLabel(fuelPlan.plannedGallons, fuelDensity)}</dd></div>
+                    </dl>
+                    <p className="mt-3 text-xs text-muted-foreground">Load at least the planned fuel before departure. Compare it with your SimBrief / aircraft EFB block fuel: the same trip-plus-reserve principle applies, but taxi, contingency and alternate requirements may increase the simulator's total. Use the higher requirement; SmoothSky's estimate does not validate your simulator fuel load.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Reserve follows the current administrator setting. Weekly lease costs are excluded from this estimate.</p>
+                  </aside>}
                    {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FOB savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
                   <Button
                     className="mt-5 w-full"
