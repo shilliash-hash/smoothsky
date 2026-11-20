@@ -1,5 +1,9 @@
 # Roadmap
 
+## Short-hop charter reduction
+- [x] Apply database-backed 80 NM / 50% charter rule to the shared quote and cargo fare, freezing exact-distance eligibility/rate in the quote; FBOs, settlement and deployment variables unchanged. Applied definitions and owner-only permissions verified.
+- [x] Show the frozen reduced charter amount and short-hop note in Dispatch. 110 tests passed: 50/79.999/80/80.001/120 NM, all seven tiers, frozen settings, cargo, FBOs, nearby/search/alternative previews and existing tip/settlement regressions. Signed-in 11 NM quote showed 32.5 SC/pax and -50% note; 122 NM quote showed full 65 SC/pax, with tile margins matching both quotes. Desktop/mobile screenshots checked, no overflow or runtime errors, build OK. No new live flight dispatched or ACARS hardware tested.
+
 ## Dispatch destination profitability
 - [x] Add owner-scoped bounded destination estimates using flight_quote_full, plus up to six alternatives within 150 NM; existing search RPCs, settlement, radar and deployment variables unchanged. Alternatives select six nearest eligible ports before quoting/ranking, rather than quoting every airport within the radius.
 - [x] Add Best Deals/Nearest sorting, top-three positive deals, revenue/margin readouts and one-click alternatives with current cargo settings; unavailable estimates show their reason rather than a fabricated zero.

@@ -316,6 +316,13 @@
       "when": 1795189346467,
       "tag": "0044_dispatch_destination_deals",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1795191849568,
+      "tag": "0045_short_hop_charter_reduction",
+      "breakpoints": true
     }
   ]
 }

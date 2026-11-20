@@ -37,7 +37,7 @@ use the editor.
 - Transaction history resolves flight references with owner-scoped SECURITY INVOKER joins, filters before its row limit, and includes returned aircraft; settlement descriptions freeze flight number, registration and route without rewriting past ledger entries.
 - Flight numbers are allocated under a company-row lock from ICAO + a sequence starting at 101, unique per company, with an authenticated dispatch-time override; UUIDs remain internal references so readable identities do not affect ledger integrity.
 - Economy settings and aircraft specifications are read from database tables; flight quotes are calculated in SQL and frozen at dispatch — UI and settlement must share the same rules.
-- Charter rates use a seven-entry aircraft-tier array with one shared T5–7 rate; revenue breakdown reads the quote's frozen settings and total, avoiding drift from rounded display distances.
+- Charter uses seven tier rates (shared T5–7); SQL freezes exact-distance reduction and rate for passengers, cargo and UI — prevents rounded-boundary drift.
 - Protected operations use authenticated server functions and owner-scoped RLS; no privileged client queries — company data stays private.
 - Web simulation and future ACARS share flight records and settlement; ACARS writes require a separately verified ingestion adapter — manual data cannot impersonate simulator evidence.
 - Radar dynamically imports Leaflet and uses Turf nautical-mile/geodesic calculations — avoids SSR browser imports and hand-rolled map geometry.

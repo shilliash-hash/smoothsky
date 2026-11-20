@@ -12,6 +12,23 @@ const a = { lat: 50.0777, lon: 19.7848 },
   b = { lat: 52.1657, lon: 20.9671 };
 const rules = { natural_cap: 0.95, hourly_rate: 0.01, transit_cap: 1.5 };
 describe("flight economy and radar", () => {
+  it("displays the frozen 50% short-hop charter without reducing the distance fare", () => {
+    const result = ticketRevenueBreakdown(124.5, 3, 1, [65], { base_rate: 65, rate: 32.5, multiplier: 0.5, threshold_nm: 80, reduced: true });
+    expect(result.surchargePerPassenger).toBe(32.5);
+    expect(result.charterRevenue).toBe(97.5);
+    expect(result.distanceRevenue).toBe(27);
+    expect(result.isShortHop).toBe(true);
+    expect(result.reductionPercent).toBe(50);
+  });
+  it("keeps full charter at the frozen 80 NM boundary", () => {
+    const result = ticketRevenueBreakdown(238.2, 3, 1, [65], { base_rate: 65, rate: 65, multiplier: 1, threshold_nm: 80, reduced: false });
+    expect(result.charterRevenue).toBe(195);
+    expect(result.distanceRevenue).toBe(43.2);
+    expect(result.isShortHop).toBe(false);
+  });
+  it("uses frozen rates even after the administrator changes current charter rates", () => {
+    expect(ticketRevenueBreakdown(124.5, 3, 1, [100], { base_rate: 65, rate: 32.5, multiplier: 0.5, threshold_nm: 80, reduced: true }).charterRevenue).toBe(97.5);
+  });
   for (const [tier, bonus] of [[1, 65], [2, 50], [3, 35], [4, 20], [5, 0], [6, 0], [7, 0]]) {
     it(`Tier ${tier} adds ${bonus} SC per passenger`, () => {
       const result = ticketRevenueBreakdown(3 * (10 + Number(bonus)), 3, Number(tier), [65, 50, 35, 20, 0, 0, 0]);
