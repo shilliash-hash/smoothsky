@@ -1,9 +1,9 @@
 # Roadmap
 
 ## World radar activity and tier catalogue
-- [ ] Add safe paginated worldwide ground/activity aggregates without changing private flight access.
-- [ ] Load up to 500 tier airports plus all priority ports, scoped supplies, and global ground/activity markers; preserve Dispatch and deployment variables.
-- [ ] Run SQL/regression tests and signed-in desktop/mobile radar checks; measure rather than guarantee sub-0.3-second loading.
+- [x] Add safe paginated worldwide ground/activity aggregates without changing private flight access; anonymous/authenticated grants verified.
+- [x] Load up to 500 tier airports plus all priority ports, scoped supplies in batches of 200, and global ground/activity markers; Dispatch, Flight Deck styling and deployment variables unchanged.
+- [x] 45 SQL/regression tests passed, including 49,501-airport fixture, 1,203 world ports and API pagination. Signed-in desktop/mobile filters, world ground counts, pulses, passenger gauges and airport details verified without console errors or overflow. Cached tier switch measured 189 ms; warm map navigation 546 ms; first map container 2,588 ms in development, so full-page loading below 0.3 s is not achieved. No active flights available during verification; live aircraft rendering and isolated production timing remain unverified.
 
 ## Bounded dispatch and radar airport loading
 - [x] Add nearby-airport RPC (60 maximum, reachable own FBO priority) and indexed exact-code/distance search (40 maximum, 250 ms debounce); default T1 exclusion only for aircraft T3–7, explicit filters retained.
