@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useVisibleTiers } from "@/lib/airport-tiers";
 import { TierPills } from "@/components/game/TierPills";
 import { RouteError } from "@/components/game/RouteError";
+import { acarsLinkLabel } from '@/lib/acars-status';
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
@@ -47,6 +48,7 @@ function Radar() {
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
+  const currentFlight = d.flights.find(f => f.id === flight?.id) ?? flight;
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
   const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
   const [tiers, setTiers] = useVisibleTiers();
@@ -274,23 +276,25 @@ function Radar() {
               )}
             </>
           ) : (
-            flight && (
+            currentFlight && (
               <div className="mt-3 space-y-3">
+                {currentFlight.execution_source === 'ACARS_AGENT' ? <p className="readout text-amber">{acarsLinkLabel(currentFlight.status, currentFlight.telemetry, currentFlight.departed_at, now)}</p> : <>
                 <p>
-                  {flight.passengers} passengers · {Math.round(flightProgress(flight, now) * 100)}%
+                  {currentFlight.passengers} passengers · {Math.round(flightProgress(currentFlight, now) * 100)}%
                   ·{" "}
-                  {flight.execution_source === "WEB_MANUAL"
+                    {currentFlight.execution_source === "WEB_MANUAL"
                     ? "Simulated position"
                     : "ACARS position"}
                 </p>
                 <progress
                   className="h-2 w-full accent-primary"
-                  value={flightProgress(flight, now)}
+                  value={flightProgress(currentFlight, now)}
                   max={1}
                 />
+                </>}
                 <p className="readout">
                   Estimated contribution{" "}
-                  {formatCr(Number((flight.estimate as Record<string, number>)["net"]))}
+                  {formatCr(Number((currentFlight.estimate as Record<string, number>)["net"]))}
                 </p>
                 <Button asChild variant="outline">
                   <Link to="/dispatch">Flight operations</Link>

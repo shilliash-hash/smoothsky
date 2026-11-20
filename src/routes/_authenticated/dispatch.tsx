@@ -21,6 +21,8 @@ import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-
 import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
+import { adminAccessQuery } from '@/lib/admin';
+import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -54,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/dispatch")({
 function Dispatch() {
   const { data: d } = useSuspenseQuery(operationsQuery);
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const { data: isAdmin = false } = useQuery(adminAccessQuery);
   const qc = useQueryClient();
   const action = useServerFn(flightAction);
   const search = Route.useSearch();
@@ -111,7 +114,7 @@ function Dispatch() {
   const found = useAirportSearch(filter, tiers);
   const nearby = useQuery({
     queryKey: ["airports-near", origin?.icao, selected?.type?.range_nm, [...tiers].sort().join("")],
-    queryFn: () => airportsNear(origin!, selected?.type?.range_nm ?? 0, tiers),
+    queryFn: () => origin ? airportsNear(origin, selected?.type?.range_nm ?? 0, tiers) : Promise.resolve([]),
     enabled: !!origin && !!selected?.type && !searching,
     staleTime: 300_000,
   });
@@ -176,10 +179,10 @@ function Dispatch() {
           </Link>
         </Button>
       </div>
-      <div className="mt-5 flex flex-wrap items-center gap-4 border-y border-border py-3">
-        <label className="flex items-center gap-2 text-sm"><Switch checked={simulation} onCheckedChange={setSimulation} disabled={d.rules["web_simulation_enabled"] !== true} />Simulation without ACARS</label>
+      {simulationControlsVisible(webSimAllowed, isAdmin) && <div className="mt-5 flex flex-wrap items-center gap-4 border-y border-border py-3">
+        <label className="flex items-center gap-2 text-sm"><Switch checked={simulationEnabled} onCheckedChange={setSimulation} disabled={!webSimAllowed} />Simulation without ACARS</label>
         <span className="readout text-xs text-amber">{!webSimAllowed ? "ACARS LIVE MODE · web simulation disabled by administrator" : simulationEnabled ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}×` : "ACARS LIVE MODE"}</span>
-      </div>
+      </div>}
       <section className="mt-6 border-y border-border py-5">
         <label className="text-xs uppercase text-muted-foreground" htmlFor="dispatch-aircraft">
           Aircraft
@@ -366,7 +369,7 @@ function Dispatch() {
                   </p>
                   {acars && active && (
                     <p className="readout mt-2 text-xs text-amber">
-                      {f.status === "DISPATCHED" ? "○ AWAITING ACARS" : `● LIVE ACARS · EN ROUTE${live ? ` · ${live.phase ?? ""} · ${Math.round(live.altitude_ft ?? 0)} ft · ${Math.round(live.ground_speed_kt ?? 0)} kt · ${Math.round(live.fuel_gal ?? 0)} gal` : ""}`}
+                      {acarsLinkLabel(f.status, f.telemetry, f.departed_at, now)}{live ? ` · ${live.phase ?? ""} · ${Math.round(live.altitude_ft ?? 0)} ft · ${Math.round(live.ground_speed_kt ?? 0)} kt · ${Math.round(live.fuel_gal ?? 0)} gal` : ""}
                     </p>
                   )}
                   {f.status === "EN_ROUTE" && !acars && (

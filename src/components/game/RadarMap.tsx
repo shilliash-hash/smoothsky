@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { Operations, Airport, Flight } from "@/lib/operations";
 import { fuelLabel } from "@/lib/fleet-rules";
+import { acarsGps } from '@/lib/acars-status';
 import {
   distanceNm,
   flightPosition,
@@ -204,7 +205,8 @@ export default function RadarMap({
             dashArray: "4 5",
           },
         }).addTo(layer);
-        const p = flightPosition(a, b, flightProgress(f, Date.now()));
+        const p = f.execution_source === 'ACARS_AGENT' ? acarsGps(f.telemetry) : flightPosition(a, b, flightProgress(f, Date.now()));
+        if (!p) continue;
         L.marker([p.lat, p.lon], {
           icon: L.divIcon({
             className: "radar-plane",

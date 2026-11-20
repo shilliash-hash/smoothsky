@@ -1,1 +1,2 @@
 - Airport data is never loaded whole: radar/dispatch get size>=4 (limit 1500) plus player-touched/active-flight airports; searches are DB-side (airport-search.ts), limit 50 — scales to ~50k airports.
+- ACARS map positions use validated live GPS only; reconnect status and ingestion enforce a strict 30-minute window from server-received telemetry — prevents simulated movement and indefinite resumes.

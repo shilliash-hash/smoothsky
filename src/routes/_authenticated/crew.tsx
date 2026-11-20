@@ -48,6 +48,12 @@ function Crew() {
   const [flightNumber, setFlightNumber] = useState("");
   const [quote, setQuote] = useState<Record<string, string | number | boolean | null> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [guideHidden, setGuideHidden] = useState(false);
+  useEffect(() => { try { setGuideHidden(localStorage.getItem('smoothsky_crew_guide_hidden') === 'true'); } catch {} }, []);
+  function toggleGuide() {
+    setGuideHidden(!guideHidden);
+    try { localStorage.setItem('smoothsky_crew_guide_hidden', String(!guideHidden)); } catch {}
+  }
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
@@ -90,6 +96,14 @@ function Crew() {
       <div className="text-right"><p className="text-xs uppercase text-muted-foreground">Pilot wallet</p><p className="readout text-2xl">{formatCr(Number(ops?.balance ?? 0))}</p></div>
     </div>
 
+    <section className="mt-5 border-y border-border py-3">
+      <div className="flex items-center justify-between gap-3"><h2 className="readout text-xs uppercase text-amber">How it works</h2><Button size="sm" variant="ghost" onClick={toggleGuide} aria-expanded={!guideHidden}>{guideHidden ? 'Show' : 'Hide'}</Button></div>
+      {!guideHidden && <ol className="mt-2 grid gap-3 text-xs text-muted-foreground md:grid-cols-3">
+        <li><span className="readout text-primary">01</span> Reserve an available aircraft (locks it for you temporarily).</li>
+        <li><span className="readout text-primary">02</span> Choose any destination within range in the Dispatch panel and click Dispatch flight.</li>
+        <li><span className="readout text-primary">03</span> Fly via SmoothSky ACARS and click Send PIREP after parking to collect your commission.</li>
+      </ol>}
+    </section>
     <div className="mt-6 grid gap-6 lg:grid-cols-5">
       <div className="instrument p-5 lg:col-span-3">
         <p className="text-xs uppercase text-muted-foreground">Available aircraft</p>

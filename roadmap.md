@@ -83,3 +83,6 @@
 - [x] Special Missions board (MEDEVAC / AOG) with deadlines and 50% late penalty
 - [x] Homepage guide with live world telemetry
 - [x] ACARS live mode in Dispatch, emergency Cancel flight, /acars/active resume endpoint
+- [x] Hide disabled simulation controls from non-admin players; use real GPS on radar.
+- [x] Add 30-minute ACARS reconnect window and persistent Crew onboarding hint; unit tests and signed-in pages checked, real simulator reconnect not available in sandbox.
+- [x] Verify catalogue leasing changes against affordability, existing contracts and acquisition guards; C172 available in signed-in market, BE58 requires 11,600 SC. Exact reported-player error requested.

@@ -225,6 +225,13 @@
       "when": 1795125944972,
       "tag": "0031_acars_live_mode_and_emergency_cancel",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795134902359,
+      "tag": "0032_acars_resume_window",
+      "breakpoints": true
     }
   ]
 }
