@@ -33,7 +33,7 @@ beforeAll(async () => {
     INSERT INTO economy_config VALUES('web_simulation_enabled','true');
     CREATE TABLE operating_rules(singleton boolean DEFAULT true);
     INSERT INTO operating_rules DEFAULT VALUES;
-    CREATE TABLE company_ledger(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,company_id uuid,entry_type text CONSTRAINT company_ledger_entry_type_check CHECK(entry_type IS NOT NULL),debit_account text,credit_account text,amount numeric,company_delta numeric,balance_after numeric,description text,reference text,idempotency_key text UNIQUE,created_at timestamptz DEFAULT now());
+    CREATE TABLE company_ledger(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,company_id uuid,entry_type text CONSTRAINT company_ledger_entry_type_check CHECK(entry_type IS NOT NULL),debit_account text,credit_account text,amount numeric CHECK(amount>0),company_delta numeric,balance_after numeric,description text,reference text,idempotency_key text UNIQUE,created_at timestamptz DEFAULT now());
     CREATE TABLE pilot_ledger(amount numeric);
     CREATE FUNCTION company_balance(p_company uuid) RETURNS numeric LANGUAGE sql AS $$ SELECT coalesce((SELECT balance_after FROM company_ledger WHERE company_id=p_company ORDER BY id DESC LIMIT 1),0) $$;
     CREATE FUNCTION passenger_stock(text) RETURNS numeric LANGUAGE sql AS $$ SELECT 0::numeric $$;
@@ -52,6 +52,9 @@ beforeAll(async () => {
   if (!daily) throw new Error('Missing production daily results');
   await db.exec(daily);
   await db.exec(sql('0039_passenger_butter_tip.sql'));
+  const handlingGuard = sql('0040_company_fbo_free_handling.sql').match(/DO \$\$[\s\S]*?END \$\$;/)?.[0];
+  if (!handlingGuard) throw new Error('Missing production zero-value settlement guard');
+  await db.exec(handlingGuard);
 }, 30000);
 beforeEach(async () => {
   await db.exec(`TRUNCATE company_ledger,flights,fleet_aircraft,companies,pilot_ledger;
@@ -66,6 +69,15 @@ beforeEach(async () => {
 afterAll(async () => { await db.close(); });
 
 describe('passenger landing tip SQL', () => {
+  it('settles free FBO handling without a zero-value ledger entry', async () => {
+    await db.exec(`UPDATE flights SET estimate=estimate||'{"handling_fee":0,"net":1300}'::jsonb WHERE id='${flight}'`);
+    expect((await settle()).rows[0]?.result).toMatchObject({ net: 1400, balance_after: 1400 });
+    expect((await db.query("SELECT count(*)::int n FROM company_ledger WHERE entry_type='HANDLING_FEES'")).rows[0]).toEqual({ n: 0 });
+  });
+  it('preserves frozen handling for flights dispatched before the FBO change', async () => {
+    await settle();
+    expect((await db.query("SELECT amount::float FROM company_ledger WHERE entry_type='HANDLING_FEES'")).rows).toEqual([{ amount: 100 }]);
+  });
   it.each([-100, -61, 0, 100])('awards exactly 10%% of tickets at %s fpm, never of cargo', async (fpm) => {
     expect((await settle({ landing_rate_fpm: fpm })).rows[0]?.result).toMatchObject({ passenger_tip: 100, passenger_tip_pct: 10, net: 1300, balance_after: 1300 });
   });

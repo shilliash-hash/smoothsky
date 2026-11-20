@@ -1,5 +1,9 @@
 # Roadmap
 
+## Company FBO ground handling
+- [x] Waive half of handling per active owner FBO endpoint, preserve landing/module discounts and frozen historical quotes, and skip zero-value settlement entries.
+- [x] Show Company FBO handling savings in Dispatch and free handling on base cards. 58 tests passed, including production SQL for 100/50/0 SC, cargo, closed/foreign FBOs, zero-fee settlement, old quotes, landing-module discounts, passenger tips and leases. Signed-in existing-company quotes verified at origin (7.04 SC) and destination (5.94 SC); desktop/mobile screenshots checked, no overflow or console errors, build OK, deployment variables unchanged. No live flight dispatched or settled on the player's account; zero-fee settlement verified in isolated SQL tests.
+
 ## Passenger landing tips
 - [x] Add ACARS-only passenger tips with balanced, idempotent ledger posting, frozen database-backed rules and profitability/commission reporting; preserve existing leases and historical settlements.
 - [x] Add touchdown and tip breakdown in Dispatch/Logbook and ledger label; 77 tests passed. Signed-in ACARS HTTP report awarded 23.76 SC on 237.57 SC tickets at -61 fpm, duplicate report rejected (409), entry and debrief read back on desktop/mobile; no console errors, build OK, deployment variables unchanged. Real simulator hardware not connected.

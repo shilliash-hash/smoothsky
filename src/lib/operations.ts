@@ -31,5 +31,5 @@ export type Quote = {
   ticket_revenue?: number;
   all_cargo?: boolean;
   mission_category?: string;
-  fob_discounts?: { fuel: number; landing: number; handling_origin: number; handling_destination: number; maintenance: number; savings: number };
+   fob_discounts?: { fuel: number; landing: number; handling_origin: number; handling_destination: number; handling_discount?: number; handling_savings?: number; maintenance: number; savings: number };
 };

@@ -306,7 +306,7 @@ function Dispatch() {
                       ...((quote.cargo_kg ?? 0) > 0 ? [[`Cargo revenue (${quote.cargo_kg} kg)`, quote.cargo_revenue ?? 0]] : []),
                       ["Fuel", -quote.fuel_cost],
                       ["Landing", -quote.landing_fee],
-                      ["Handling (both airports)", -quote.handling_fee],
+                      ["Handling fee", -quote.handling_fee],
                       ["Maintenance reserve", -quote.maintenance],
                     ].map(([label, value]) => (
                       <div key={String(label)} className="flex justify-between gap-3 text-sm">
@@ -314,7 +314,7 @@ function Dispatch() {
                           <span className="block text-xs text-muted-foreground">
                             (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax)
                           </span>
-                        )}</dt>
+                        )}{label === "Handling fee" && quote.fob_discounts && (quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) > 0 && <span className="block text-xs text-primary">{(quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) === 2 ? "Free · Company FBO hubs" : "−50% · Company FBO"}</span>}</dt>
                         <dd className="shrink-0">{formatCr(Number(value))}</dd>
                       </div>
                     ))}
