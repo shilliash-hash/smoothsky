@@ -175,7 +175,7 @@ export default function RadarMap({
       marker.getElement()?.setAttribute("aria-label", `${a.icao} airport`);
       const base = data.bases.find(b => b.airport_icao === a.icao);
       if (base) {
-        L.marker([a.lat, a.lon], { icon: L.divIcon({ className: "radar-fob-marker", iconSize: [26, 26], iconAnchor: [13, 40], html: '<span class="flex h-6 w-6 items-center justify-center border border-amber bg-panel text-amber">⚑</span>' }) }).bindTooltip(`${base.base_type} FOB · ${a.icao}`).on("click", openAirport).addTo(layer);
+        L.marker([a.lat, a.lon], { icon: L.divIcon({ className: "radar-fob-marker", iconSize: [26, 26], iconAnchor: [13, 40], html: '<span class="flex h-6 w-6 items-center justify-center border border-amber bg-panel text-amber">⚑</span>' }) }).bindTooltip(`${base.base_type} FBO · ${a.icao}`).on("click", openAirport).addTo(layer);
       }
     }
   }, [

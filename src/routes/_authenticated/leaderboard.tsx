@@ -59,6 +59,6 @@ function Leaderboard() {
       {filtered.length === 0 && <p className="py-10 text-center text-muted-foreground">{rows.length ? "No matching companies." : "No companies yet."}</p>}
     </div>
     </>}
-    <p className="mt-4 max-w-3xl text-xs leading-relaxed text-muted-foreground">Net worth = ledger cash + owned aircraft purchase value + active lease deposits + invested value of active FOBs and modules. Flight totals include completed flights; test hours use simulated flight time, not accelerated wall-clock time. Weekly positions are recorded on the first ranking visit of each UTC week.</p>
+    <p className="mt-4 max-w-3xl text-xs leading-relaxed text-muted-foreground">Net worth = ledger cash + owned aircraft purchase value + active lease deposits + invested value of active FBOs and modules. Flight totals include completed flights; test hours use simulated flight time, not accelerated wall-clock time. Weekly positions are recorded on the first ranking visit of each UTC week.</p>
   </AppShell>;
 }

@@ -6,7 +6,7 @@ const rules = [
   { icon: Coins, title: "Smooth Coins", text: "1 SC ≈ 1 EUR/USD: a realistic pricing scale for fuel, airport fees and aircraft, not a redeemable currency." },
   { icon: Plane, title: "Your fleet", text: "Leasing requires a refundable deposit and a weekly payment for the contract term. Owned aircraft have no lease payments and allow a custom, unique registration following the home-base country's rules." },
   { icon: Fuel, title: "Passengers & fuel", text: "Passenger pools naturally regenerate at 1% of capacity per hour, up to 95%. Both 100LL and Jet-A1 tanks refill at 10% of capacity per hour, up to full." },
-  { icon: MapPin, title: "FOB bases", text: "Operate 1 Main and up to 2 Satellite FOBs. Fuel contracts, handling desks and maintenance bays reduce the matching operating costs at supported airports." },
+  { icon: MapPin, title: "FBO bases", text: "Fixed-Base Operator infrastructure: operate 1 Main and up to 2 Satellite FBOs. Fuel contracts, handling desks and maintenance bays reduce the matching operating costs at supported airports." },
 ];
 export function GameInfo() {
   return <Dialog><DialogTrigger asChild><Button variant="ghost" size="icon" aria-label="SmoothSky rules" title="SmoothSky rules"><Info className="h-4 w-4" /></Button></DialogTrigger>

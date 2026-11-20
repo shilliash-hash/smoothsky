@@ -174,7 +174,7 @@ function Radar() {
           <span className="text-radar-pax">◔ Passenger pool · % full</span>
           <span className="text-radar-range">◯ Aircraft range</span>
           <span className="text-radar-activity">◎ Pulse · Active airport (7 days)</span>
-          <span className="text-amber">⚑ Company FOB</span>
+          <span className="text-amber">⚑ Company FBO</span>
         </div>
       </div>
       <p className="mt-1 text-right text-[10px] text-muted-foreground">
@@ -227,7 +227,7 @@ function Radar() {
               <p className="mt-2 text-sm text-muted-foreground">
                 {airport.city} · {airport.country} · {airport.airport_type.replaceAll("_", " ")}
               </p>
-              {d.bases.some(b => b.airport_icao === airport.icao) && <Button asChild variant="outline" className="mt-3"><Link to="/bases">⚑ {d.bases.find(b => b.airport_icao === airport.icao)?.base_type} FOB · Manage base</Link></Button>}
+              {d.bases.some(b => b.airport_icao === airport.icao) && <Button asChild variant="outline" className="mt-3"><Link to="/bases">⚑ {d.bases.find(b => b.airport_icao === airport.icao)?.base_type} FBO · Manage base</Link></Button>}
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-muted-foreground">Size / Development</dt>

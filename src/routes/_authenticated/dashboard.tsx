@@ -1,3 +1,4 @@
+import { displayTerminology } from "@/lib/display-terminology";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin } from "lucide-react";
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { SPOT_RENTAL: "Single-flight rental", FOB_SETUP: "FOB setup", FOB_MODULE: "FOB module", FOB_UPKEEP: "FOB upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { SPOT_RENTAL: "Single-flight rental", FOB_SETUP: "FBO setup", FOB_MODULE: "FBO module", FOB_UPKEEP: "FBO upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
   const { data: bases } = useSuspenseQuery(basesQuery);
@@ -76,7 +77,7 @@ function Dashboard() {
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>
           <p className="readout mt-2 text-3xl text-amber">{hb?.icao}</p>
           <p className="text-sm text-muted-foreground">{hb?.name}, {hb?.city} · {hb?.lat.toFixed(3)}, {hb?.lon.toFixed(3)}</p>
-          <p className="mt-2 text-xs text-success">{bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type ? `● ${bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type} FOB active` : "Home airport · No FOB installed"}</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/bases">Manage bases · {bases.bases.length} active</Link></Button>
+          <p className="mt-2 text-xs text-success">{bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type ? `● ${bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type} FBO active` : "Home airport · No FBO installed"}</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/bases">Manage bases · {bases.bases.length} active</Link></Button>
         </div>
       </div>
 
@@ -117,7 +118,7 @@ function Dashboard() {
                 <tr key={e.id} className="border-b border-border/50 last:border-0">
                   <td className="p-3 text-muted-foreground">{new Date(e.created_at).toLocaleString("en-US")}</td>
                   <td className="p-3">{typeLabel[e.entry_type] ?? e.entry_type}</td>
-                  <td className="p-3 font-sans">{flightTransactionContext(e) ? <span className="readout text-primary">{flightTransactionContext(e)}</span> : e.description}</td>
+                  <td className="p-3 font-sans">{flightTransactionContext(e) ? <span className="readout text-primary">{flightTransactionContext(e)}</span> : displayTerminology(e.description)}</td>
                   <td className="p-3 text-xs text-muted-foreground">{e.debit_account} / {e.credit_account}</td>
                   <td className={`p-3 text-right ${e.company_delta >= 0 ? "text-success" : "text-destructive"}`}>{e.company_delta >= 0 ? "+" : ""}{formatCr(e.company_delta)}</td>
                   <td className="p-3 text-right">{formatCr(e.balance_after)}</td>
@@ -128,7 +129,7 @@ function Dashboard() {
         </div>
       </section>
       {selected && (() => { const f = overview.fleet.find(f => f.id === selected); return f ? <AircraftDetails aircraft={f.id} registration={f.registration} baseRate={Number(f.type?.weekly_rate ?? f.weekly_rate)} renewalDiscount={Number(overview.rules.renewal_discount)} onClose={() => setSelected(null)} /> : null; })()}
-      <Dialog open={restructure} onOpenChange={open => { if (!recovering) setRestructure(open); }}><DialogContent><DialogTitle>Controlled company restructuring</DialogTitle><DialogDescription>All aircraft will be returned or liquidated at their recorded purchase value. All FOBs will close without refunds. Cash will restart at the current starting-capital setting; company identity and transaction history remain. Finish or cancel active flights first.</DialogDescription><label className="text-sm">Type RESTRUCTURE to confirm<Input aria-label="Restructuring confirmation" value={confirmation} onChange={e => setConfirmation(e.target.value)} className="mt-2" /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={recovering} onClick={() => setRestructure(false)}>Cancel</Button><Button variant="destructive" disabled={recovering || confirmation !== "RESTRUCTURE"} onClick={async () => { setRecovering(true); try { await recover({ data: { action: "restructure", confirmation: "RESTRUCTURE" } }); setRestructure(false); setConfirmation(""); await qc.invalidateQueries(); toast.success("Company restructured — history retained"); } catch (e) { toast.error(e instanceof Error ? e.message : "Restructuring failed"); } finally { setRecovering(false); } }}>Confirm restructuring</Button></div></DialogContent></Dialog>
+      <Dialog open={restructure} onOpenChange={open => { if (!recovering) setRestructure(open); }}><DialogContent><DialogTitle>Controlled company restructuring</DialogTitle><DialogDescription>All aircraft will be returned or liquidated at their recorded purchase value. All FBOs will close without refunds. Cash will restart at the current starting-capital setting; company identity and transaction history remain. Finish or cancel active flights first.</DialogDescription><label className="text-sm">Type RESTRUCTURE to confirm<Input aria-label="Restructuring confirmation" value={confirmation} onChange={e => setConfirmation(e.target.value)} className="mt-2" /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={recovering} onClick={() => setRestructure(false)}>Cancel</Button><Button variant="destructive" disabled={recovering || confirmation !== "RESTRUCTURE"} onClick={async () => { setRecovering(true); try { await recover({ data: { action: "restructure", confirmation: "RESTRUCTURE" } }); setRestructure(false); setConfirmation(""); await qc.invalidateQueries(); toast.success("Company restructured — history retained"); } catch (e) { toast.error(e instanceof Error ? displayTerminology(e.message) : "Restructuring failed"); } finally { setRecovering(false); } }}>Confirm restructuring</Button></div></DialogContent></Dialog>
     </AppShell>
   );
 }

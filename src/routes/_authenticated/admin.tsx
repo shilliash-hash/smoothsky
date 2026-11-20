@@ -1,3 +1,4 @@
+import { displayTerminology } from "@/lib/display-terminology";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -85,7 +86,7 @@ function Admin() {
       toast.success("Changes saved");
       return true;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? displayTerminology(e.message) : "Save failed");
       return false;
     } finally {
       setBusy(false);
@@ -145,7 +146,7 @@ function Admin() {
             </table>
           </div>
           <section className="mt-8 border-y border-border py-5"><h2 className="text-xl font-semibold">World supplies</h2><p className="mt-2 text-sm text-muted-foreground">Restore every airport to the configured initial passenger stock and full simulated fuel capacity. Active flights must be completed or cancelled first.</p><Button variant="destructive" className="mt-4" disabled={busy} onClick={() => setResetOpen(true)}>Reset airports (Passengers & Fuel)</Button></section>
-          <Dialog open={resetOpen} onOpenChange={open => { if (!busy) setResetOpen(open); }}><DialogContent><DialogTitle>Reset world airport supplies?</DialogTitle><DialogDescription>This affects all players. Passenger pools return to the configured starting level; both fuel types return to full capacity. Airport data, companies, flights and financial histories remain unchanged.</DialogDescription><label className="text-sm">Type RESET AIRPORTS to confirm<Input aria-label="Airport reset confirmation" className="mt-2" value={resetConfirmation} onChange={e => setResetConfirmation(e.target.value)} /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setResetOpen(false)}>Cancel</Button><Button variant="destructive" disabled={busy || resetConfirmation !== "RESET AIRPORTS"} onClick={async () => { setBusy(true); try { await reset({ data: { confirmation: "RESET AIRPORTS" } }); setResetOpen(false); setResetConfirmation(""); await qc.invalidateQueries(); toast.success("Airport passenger and fuel supplies reset"); } catch (e) { toast.error(e instanceof Error ? e.message : "Reset failed"); } finally { setBusy(false); } }}>Confirm airport reset</Button></div></DialogContent></Dialog>
+          <Dialog open={resetOpen} onOpenChange={open => { if (!busy) setResetOpen(open); }}><DialogContent><DialogTitle>Reset world airport supplies?</DialogTitle><DialogDescription>This affects all players. Passenger pools return to the configured starting level; both fuel types return to full capacity. Airport data, companies, flights and financial histories remain unchanged.</DialogDescription><label className="text-sm">Type RESET AIRPORTS to confirm<Input aria-label="Airport reset confirmation" className="mt-2" value={resetConfirmation} onChange={e => setResetConfirmation(e.target.value)} /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setResetOpen(false)}>Cancel</Button><Button variant="destructive" disabled={busy || resetConfirmation !== "RESET AIRPORTS"} onClick={async () => { setBusy(true); try { await reset({ data: { confirmation: "RESET AIRPORTS" } }); setResetOpen(false); setResetConfirmation(""); await qc.invalidateQueries(); toast.success("Airport passenger and fuel supplies reset"); } catch (e) { toast.error(e instanceof Error ? displayTerminology(e.message) : "Reset failed"); } finally { setBusy(false); } }}>Confirm airport reset</Button></div></DialogContent></Dialog>
         </TabsContent>
         <TabsContent value="fleet" className="mt-6">
           <div className="flex justify-between gap-3">
@@ -425,9 +426,9 @@ function EconomyRow({
     >
       <div>
         <label htmlFor={row.key} className="text-sm font-medium capitalize">
-          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key.replaceAll("_", " ")}
+          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : displayTerminology(row.key.replaceAll("_", " "))}
         </label>
-        <p className="mt-1 text-xs text-muted-foreground">{row.description}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{displayTerminology(row.description)}</p>
       </div>
       {isBool ? (
         <Switch
@@ -441,7 +442,7 @@ function EconomyRow({
             <label key={index} className="text-[10px] text-muted-foreground">
               {row.key === "charter_by_tier" ? `Tier ${index === 4 ? "5–7" : index + 1} · SC/pax` : `Size ${index + 1}`}
               <Input
-                aria-label={`${row.key.replaceAll("_", " ")} ${index + 1}`}
+                aria-label={`${displayTerminology(row.key.replaceAll("_", " "))} ${index + 1}`}
                 type="number"
                 min="0"
                 step={Number.isInteger(Number(row.value instanceof Array ? row.value[index] : item)) ? "1" : "0.1"}
@@ -463,7 +464,7 @@ function EconomyRow({
       ) : (
         <Input
           id={row.key}
-          aria-label={row.key.replaceAll("_", " ")}
+          aria-label={displayTerminology(row.key.replaceAll("_", " "))}
           type="number"
           step={Number.isInteger(Number(row.value)) ? "1" : "0.1"}
           value={value}
@@ -546,7 +547,7 @@ function OperatingRulesEditor() {
   return <form className="mb-6 border-b border-border pb-5" onSubmit={async e => {
     e.preventDefault(); setBusy(true);
     try { await save({ data: edit }); await qc.invalidateQueries(); toast.success('Operating rules saved'); }
-    catch(e) { toast.error(e instanceof Error ? e.message : 'Save failed'); }
+    catch(e) { toast.error(e instanceof Error ? displayTerminology(e.message) : 'Save failed'); }
     finally { setBusy(false); }
   }}>
     <h2 className="mb-4 text-lg font-semibold">Lease contracts, fuel units & cargo</h2>

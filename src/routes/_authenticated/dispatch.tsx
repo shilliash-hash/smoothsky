@@ -1,3 +1,4 @@
+import { displayTerminology } from "@/lib/display-terminology";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -107,7 +108,7 @@ function Dispatch() {
         if (active) setQuote(q as Quote);
       })
       .catch((e) => {
-        if (active) setQuoteError(e.message);
+        if (active) setQuoteError(displayTerminology(e.message));
       });
     return () => {
       active = false;
@@ -162,7 +163,7 @@ function Dispatch() {
               : simulationEnabled ? "Passengers reserved — ready for departure" : "Flight dispatched — connect your ACARS client",
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Flight action failed");
+      toast.error(e instanceof Error ? displayTerminology(e.message) : "Flight action failed");
     } finally {
       setBusy(false);
     }
@@ -334,7 +335,7 @@ function Dispatch() {
                     <p className="mt-3 text-xs text-muted-foreground">Load at least the planned fuel before departure. Compare it with your SimBrief / aircraft EFB block fuel: the same trip-plus-reserve principle applies, but taxi, contingency and alternate requirements may increase the simulator's total. Use the higher requirement; SmoothSky's estimate does not validate your simulator fuel load.</p>
                     <p className="mt-2 text-xs text-muted-foreground">Reserve follows the current administrator setting. Weekly lease costs are excluded from this estimate.</p>
                   </aside>}
-                   {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FOB savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
+                   {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FBO savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
                   <Button
                     className="mt-5 w-full"
                     disabled={

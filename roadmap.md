@@ -1,5 +1,9 @@
 # Roadmap
 
+## Civil aviation terminology
+- [x] Replace player-facing FOB text with FBO, including legacy descriptions and errors; preserve database identifiers and deployment variables.
+- [x] Verify signed-in bases, dashboard, radar, leaderboard and admin plus public information; 19 existing tests passed, build OK. Player-authored company names remain unchanged.
+
 ## Global live flight radar
 - [x] Add anonymous/authenticated safe active-flight RPC without changing private flights policies.
 - [x] Refresh worldwide map/list every 5 seconds, distinguish own flights and show public airline/aircraft telemetry details; radar also permits pilot accounts without companies.

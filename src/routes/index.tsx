@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 const pillars = [
-  { icon: Landmark, title: "Realistic economics", points: ["1 SC ≈ 1 EUR/USD — every coin goes through a double-entry ledger", "Airport fuel refills 10%/h, passenger pools 1%/h", "Stepped charter bonuses reward small GA aircraft on thin routes", "Leases, purchases, FOB bases and weekly obligations"] },
+  { icon: Landmark, title: "Realistic economics", points: ["1 SC ≈ 1 EUR/USD — every coin goes through a double-entry ledger", "Airport fuel refills 10%/h, passenger pools 1%/h", "Stepped charter bonuses reward small GA aircraft on thin routes", "Leases, purchases, FBO bases and weekly obligations"] },
   { icon: Users, title: "Two career paths", points: ["Airline Owner: lease or buy aircraft, open bases, hire pilots", "Pilot: fly on a Roster contract or as a Freelancer for commission", "Earn Type Ratings to unlock bigger tiers", "Buy airline stakes for weekly dividends or a personal aircraft"] },
   { icon: Package, title: "Cargo & urgent missions", points: ["Belly cargo alongside passengers or All-Cargo with +50% capacity", "Cargo pools regenerate hourly — even at small regional fields", "MEDEVAC / transplant runs with fees waived and 2–3 h deadlines", "AOG industrial freight — late delivery halves the payout"] },
   { icon: Radio, title: "SimBrief + Live ACARS", points: ["Import your SimBrief OFP straight into Dispatch", "Personal ACARS key streams live position to the radar", "PIREPs are validated against physics and fuel plausibility", "No simulator yet? Use the accelerated web test flight"] },
