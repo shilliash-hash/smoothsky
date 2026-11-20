@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Landmark, Fuel, Wrench, Users, Plus, Check } from "lucide-react";
+import { Landmark, Fuel, Wrench, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/bases")({
   head: () => ({ meta: [{ title: "Company bases — SmoothSky" }, { name: "description", content: "Manage your main and satellite SmoothSky bases, operating modules and weekly costs." }, { property: "og:title", content: "Company bases — SmoothSky" }, { property: "og:description", content: "Company FBO infrastructure, fuel contracts and operating discounts." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: Bases,
 });
-const modules = [ { key: "fuel", flag: "has_fuel_contract", label: "Fuel Contract", icon: Fuel }, { key: "handling", flag: "has_handling_desk", label: "Handling Desk", icon: Users }, { key: "maintenance", flag: "has_maintenance_bay", label: "Maintenance Bay", icon: Wrench } ] as const;
+const modules = [ { key: "fuel", flag: "has_fuel_contract", label: "Fuel Contract", icon: Fuel }, { key: "maintenance", flag: "has_maintenance_bay", label: "Maintenance Bay", icon: Wrench } ] as const;
 function Bases() {
   const { data: company } = useSuspenseQuery(companyQuery);
   const { data } = useSuspenseQuery(basesQuery);
@@ -56,7 +56,7 @@ function Bases() {
       {data.bases.map(b => { const weekly = number(`fob_${b.base_type.toLowerCase()}_upkeep`) + modules.reduce((sum, m) => sum + (b[m.flag] ? number(`fob_${m.key}_upkeep`) : 0), 0); return <article key={b.id} className="border border-border rounded-md p-5">
         <div className="flex items-center gap-3"><Landmark className="h-6 w-6 text-amber" /><div><p className="text-xs uppercase text-muted-foreground">{b.base_type} FBO</p><h2 className="readout text-xl text-primary">{b.airport_icao}</h2></div></div><p className="mt-2 min-h-10 text-sm text-muted-foreground">{b.airport?.name}</p>
         <p className="mt-3 flex items-start gap-2 text-xs text-primary"><Check className="h-4 w-4 shrink-0" />Free ground handling (0 SC) at this airport</p>
-        <div className="mt-4 space-y-4">{modules.map(m => <div key={m.key} className="border-t border-border pt-3"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-2 text-sm"><m.icon className="h-4 w-4" />{m.label}</span>{b[m.flag] ? <Check aria-label="Installed" className="h-4 w-4 text-success" /> : <Button size="sm" variant="outline" disabled={busy || !invest || (data.health?.balance ?? 0) < number(`fob_${m.key}_setup`)} onClick={() => setConfirmation({ action: "module", base: b.id, module: m.key })}><Plus className="h-3 w-3" />Install</Button>}</div><p className="mt-1 text-xs text-muted-foreground">{(number(`fob_${m.key}_discount`) * 100).toFixed(0)}% {m.key === "handling" ? "landing fee discount" : "discount"} · {formatCr(number(`fob_${m.key}_upkeep`))}/week{!b[m.flag] && ` · ${formatCr(number(`fob_${m.key}_setup`))} setup`}</p></div>)}</div>
+        <div className="mt-4 space-y-4">{modules.map(m => <div key={m.key} className="border-t border-border pt-3"><div className="flex items-center justify-between gap-2"><span className="flex items-center gap-2 text-sm"><m.icon className="h-4 w-4" />{m.label}</span>{b[m.flag] ? <Check aria-label="Installed" className="h-4 w-4 text-success" /> : <Button size="sm" variant="outline" disabled={busy || !invest || (data.health?.balance ?? 0) < number(`fob_${m.key}_setup`)} onClick={() => setConfirmation({ action: "module", base: b.id, module: m.key })}><Plus className="h-3 w-3" />Install</Button>}</div><p className="mt-1 text-xs text-muted-foreground">{(number(`fob_${m.key}_discount`) * 100).toFixed(0)}% discount · {formatCr(number(`fob_${m.key}_upkeep`))}/week{!b[m.flag] && ` · ${formatCr(number(`fob_${m.key}_setup`))} setup`}</p></div>)}</div>
         <p className="readout mt-5 border-t border-border pt-3 text-sm">{formatCr(weekly)} / week</p><p className="mt-1 text-xs text-muted-foreground">Next payment · {new Date(b.next_payment_due).toLocaleDateString("en-US")}</p>
       </article>; })}
     </section>
