@@ -1,5 +1,10 @@
 # Roadmap
 
+## Accessible pilot progression
+- [x] Grant baseline T1–T3 to new and existing pilots without removing paid ratings; applied backfill has zero missing baseline profiles. Leasing prices/eligibility and single-flight rental settlement unchanged; no independent freelancer rental system added.
+- [x] Allow owners to buy higher ratings directly from their own company, with company-before-profile locks, synchronized obligations, idempotent ledger charges, expenses/dividend accounting and profile payment readouts. Freelancers retain wallet-funded higher training.
+- [x] 72 SQL/regression tests passed. Signed-in test owner purchased T4: company 30,000 → 15,000 SC, pilot wallet stayed 0; licence and expense read back through Profile/Dashboard. PC-12 and King Air spot-rental buttons enabled; desktop/mobile checked without overflow or runtime errors, build OK. Deployment variables unchanged. Test company has no in-app deletion path, so its rows were not deleted through SQL; no player funds spent.
+
 ## Configurable spot rental rate
 - [x] Replace the fixed rental multiplier with live economy configuration, default 0.20; admin editing (0.01–1.00), shared market/confirmation/affordability prices and missing-setting fallback/upsert. Existing single-flight settlement, historical charges and deployment variables unchanged.
 - [x] 26 tests passed for default/configured SQL pricing, rounding, admin bounds and acquisition guards. Signed-in Admin saved/read back 0.25; C172 market and confirmation both showed 238 SC; restored 0.20 and verified 190 SC. Desktop/mobile screenshots checked, no overflow or runtime errors, build OK. No rental purchased or flight settled on the player's account.

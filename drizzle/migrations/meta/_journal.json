@@ -330,6 +330,13 @@
       "when": 1795211274292,
       "tag": "0046_configurable_spot_rental_multiplier",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795213461691,
+      "tag": "0047_baseline_ratings_company_training",
+      "breakpoints": true
     }
   ]
 }

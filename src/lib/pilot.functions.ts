@@ -54,6 +54,7 @@ export type CareerProfile = {
   pilot_home_icao: string | null;
   type_ratings: number[];
   balance: number;
+  training_company: { id: string; name: string; balance: number } | null;
   roster: { company_id: string; name: string; icao_code: string; commission_pct: number; joined_at: string } | null;
   prices: { T3_4: number; T5: number; T6_7: number };
 };

@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 const ratingGroups = [
-  { id: "T3_4", label: "Tier 3–4", tiers: [3, 4], hint: "PC-12, King Air 350, Twin Otter" },
+  { id: "T3_4", label: "Tier 4", tiers: [4], hint: "Twin Otter" },
   { id: "T5", label: "Tier 5", tiers: [5], hint: "ATR 72-600" },
   { id: "T6_7", label: "Tier 6–7", tiers: [6, 7], hint: "A320neo, 777-300ER" },
 ] as const;
@@ -48,6 +48,7 @@ function Profile() {
   const roster = useServerFn(rosterAction);
   const saveHiring = useServerFn(setCompanyHiring);
   const [simbrief, setSimbrief] = useState("");
+  const [buyingRating, setBuyingRating] = useState<string | null>(null);
   const [h, setH] = useState({ hiring: false, roster: 40, freelance: 25 });
   useEffect(() => { setSimbrief(pilot?.simbriefUsername ?? ""); }, [pilot?.simbriefUsername]);
   useEffect(() => { if (company) setH({ hiring: !!company.is_hiring, roster: Number(company.roster_commission_pct), freelance: Number(company.freelance_commission_pct) }); }, [company]);
@@ -67,6 +68,18 @@ function Profile() {
   };
 
   const role = c?.career_role ?? (company ? "ENTREPRENEUR" : null);
+  const trainingCompany = c?.training_company;
+  const trainingBalance = Number(trainingCompany?.balance ?? c?.balance ?? 0);
+  const purchaseRating = async (group: "T3_4" | "T5" | "T6_7", label: string) => {
+    if (buyingRating) return;
+    setBuyingRating(group);
+    try {
+      await buy({ data: { group } });
+      await qc.invalidateQueries();
+      toast.success(`${label} licence purchased`);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Purchase failed"); }
+    finally { setBuyingRating(null); }
+  };
   return <AppShell company={company ?? null}>
     <p className="readout flex items-center gap-2 text-xs uppercase text-amber"><UserRound className="h-4 w-4" /> Crew room</p>
     <h1 className="mt-2 text-3xl font-semibold">Pilot profile</h1>
@@ -92,11 +105,12 @@ function Profile() {
       </div>
       <div className="instrument p-5">
         <p className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><BadgeCheck className="h-4 w-4" /> Type ratings</p>
-        <p className="mt-2 text-sm">Tier 1–2 included. Higher tiers require a one-time licence paid from your pilot wallet.</p>
+        <p className="mt-2 text-sm">Tier 1–3 included · PC-12 and King Air unlocked.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{trainingCompany ? `Training paid by ${trainingCompany.name} · Company funds: ${formatCr(trainingBalance)}` : `Training paid from pilot wallet · Available: ${formatCr(trainingBalance)}`}</p>
         <ul className="mt-3 space-y-2">{ratingGroups.map(g => { const held = g.tiers.every(t => c?.type_ratings?.includes(t)); const price = Number(c?.prices?.[g.id] ?? 0); return (
-          <li key={g.id} className="flex items-center justify-between gap-3 border-t border-border pt-2">
+          <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-2">
             <div><span className="readout text-primary">{g.label}</span><div className="text-xs text-muted-foreground">{g.hint}</div></div>
-            {held ? <span className="readout text-xs text-primary">HELD</span> : <Button size="sm" variant="outline" disabled={Number(c?.balance ?? 0) < price} onClick={() => run(() => buy({ data: { group: g.id } }), `${g.label} licence purchased`)}>{formatCr(price)}</Button>}
+            {held ? <span className="readout text-xs text-primary">HELD</span> : <Button size="sm" variant="outline" aria-label={`Buy ${g.label} licence`} title={trainingBalance < price ? "Insufficient funds" : trainingCompany ? "Pay from company funds" : "Pay from pilot wallet"} disabled={!c || price <= 0 || trainingBalance < price || buyingRating !== null} onClick={() => void purchaseRating(g.id, g.label)}>{buyingRating === g.id ? "Purchasing…" : formatCr(price)}</Button>}
           </li>); })}</ul>
       </div>
     </div>
