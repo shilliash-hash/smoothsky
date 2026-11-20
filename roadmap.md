@@ -87,4 +87,5 @@
 - [x] Add 30-minute ACARS reconnect window and persistent Crew onboarding hint; unit tests and signed-in pages checked, real simulator reconnect not available in sandbox.
 - [x] Verify catalogue leasing changes against affordability, existing contracts and acquisition guards; C172 available in signed-in market, BE58 requires 11,600 SC. Exact reported-player error requested.
 - [x] Expose every non-financial acquisition blocker; signed-in term validation and enabled C172 verified.
-- [ ] Confirm the screenshot player's specific blocker — waiting for their home-base ICAO or the newly displayed warning; NLR is absent from the current accessible company list.
+- [x] Identify Canadian registration coverage gap for CYYR; support both CA and Canada imports without altering lease prices.
+- [ ] Verify and apply repair in the user's isolated 49,000-airport database — current development and production query tools both return the 7,529-airport database without CYYR.
