@@ -1,5 +1,9 @@
 # Roadmap
 
+## Configurable spot rental rate
+- [x] Replace the fixed rental multiplier with live economy configuration, default 0.20; admin editing (0.01–1.00), shared market/confirmation/affordability prices and missing-setting fallback/upsert. Existing single-flight settlement, historical charges and deployment variables unchanged.
+- [x] 26 tests passed for default/configured SQL pricing, rounding, admin bounds and acquisition guards. Signed-in Admin saved/read back 0.25; C172 market and confirmation both showed 238 SC; restored 0.20 and verified 190 SC. Desktop/mobile screenshots checked, no overflow or runtime errors, build OK. No rental purchased or flight settled on the player's account.
+
 ## Short-hop charter reduction
 - [x] Apply database-backed 80 NM / 50% charter rule to the shared quote and cargo fare, freezing exact-distance eligibility/rate in the quote; FBOs, settlement and deployment variables unchanged. Applied definitions and owner-only permissions verified.
 - [x] Show the frozen reduced charter amount and short-hop note in Dispatch. 110 tests passed: 50/79.999/80/80.001/120 NM, all seven tiers, frozen settings, cargo, FBOs, nearby/search/alternative previews and existing tip/settlement regressions. Signed-in 11 NM quote showed 32.5 SC/pax and -50% note; 122 NM quote showed full 65 SC/pax, with tile margins matching both quotes. Desktop/mobile screenshots checked, no overflow or runtime errors, build OK. No new live flight dispatched or ACARS hardware tested.

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { fuelProjection, fuelCapacity, validateEconomyValue, aircraftSchema } from "./admin-rules";
 describe("airport fuel and admin validation", () => {
+  it("accepts a configurable 0.20 spot rental multiplier", () => {
+    expect(validateEconomyValue("spot_rental_multiplier", 0.20)).toBe(0.20);
+    expect(validateEconomyValue("spot_rental_multiplier", 0.25)).toBe(0.25);
+  });
+  it("limits the spot rental multiplier to 0.01–1.00", () => {
+    for (const value of [0, -0.2, 1.01, NaN, Infinity, "0.20"]) expect(() => validateEconomyValue("spot_rental_multiplier", value)).toThrow();
+    expect(validateEconomyValue("spot_rental_multiplier", 0.01)).toBe(0.01);
+    expect(validateEconomyValue("spot_rental_multiplier", 1)).toBe(1);
+  });
   it("FOB discounts cannot exceed 100%", () => {
     for (const key of ["fob_fuel_discount", "fob_handling_discount", "fob_maintenance_discount"]) {
       expect(() => validateEconomyValue(key, 1.1)).toThrow();

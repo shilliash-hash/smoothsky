@@ -3,6 +3,6 @@
 - Market acquisition blockers are resolved centrally and displayed explicitly; missing country rules resolve to the shared emergency rule without bypassing financial checks — import coverage must not disable funded acquisitions.
 - Recruitment defaults/ranges live in economy_config; SQL validates owner-selected rates and applies defaults only to new companies, preserving existing rates and dispatched-flight snapshots.
 
-- Single-flight rentals use atomic owner/tier-checked SQL acquisition and terminal-flight retirement, never deletion; no lease contracts, while ledger charges count in aircraft/company P&L and dividends.
+- Single-flight rentals use atomic owner/tier-checked SQL acquisition and terminal-flight retirement, never deletion; no lease contracts, while ledger charges count in aircraft/company P&L and dividends. Acquisition SQL and all market prices/affordability/confirmations read the live economy multiplier; historical charges remain frozen. Admin can upsert the setting if an environment has no seeded row — keeps economic tuning consistent across environments.
 
 - Dispatch previews reuse flight_quote_full in owner-scoped additive RPCs after the 60/40 result limits; alternatives quote only six nearest eligible ports within 150 NM then rank these by margin. Invalid quotes remain null with a reason; cargo settings are part of query identity — avoids economic drift, unbounded quotation work and shared-search regressions.

@@ -7,11 +7,11 @@ import { formatCr } from '@/lib/rules';
 import type { registrationRule } from '@/lib/registration-rules';
 
 type Aircraft = { manufacturer: string; model: string; tier: number; weekly_rate: number; security_deposit: number; purchase_price: number };
-export function AcquisitionConfirmation({ mode, aircraft, home, weeks, balance, registration, rule, busy, block, onRegistration, onClose, onConfirm }: {
-  mode: AcquisitionMode; aircraft: Aircraft; home: string; weeks: number; balance: number; registration: string; rule: ReturnType<typeof registrationRule>; busy: boolean; block: string | null;
+export function AcquisitionConfirmation({ mode, aircraft, rentalMultiplier, home, weeks, balance, registration, rule, busy, block, onRegistration, onClose, onConfirm }: {
+  mode: AcquisitionMode; aircraft: Aircraft; rentalMultiplier?: number; home: string; weeks: number; balance: number; registration: string; rule: ReturnType<typeof registrationRule>; busy: boolean; block: string | null;
   onRegistration: (value: string) => void; onClose: () => void; onConfirm: () => void;
 }) {
-  const due = acquisitionDue(mode, aircraft);
+  const due = acquisitionDue(mode, aircraft, rentalMultiplier);
   const rows: [string, string][] = [
     ['Delivery airport', home], ['Agreement', mode === 'lease' ? `Weekly Lease · ${weeks} weeks` : mode === 'rent' ? 'Spot Rental · 1 flight' : 'Outright Purchase'],
     ...(mode === 'lease' ? [['Weekly rate', formatCr(aircraft.weekly_rate)], ['Contract total (excl. deposit)', formatCr(aircraft.weekly_rate * weeks)]] as [string, string][] : []),
