@@ -1290,6 +1290,33 @@ export type Database = {
         Returns: Json
       }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
+      get_live_radar_flights: {
+        Args: never
+        Returns: {
+          aircraft_model: string
+          airline_name: string
+          departed_at: string
+          destination_icao: string
+          destination_lat: number
+          destination_lon: number
+          eta_at: string
+          execution_source: string
+          flight_number: string
+          id: string
+          is_own: boolean
+          last_altitude_ft: number
+          last_groundspeed_kts: number
+          last_heading: number
+          last_lat: number
+          last_lon: number
+          last_telemetry_at: string
+          origin_icao: string
+          origin_lat: number
+          origin_lon: number
+          registration: string
+          status: string
+        }[]
+      }
       get_pilot_leaderboard: {
         Args: never
         Returns: {

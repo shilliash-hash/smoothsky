@@ -1,5 +1,10 @@
 # Roadmap
 
+## Global live flight radar
+- [x] Add anonymous/authenticated safe active-flight RPC without changing private flights policies.
+- [x] Refresh worldwide map/list every 5 seconds, distinguish own flights and show public airline/aircraft telemetry details; radar also permits pilot accounts without companies.
+- [x] Verify 15 tests, anonymous RPC, real dispatched flight visible to another account, owner badge, automatic cancellation removal and desktop/mobile map. Live airborne GPS covered by unit tests; no real simulator connected. Deployment variables unchanged.
+
 ## Single-flight rentals and acquisition confirmations
 - [x] Add atomic tier-checked rentals at 37% of weekly rate, no deposit/weekly billing, retirement after settlement or cancellation.
 - [x] Add shared Lease/Rent/Buy confirmation, rental fleet labels and accurate rental operating expenses.

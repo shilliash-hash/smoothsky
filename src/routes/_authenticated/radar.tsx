@@ -1,13 +1,12 @@
-import { createFileRoute, ClientOnly, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, ClientOnly, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { Plane, X } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { operationsQuery, type Airport, type Flight } from "@/lib/operations";
-import { projectedPassengers, flightProgress, type Economy } from "@/lib/dispatch-engine";
-import { formatCr } from "@/lib/rules";
+import { operationsQuery, type Airport } from "@/lib/operations";
+import { projectedPassengers, type Economy } from "@/lib/dispatch-engine";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
 import { airportCategories, airportMatches, type AirportCategory } from "@/lib/radar-filters";
@@ -16,11 +15,11 @@ import { useVisibleTiers } from "@/lib/airport-tiers";
 import { TierPills } from "@/components/game/TierPills";
 import { RouteError } from "@/components/game/RouteError";
 import { acarsLinkLabel } from '@/lib/acars-status';
+import { liveRadarQuery, liveRadarProgress, type LiveRadarFlight } from '@/lib/live-radar';
 const RadarMap = lazy(() => import("@/components/game/RadarMap"));
 export const Route = createFileRoute("/_authenticated/radar")({
   loader: async ({ context }) => {
-    const [d] = await Promise.all([context.queryClient.ensureQueryData(operationsQuery), context.queryClient.ensureQueryData(fleetOverviewQuery)]);
-    if (!(d?.company ?? null)) throw redirect({ to: "/onboarding" });
+    await Promise.all([context.queryClient.ensureQueryData(operationsQuery), context.queryClient.ensureQueryData(fleetOverviewQuery), context.queryClient.ensureQueryData(liveRadarQuery)]);
   },
   errorComponent: RouteError,
   head: () => ({
@@ -28,12 +27,12 @@ export const Route = createFileRoute("/_authenticated/radar")({
       { title: "Operational radar — SmoothSky" },
       {
         name: "description",
-        content: "Explore European airports, aircraft positions and reachable destinations.",
+        content: "Track worldwide active SmoothSky flights, live ACARS positions and airport activity.",
       },
       { property: "og:title", content: "Operational radar — SmoothSky" },
       {
         property: "og:description",
-        content: "Your fleet and airport network on an interactive operational map.",
+        content: "All active SmoothSky airlines and aircraft on a live worldwide operational map.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -44,11 +43,12 @@ export const Route = createFileRoute("/_authenticated/radar")({
 function Radar() {
   const { data: d } = useSuspenseQuery(operationsQuery);
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const { data: liveFlights, isRefetchError, dataUpdatedAt } = useSuspenseQuery(liveRadarQuery);
   const [selected, setSelected] = useState("__default");
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);
-  const [flight, setFlight] = useState<Flight | null>(null);
-  const currentFlight = d.flights.find(f => f.id === flight?.id) ?? flight;
+  const [flight, setFlight] = useState<LiveRadarFlight | null>(null);
+  const currentFlight = liveFlights.find(f => f.id === flight?.id) ?? null;
   const [layers, setLayers] = useState({ pax: true, activity: true, flights: true });
   const [categories, setCategories] = useState<AirportCategory[]>([...airportCategories]);
   const [tiers, setTiers] = useVisibleTiers();
@@ -58,7 +58,7 @@ function Radar() {
     setAirport(a);
     setFlight(null);
   }, []);
-  const onFlight = useCallback((f: Flight) => {
+  const onFlight = useCallback((f: LiveRadarFlight) => {
     setFlight(f);
     setAirport(null);
   }, []);
@@ -68,7 +68,6 @@ function Radar() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (!d.company) return null;
   const chosen = selected === "__default" ? (d.fleet[0]?.id ?? "") : selected;
   const pool = d.pools.find((p) => p.airport_icao === airport?.icao);
   const rules = d.rules as Economy;
@@ -100,7 +99,7 @@ function Radar() {
         </div>
         <span className="readout text-xs text-muted-foreground">
           {visible.length.toLocaleString()} / {d.airports.length.toLocaleString()} airports ·{" "}
-          {d.flights.filter((f) => f.status === "EN_ROUTE").length} airborne
+          {liveFlights.filter((f) => f.status === "EN_ROUTE").length} airborne · {liveFlights.filter(f => f.status === "DISPATCHED").length} dispatched
         </span>
       </div>
       <div className="my-5 flex flex-wrap items-center gap-4">
@@ -127,7 +126,7 @@ function Radar() {
               checked={layers[key]}
               onCheckedChange={(value) => setLayers((current) => ({ ...current, [key]: value }))}
             />
-            {key === "pax" ? "Passenger rings" : key === "activity" ? "Activity" : "Airborne"}
+            {key === "pax" ? "Passenger rings" : key === "activity" ? "Activity" : "Live flights"}
           </label>
         ))}
       </div>
@@ -149,6 +148,8 @@ function Radar() {
           <Suspense fallback={<div className="h-[600px]">Loading map…</div>}>
             <RadarMap
               data={d}
+              flights={liveFlights}
+              focusedFlight={flight?.id ?? null}
               airportFilter={airportFilter}
               selected={chosen}
               rangeOnly={rangeOnly}
@@ -167,8 +168,9 @@ function Radar() {
           </span>
           <span className="flex items-center gap-2">
             <i className="h-2 w-2 rounded-full bg-amber" />
-            Ground fleet / airborne
+            Ground fleet / world flights
           </span>
+          <span className="text-primary">✈ Your flight</span>
           <span className="text-radar-pax">◔ Passenger pool · % full</span>
           <span className="text-radar-range">◯ Aircraft range</span>
           <span className="text-radar-activity">◎ Pulse · Active airport (7 days)</span>
@@ -178,7 +180,25 @@ function Radar() {
       <p className="mt-1 text-right text-[10px] text-muted-foreground">
         Airports & runways: OurAirports · provisional classification · fuel: SmoothSky simulation
       </p>
-      {(airport || flight) && (
+      <section className="mt-6 border-y border-border py-5" aria-label="Worldwide active flights">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold">Worldwide active flights <span className="readout text-sm text-amber">{liveFlights.length}</span></h2>
+          <span className="readout text-xs text-muted-foreground">Updated {new Date(dataUpdatedAt).toLocaleTimeString()} · 5s refresh</span>
+        </div>
+        {isRefetchError && <p role="alert" className="mb-3 text-sm text-amber">Live update unavailable — showing last received flights. Retrying…</p>}
+        {liveFlights.length === 0 ? <p className="text-sm text-muted-foreground">No active flights worldwide.</p> :
+          <div className="max-h-96 overflow-y-auto divide-y divide-border">
+            {liveFlights.map(f => <Button key={f.id} variant="ghost" onClick={() => onFlight(f)} className={`h-auto w-full justify-start whitespace-normal rounded-none py-3 text-left ${f.is_own ? 'text-primary' : ''}`}>
+              <Plane className="mr-3 h-5 w-5 shrink-0" />
+              <span className="grid min-w-0 flex-1 gap-1 sm:grid-cols-3">
+                <span className="min-w-0 break-words"><span className="readout">{f.flight_number}</span> · {f.airline_name}{f.is_own && <span className="ml-2 text-xs text-primary">YOUR FLIGHT</span>}</span>
+                <span className="readout text-xs">{f.origin_icao} → {f.destination_icao}<span className="block text-muted-foreground">{f.registration} · {f.aircraft_model}</span></span>
+                <span className="text-xs text-muted-foreground">{f.status === 'DISPATCHED' ? 'DISPATCHED · Awaiting departure' : f.execution_source === 'ACARS_AGENT' ? acarsLinkLabel(f.status, { live: { received_at: f.last_telemetry_at } }, f.departed_at, now).replace(' — use Cancel flight', '') : 'EN ROUTE · Simulated'}{f.eta_at && <span className="block">ETA {new Date(f.eta_at).toLocaleTimeString()}</span>}</span>
+              </span>
+            </Button>)}
+          </div>}
+      </section>
+      {(airport || currentFlight) && (
         <section
           role="dialog"
           aria-label={airport ? "Airport details" : "Flight details"}
@@ -188,7 +208,7 @@ function Radar() {
             <h2 className="text-xl font-semibold">
               {airport
                 ? `${airport.icao} · ${airport.name}`
-                : `${flight?.flight_number} · ${flight?.aircraft?.registration ?? "—"} · ${flight?.origin_icao} → ${flight?.destination_icao}`}
+                : `${currentFlight?.flight_number} · ${currentFlight?.registration ?? "—"} · ${currentFlight?.origin_icao} → ${currentFlight?.destination_icao}`}
             </h2>
             <Button
               variant="ghost"
@@ -278,27 +298,21 @@ function Radar() {
           ) : (
             currentFlight && (
               <div className="mt-3 space-y-3">
-                {currentFlight.execution_source === 'ACARS_AGENT' ? <p className="readout text-amber">{acarsLinkLabel(currentFlight.status, currentFlight.telemetry, currentFlight.departed_at, now)}</p> : <>
-                <p>
-                  {currentFlight.passengers} passengers · {Math.round(flightProgress(currentFlight, now) * 100)}%
-                  ·{" "}
-                    {currentFlight.execution_source === "WEB_MANUAL"
-                    ? "Simulated position"
-                    : "ACARS position"}
-                </p>
-                <progress
-                  className="h-2 w-full accent-primary"
-                  value={flightProgress(currentFlight, now)}
-                  max={1}
-                />
+                <p className="text-lg text-primary">{currentFlight.airline_name}{currentFlight.is_own && <span className="ml-3 readout text-xs">YOUR FLIGHT</span>}</p>
+                <p className="text-sm text-muted-foreground">{currentFlight.aircraft_model} · {currentFlight.registration} · {currentFlight.status}</p>
+                {currentFlight.execution_source === 'ACARS_AGENT' ? <>
+                  <p className="readout text-amber">{acarsLinkLabel(currentFlight.status, { live: { received_at: currentFlight.last_telemetry_at } }, currentFlight.departed_at, now).replace(' — use Cancel flight', '')}</p>
+                  <dl className="grid gap-3 text-sm sm:grid-cols-3">
+                    <div><dt className="text-muted-foreground">Altitude</dt><dd>{currentFlight.last_altitude_ft == null ? '—' : `${Math.round(currentFlight.last_altitude_ft).toLocaleString()} ft`}</dd></div>
+                    <div><dt className="text-muted-foreground">Ground speed / Heading</dt><dd>{currentFlight.last_groundspeed_kts ?? '—'} kt · {currentFlight.last_heading ?? '—'}°</dd></div>
+                    <div><dt className="text-muted-foreground">Last telemetry</dt><dd>{currentFlight.last_telemetry_at ? new Date(currentFlight.last_telemetry_at).toLocaleTimeString() : 'Awaiting GPS'}</dd></div>
+                  </dl>
+                </> : <>
+                  <p className="readout">{currentFlight.status === 'DISPATCHED' ? 'Awaiting departure' : `Simulated position · ${Math.round(liveRadarProgress(currentFlight, now) * 100)}%`}</p>
+                  <progress className="h-2 w-full accent-primary" value={liveRadarProgress(currentFlight, now)} max={1} />
                 </>}
-                <p className="readout">
-                  Estimated contribution{" "}
-                  {formatCr(Number((currentFlight.estimate as Record<string, number>)["net"]))}
-                </p>
-                <Button asChild variant="outline">
-                  <Link to="/dispatch">Flight operations</Link>
-                </Button>
+                <p className="readout text-sm text-muted-foreground">Departure {currentFlight.departed_at ? new Date(currentFlight.departed_at).toLocaleTimeString() : 'Pending'} · ETA {currentFlight.eta_at ? new Date(currentFlight.eta_at).toLocaleTimeString() : 'After departure'}</p>
+                {currentFlight.is_own && <Button asChild variant="outline"><Link to="/dispatch">Flight operations</Link></Button>}
               </div>
             )
           )}

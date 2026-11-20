@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
-import type { Operations, Airport, Flight } from "@/lib/operations";
+import type { Operations, Airport } from "@/lib/operations";
+import { liveRadarPosition, type LiveRadarFlight } from '@/lib/live-radar';
 import { fuelLabel } from "@/lib/fleet-rules";
-import { acarsGps } from '@/lib/acars-status';
 import {
   distanceNm,
-  flightPosition,
-  flightProgress,
   rangeRing,
   routeArc,
 } from "@/lib/dispatch-engine";
 export default function RadarMap({
   data,
+  flights,
+  focusedFlight,
   airportFilter,
   selected,
   rangeOnly,
@@ -21,13 +21,15 @@ export default function RadarMap({
   onFlight,
 }: {
   data: Operations;
+  flights: LiveRadarFlight[];
+  focusedFlight: string | null;
   airportFilter: string[];
   selected: string;
   rangeOnly: boolean;
   layers: { pax: boolean; activity: boolean; flights: boolean };
   densities: { avgas: number; jeta: number };
   onAirport: (a: Airport) => void;
-  onFlight: (f: Flight) => void;
+  onFlight: (f: LiveRadarFlight) => void;
 }) {
   const div = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -38,6 +40,12 @@ export default function RadarMap({
   const center = useRef("");
   const [zoom, setZoom] = useState(5);
   const [view, setView] = useState(0);
+  useEffect(() => {
+    const f = flights.find(f => f.id === focusedFlight);
+    if (!f || !map.current) return;
+    const p = liveRadarPosition(f, Date.now());
+    if (p) map.current.panTo([p.lat, p.lon]);
+  }, [focusedFlight]);
   useEffect(() => {
     if (!div.current) return;
     const m = L.map(div.current, { preferCanvas: false }).setView([50, 15], 5);
@@ -193,23 +201,22 @@ export default function RadarMap({
       layer.clearLayers();
       if (!layers.flights) return;
       const root = getComputedStyle(document.documentElement);
-      for (const f of data.flights.filter((f) => f.status === "EN_ROUTE")) {
-        const a = data.airports.find((a) => a.icao === f.origin_icao),
-          b = data.airports.find((a) => a.icao === f.destination_icao);
-        if (!a || !b) continue;
+      for (const f of flights) {
+        const a = { lat: f.origin_lat, lon: f.origin_lon },
+          b = { lat: f.destination_lat, lon: f.destination_lon };
         L.geoJSON(routeArc(a, b), {
           style: {
-            color: root.getPropertyValue("--amber").trim(),
+             color: root.getPropertyValue(f.is_own ? "--primary" : "--amber").trim(),
             weight: 2,
             opacity: 0.7,
             dashArray: "4 5",
           },
         }).addTo(layer);
-        const p = f.execution_source === 'ACARS_AGENT' ? acarsGps(f.telemetry) : flightPosition(a, b, flightProgress(f, Date.now()));
+        const p = liveRadarPosition(f, Date.now());
         if (!p) continue;
         L.marker([p.lat, p.lon], {
           icon: L.divIcon({
-            className: "radar-plane",
+            className: `radar-plane${f.is_own ? ' radar-plane-own' : ''}${f.status === 'DISPATCHED' ? ' radar-plane-dispatched' : ''}`,
             html: `<span style="display:block;transform:rotate(${p.heading - 90}deg)">✈</span>`,
             iconSize: [24, 24],
             iconAnchor: [12, 12],
@@ -217,7 +224,7 @@ export default function RadarMap({
         })
           .bindTooltip(() => {
             const label = document.createElement("span");
-            label.textContent = `${f.flight_number} · ${f.aircraft?.registration ?? "—"} · ${f.origin_icao} → ${f.destination_icao}`;
+            label.textContent = `${f.is_own ? 'YOUR FLIGHT · ' : ''}${f.airline_name} · ${f.flight_number} · ${f.registration} · ${f.origin_icao} → ${f.destination_icao} · ${f.status}`;
             return label;
           })
           .on("click", () => onFlight(f))
@@ -227,7 +234,7 @@ export default function RadarMap({
     draw();
     const timer = setInterval(draw, 1000);
     return () => clearInterval(timer);
-  }, [data.flights, data.fleet, data.airports, onFlight, layers.flights]);
+  }, [flights, onFlight, layers.flights]);
   return (
     <div
       ref={div}

@@ -192,6 +192,8 @@
   font-size: 24px;
   line-height: 24px;
 }
+.radar-plane-own { color: var(--primary); }
+.radar-plane-dispatched { opacity: 0.65; }
 .leaflet-tile-pane {
   filter: var(--radar-tile-filter);
 }

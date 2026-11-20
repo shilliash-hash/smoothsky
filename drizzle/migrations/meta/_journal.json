@@ -260,6 +260,13 @@
       "when": 1795171660680,
       "tag": "0036_rental_crew_and_profit_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795178632273,
+      "tag": "0037_global_live_radar_flights",
+      "breakpoints": true
     }
   ]
 }
