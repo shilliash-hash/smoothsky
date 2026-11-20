@@ -2,7 +2,28 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { flightNumberSchema } from "./flight-number";
-import { operationalAirportCodes } from "./operations-airports";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+async function airportContext(db: SupabaseClient<Database>, codes: string[]) {
+  const chunks: string[][] = [];
+  for (let offset = 0; offset < codes.length; offset += 200) chunks.push(codes.slice(offset, offset + 200));
+  const results = await Promise.all(chunks.map(async batch => {
+    const [airports, metrics, pools] = await Promise.all([
+      db.from("airports").select("*").in("icao", batch),
+      db.rpc("radar_airport_metrics", { p_icaos: batch }),
+      db.from("airport_passenger_pools").select("*").in("airport_icao", batch),
+    ]);
+    for (const result of [airports, metrics, pools]) if (result.error) throw result.error;
+    return { airports: airports.data ?? [], metrics: metrics.data ?? [], pools: pools.data ?? [] };
+  }));
+  return { airports: results.flatMap(r => r.airports), metrics: results.flatMap(r => r.metrics), pools: results.flatMap(r => r.pools) };
+}
+
+export const getRadarAirports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ codes: z.array(z.string().min(1).max(16)).max(200) }))
+  .handler(({ data, context }) => airportContext(context.supabase, [...new Set(data.codes)]));
 export const getOperations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -13,23 +34,6 @@ export const getOperations = createServerFn({ method: "GET" })
     if (settled.error) throw new Error(settled.error.message);
     const { data: company, error: ce } = await db.from("companies").select("*").eq("is_personal", false).maybeSingle();
     if (ce) throw ce;
-    const metrics = [];
-    const pools = [];
-    for (let offset = 0; ; offset += 1000) {
-      const [m, p] = await Promise.all([
-        db.rpc("radar_airport_metrics").order("icao").range(offset, offset + 999),
-        db
-          .from("airport_passenger_pools")
-          .select("*")
-          .order("airport_icao")
-          .range(offset, offset + 999),
-      ]);
-      if (m.error) throw m.error;
-      if (p.error) throw p.error;
-      metrics.push(...(m.data ?? []));
-      pools.push(...(p.data ?? []));
-      if ((m.data?.length ?? 0) < 1000 && (p.data?.length ?? 0) < 1000) break;
-    }
     const [r, f, l, t, n, bases] = await Promise.all([
       db.from("economy_config").select("*"),
       db.from("flights").select("*, aircraft:fleet_aircraft(registration)").order("created_at", { ascending: false }).limit(100),
@@ -39,41 +43,20 @@ export const getOperations = createServerFn({ method: "GET" })
       db.from("company_fobs").select("*").is("closed_at", null),
     ]);
     for (const result of [r, f, l, t, n, bases]) if (result.error) throw result.error;
-    // Lightweight catalogue: major ports, owner-touched airports and global aggregate hotspots.
-    const active = await db.from("flights").select("origin_icao, destination_icao").in("status", ["DISPATCHED", "EN_ROUTE"]);
-    if (active.error) throw active.error;
     const needed = new Set<string>();
-    for (const x of active.data ?? []) { needed.add(x.origin_icao); needed.add(x.destination_icao); }
+    for (const x of f.data ?? []) if (x.status === "DISPATCHED" || x.status === "EN_ROUTE") { needed.add(x.origin_icao); needed.add(x.destination_icao); }
     for (const x of l.data ?? []) needed.add(x.location_icao);
     for (const x of bases.data ?? []) needed.add(x.airport_icao);
     if (company?.home_base_icao) needed.add(company.home_base_icao);
-    const extraCodes = operationalAirportCodes(metrics, needed);
-    const loadExtra = async () => {
-      const airports = [];
-      // Bound IN-query URLs and avoid the Data API's per-response row cap.
-      for (let offset = 0; offset < extraCodes.length; offset += 200) {
-        const result = await db.from("airports").select("*").in("icao", extraCodes.slice(offset, offset + 200));
-        if (result.error) throw result.error;
-        airports.push(...(result.data ?? []));
-      }
-      return airports;
-    };
-    const [major, extra] = await Promise.all([
-      db.from("airports").select("*").gte("size", 4).order("size", { ascending: false }).limit(1500),
-      loadExtra(),
-    ]);
-    if (major.error) throw major.error;
-    const byIcao = new Map<string, NonNullable<typeof major.data>[number]>();
-    for (const a of [...(major.data ?? []), ...extra]) byIcao.set(a.icao, a);
-    const airports = [...byIcao.values()];
+    const { airports, metrics, pools } = await airportContext(db, [...needed]);
     return {
       nextFlightNumber: n.data,
       bases: bases.data ?? [],
       company,
       airports,
       rules: Object.fromEntries((r.data ?? []).map((x) => [x.key, x.value])),
-      pools: pools.filter((x) => byIcao.has(x.airport_icao)),
-      metrics: metrics.filter((x) => byIcao.has(x.icao)),
+      pools,
+      metrics,
       flights: f.data ?? [],
       fleet: l.data ?? [],
       balance: Number(t.data?.[0]?.balance_after ?? 0),

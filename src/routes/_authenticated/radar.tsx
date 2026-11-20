@@ -1,11 +1,12 @@
 import { createFileRoute, ClientOnly, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { Plane, X } from "lucide-react";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { operationsQuery, type Airport } from "@/lib/operations";
+import { getRadarAirports } from "@/lib/operations.functions";
 import { projectedPassengers, type Economy } from "@/lib/dispatch-engine";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel } from "@/lib/fleet-rules";
@@ -41,9 +42,28 @@ export const Route = createFileRoute("/_authenticated/radar")({
   component: Radar,
 });
 function Radar() {
-  const { data: d } = useSuspenseQuery(operationsQuery);
+  const { data: ownerData } = useSuspenseQuery(operationsQuery);
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const { data: liveFlights, isRefetchError, dataUpdatedAt } = useSuspenseQuery(liveRadarQuery);
+  const endpointCodes = [...new Set(liveFlights.flatMap(f => [f.origin_icao, f.destination_icao]))].sort();
+  const { data: endpoints } = useQuery({
+    queryKey: ["radar-airport-context", endpointCodes],
+    queryFn: async () => {
+      const chunks = [];
+      for (let offset = 0; offset < endpointCodes.length; offset += 200) chunks.push(endpointCodes.slice(offset, offset + 200));
+      const results = await Promise.all(chunks.map(codes => getRadarAirports({ data: { codes } })));
+      return { airports: results.flatMap(r => r.airports), metrics: results.flatMap(r => r.metrics), pools: results.flatMap(r => r.pools) };
+    },
+    enabled: endpointCodes.length > 0,
+    staleTime: 15_000,
+    refetchInterval: 15_000,
+  });
+  const d = useMemo(() => ({
+    ...ownerData,
+    airports: [...new Map([...ownerData.airports, ...(endpoints?.airports ?? [])].map(a => [a.icao, a])).values()],
+    metrics: [...new Map([...ownerData.metrics, ...(endpoints?.metrics ?? [])].map(a => [a.icao, a])).values()],
+    pools: [...new Map([...ownerData.pools, ...(endpoints?.pools ?? [])].map(a => [a.airport_icao, a])).values()],
+  }), [ownerData, endpoints]);
   const [selected, setSelected] = useState("__default");
   const [rangeOnly, setRangeOnly] = useState(false);
   const [airport, setAirport] = useState<Airport | null>(null);

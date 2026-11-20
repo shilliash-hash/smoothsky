@@ -1,5 +1,10 @@
 # Roadmap
 
+## Bounded dispatch and radar airport loading
+- [x] Add nearby-airport RPC (60 maximum, reachable own FBO priority) and indexed exact-code/distance search (40 maximum, 250 ms debounce); default T1 exclusion only for aircraft T3–7, explicit filters retained.
+- [x] Remove worldwide catalogue/supply pagination and major-port preload; operations load owner-touched airports, radar adds active-flight endpoints in batches of 200 with scoped aggregate supplies.
+- [x] 206 tests passed, including production SQL against 49,501 synthetic airports, ownership, runway/range/date-line filters, limits, FBO priority and scoped metrics. Signed-in nearby list returned 60, EPGD search returned 1, EPPW→EPGD quote read back, radar 5-second refresh observed, desktop/mobile checked without overflow or console errors; build OK and deployment variables unchanged. Accessible live database has 7,529 airports and no active flights during verification, so isolated-production timing and live active-flight endpoint rendering were not measured.
+
 ## Company FBO ground handling
 - [x] Waive half of handling per active owner FBO endpoint, preserve landing/module discounts and frozen historical quotes, and skip zero-value settlement entries.
 - [x] Show Company FBO handling savings in Dispatch and free handling on base cards. 58 tests passed, including production SQL for 100/50/0 SC, cargo, closed/foreign FBOs, zero-fee settlement, old quotes, landing-module discounts, passenger tips and leases. Signed-in existing-company quotes verified at origin (7.04 SC) and destination (5.94 SC); desktop/mobile screenshots checked, no overflow or console errors, build OK, deployment variables unchanged. No live flight dispatched or settled on the player's account; zero-fee settlement verified in isolated SQL tests.

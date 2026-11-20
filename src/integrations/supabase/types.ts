@@ -1180,6 +1180,10 @@ export type Database = {
         Args: { p_requested?: string; p_type: string }
         Returns: string
       }
+      airport_distance_nm: {
+        Args: { a_lat: number; a_lon: number; b_lat: number; b_lon: number }
+        Returns: number
+      }
       airport_fuel_capacity: {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
@@ -1314,6 +1318,14 @@ export type Database = {
         Returns: Json
       }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
+      get_dispatch_nearby_airports: {
+        Args: { p_aircraft_id: string; p_tiers?: number[] }
+        Returns: {
+          airport: Json
+          distance_nm: number
+          is_fbo: boolean
+        }[]
+      }
       get_live_radar_flights: {
         Args: never
         Returns: {
@@ -1470,19 +1482,33 @@ export type Database = {
         Args: { p_registration?: string; p_type: string }
         Returns: string
       }
-      radar_airport_metrics: {
-        Args: never
-        Returns: {
-          avgas_capacity: number
-          avgas_stock: number
-          icao: string
-          jeta_capacity: number
-          jeta_stock: number
-          operations_7d: number
-          pax_capacity: number
-          pax_stock: number
-        }[]
-      }
+      radar_airport_metrics:
+        | {
+            Args: never
+            Returns: {
+              avgas_capacity: number
+              avgas_stock: number
+              icao: string
+              jeta_capacity: number
+              jeta_stock: number
+              operations_7d: number
+              pax_capacity: number
+              pax_stock: number
+            }[]
+          }
+        | {
+            Args: { p_icaos: string[] }
+            Returns: {
+              avgas_capacity: number
+              avgas_stock: number
+              icao: string
+              jeta_capacity: number
+              jeta_stock: number
+              operations_7d: number
+              pax_capacity: number
+              pax_stock: number
+            }[]
+          }
       recruitment_commission_settings: { Args: never; Returns: Json }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
@@ -1493,6 +1519,20 @@ export type Database = {
       replenish_broker_market: { Args: never; Returns: undefined }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      search_airports: {
+        Args: {
+          p_limit?: number
+          p_min_runway_ft?: number
+          p_origin_icao?: string
+          p_query: string
+          p_tiers?: number[]
+        }
+        Returns: {
+          airport: Json
+          distance_nm: number
+          is_fbo: boolean
+        }[]
+      }
       sell_stake: { Args: { p_stake: string }; Returns: number }
       set_company_hiring: {
         Args: { p_freelance: number; p_hiring: boolean; p_roster: number }

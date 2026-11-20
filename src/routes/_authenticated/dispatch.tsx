@@ -17,7 +17,7 @@ import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel, plannedFuel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
-import { useVisibleTiers } from "@/lib/airport-tiers";
+import { dispatchAirportTiers } from "@/lib/dispatch-airports";
 import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
 import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
@@ -67,7 +67,7 @@ function Dispatch() {
   const [flightNumber, setFlightNumber] = useState<string | null>(null);
   const numberValid = flightNumberSchema.safeParse(flightNumber ?? d.nextFlightNumber ?? "").success;
   const [filter, setFilter] = useState("");
-  const [tiers, setTiers] = useVisibleTiers();
+  const [explicitTiers, setTiers] = useState<number[] | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const webSimAllowed = d.rules["web_simulation_enabled"] === true;
@@ -82,6 +82,7 @@ function Dispatch() {
   const selected =
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
+  const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
@@ -116,10 +117,10 @@ function Dispatch() {
     };
   }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo, reserveMinutes]);
   const searching = filter.trim().length >= MIN_SEARCH_CHARS;
-  const found = useAirportSearch(filter, tiers);
+  const found = useAirportSearch(filter, tiers, origin?.icao, selected?.type?.minimum_runway_ft ?? 0);
   const nearby = useQuery({
-    queryKey: ["airports-near", origin?.icao, selected?.type?.range_nm, [...tiers].sort().join("")],
-    queryFn: () => origin ? airportsNear(origin, selected?.type?.range_nm ?? 0, tiers) : Promise.resolve([]),
+    queryKey: ["airports-near", selected?.id, origin?.icao, selected?.type?.range_nm, [...tiers].sort().join("")],
+    queryFn: () => selected ? airportsNear(selected.id, tiers) : Promise.resolve([]),
     enabled: !!origin && !!selected?.type && !searching,
     staleTime: 300_000,
   });
@@ -254,8 +255,9 @@ function Dispatch() {
                     <span className="readout shrink-0 text-xs">{Math.round(a.nm)} NM</span>
                   </Button>
                 ))}
+                {(searching ? found.error : nearby.error) && <p role="alert" className="py-4 text-destructive">Airport search unavailable. Please try again.</p>}
                 {destinations.length === 0 && (
-                  <p className="py-8 text-muted-foreground">No matching reachable airports.</p>
+                  <p className="py-8 text-muted-foreground">{(searching ? found.isFetching : nearby.isFetching) ? "Loading destinations…" : "No matching reachable airports."}</p>
                 )}
               </div>
             </section>
@@ -264,8 +266,7 @@ function Dispatch() {
                 origin={origin?.icao ?? ""}
                 onImport={(plan) => {
                   if (plan.flightNumber && flightNumberSchema.safeParse(plan.flightNumber).success) setFlightNumber(plan.flightNumber);
-                  if (plan.destination && destinations.some((x) => x.icao === plan.destination)) setDestination(plan.destination);
-                  else if (plan.destination) toast.warning(`${plan.destination} is not reachable by this aircraft`);
+                  if (plan.destination) setDestination(plan.destination);
                 }}
               />
               <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
