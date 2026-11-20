@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/game/AppShell";
 import { basesQuery } from "@/lib/bases";
 import { canInvest } from "@/lib/bases-rules";
+import { acquisitionBlock } from '@/lib/market-rules';
 
 export const Route = createFileRoute("/_authenticated/market")({
   beforeLoad: async ({ context }) => {
@@ -50,6 +51,7 @@ function Market() {
 
   if (!c) return null;
   const rule = registrationRules.find(r=>r.country === c.home_base?.country);
+  const block = acquisitionBlock({ health: bases.health, registrationAvailable: Boolean(rule), ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
   const purchaseType = types.find(t=>t.id===purchasing);
   async function purchase() {
     if (!purchaseType) return;
@@ -85,6 +87,7 @@ function Market() {
       <div className="mt-6 flex flex-wrap items-center gap-2"><Tabs value={mode} onValueChange={setMode}><TabsList><TabsTrigger value="lease">Lease</TabsTrigger><TabsTrigger value="buy">Buy aircraft</TabsTrigger></TabsList></Tabs>
       <Button asChild variant="outline" size="sm"><Link to="/used-market">Used market</Link></Button></div>
       {!invest && <p role="alert" className="mt-4 text-destructive">Outstanding obligations · Aircraft acquisitions suspended</p>}
+      {invest && block && <p role="alert" className="mt-4 text-amber">{block}{!rule && ` (${c.home_base?.country ?? 'unknown'})`}</p>}
       {mode === "lease" && <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
         <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />
       </label>}
@@ -111,9 +114,9 @@ function Market() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Weekly rate</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Upfront total</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
               </div> : <div className="readout mt-4 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Purchase price · no weekly lease</p><p className="mt-2 text-xl text-primary">{formatCr(t.purchase_price)}</p></div>}
-              {mode === "lease" ? <Button className="mt-5" disabled={!invest || !afford || full || busy !== null || !Number.isInteger(weeks) || weeks < 1 || weeks > 52 || !rule} onClick={() => lease(t.id)}>
-                {full ? "Fleet limit reached" : !afford ? "Insufficient funds" : busy === t.id ? "Signing…" : "Lease aircraft"}
-              </Button> : <Button className="mt-5" disabled={!invest || busy !== null || !rule || t.purchase_price <= 0 || balance < t.purchase_price} onClick={() => {setPurchasing(t.id); setRegistration("");}}>{t.purchase_price <= 0 ? "Not for sale" : balance < t.purchase_price ? "Insufficient funds" : "Buy aircraft"}</Button>}
+              {mode === "lease" ? <Button className="mt-5" title={block ?? undefined} disabled={block !== null || !afford || full} onClick={() => lease(t.id)}>
+                {busy === t.id ? "Signing…" : block ? !rule ? "Registration unavailable" : "Acquisition unavailable" : full ? "Fleet limit reached" : !afford ? "Insufficient funds" : "Lease aircraft"}
+              </Button> : <Button className="mt-5" title={block ?? undefined} disabled={block !== null || t.purchase_price <= 0 || balance < t.purchase_price} onClick={() => {setPurchasing(t.id); setRegistration("");}}>{block ? !rule ? "Registration unavailable" : "Acquisition unavailable" : t.purchase_price <= 0 ? "Not for sale" : balance < t.purchase_price ? "Insufficient funds" : "Buy aircraft"}</Button>}
             </div>
           );
         })}

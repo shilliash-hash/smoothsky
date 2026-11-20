@@ -86,3 +86,5 @@
 - [x] Hide disabled simulation controls from non-admin players; use real GPS on radar.
 - [x] Add 30-minute ACARS reconnect window and persistent Crew onboarding hint; unit tests and signed-in pages checked, real simulator reconnect not available in sandbox.
 - [x] Verify catalogue leasing changes against affordability, existing contracts and acquisition guards; C172 available in signed-in market, BE58 requires 11,600 SC. Exact reported-player error requested.
+- [x] Expose every non-financial acquisition blocker; signed-in term validation and enabled C172 verified.
+- [ ] Confirm the screenshot player's specific blocker — waiting for their home-base ICAO or the newly displayed warning; NLR is absent from the current accessible company list.
