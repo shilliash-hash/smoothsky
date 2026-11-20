@@ -1418,6 +1418,7 @@ export type Database = {
           pax_stock: number
         }[]
       }
+      recruitment_commission_settings: { Args: never; Returns: Json }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
       replenish_broker_market: { Args: never; Returns: undefined }

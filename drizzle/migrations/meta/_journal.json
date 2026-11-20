@@ -239,6 +239,13 @@
       "when": 1795136549644,
       "tag": "0033_worldwide_registration_fallback",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795161608801,
+      "tag": "0034_configurable_recruitment_commissions",
+      "breakpoints": true
     }
   ]
 }

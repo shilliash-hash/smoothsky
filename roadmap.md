@@ -1,5 +1,9 @@
 # Roadmap
 
+## Recruitment commission settings
+- [x] Add admin-editable roster/freelance default rates and ranges, shared with recruitment validation; preserve dispatched-flight commission snapshots.
+- [x] Verify signed-in admin save/readback and recruitment range updates; 16 tests passed, admin-only economy INSERT/UPDATE policies checked, original values restored.
+
 ## Worldwide aircraft registration
 - [x] Fill country catalogue without overwriting existing rules; add VP- fallback in acquisition and market UI. Schema migration plus separate replayable data backfill for isolated databases.
 - [x] Verify catalogue coverage (280 rules, no uncovered airports in accessible database), requested mappings, fallback tests and signed-in market controls; C172 lease enabled without purchasing.

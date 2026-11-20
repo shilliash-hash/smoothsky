@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { companyQuery } from "@/lib/game";
+import { companyQuery, economyQuery } from "@/lib/game";
+import { recruitmentSettings } from "@/lib/recruitment-rules";
 import { formatCr } from "@/lib/rules";
 import { buyPersonalAircraft, getPilotOps, getStakeMarket, stakeAction, buyTypeRating, getCareer, getHiringCompanies, getPilotProfile, rosterAction, setCompanyHiring, simbriefUsernameSchema } from "@/lib/pilot.functions";
 
@@ -35,6 +36,8 @@ const ratingGroups = [
 function Profile() {
   const qc = useQueryClient();
   const { data: company } = useQuery(companyQuery);
+  const { data: economy } = useQuery(economyQuery);
+  const commissions = recruitmentSettings(economy?.["recruitment_commissions"]);
   const career = useServerFn(getCareer);
   const { data: c, refetch } = useQuery({ queryKey: ["career"], queryFn: () => career() });
   const loadPilot = useServerFn(getPilotProfile);
@@ -102,8 +105,8 @@ function Profile() {
       <p className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><Briefcase className="h-4 w-4" /> Recruitment</p>
       <div className="mt-3 grid gap-4 sm:grid-cols-3 sm:items-end">
         <label className="flex items-center gap-3 text-sm"><Switch checked={h.hiring} onCheckedChange={v => setH({ ...h, hiring: v })} /> Hiring pilots</label>
-        <div><Label htmlFor="rc">Roster commission (35–50% of net)</Label><Input id="rc" type="number" min={35} max={50} step={1} value={h.roster} onChange={e => setH({ ...h, roster: Number(e.target.value) })} /></div>
-        <div><Label htmlFor="fc">Freelance commission (20–30% of net)</Label><Input id="fc" type="number" min={20} max={30} step={1} value={h.freelance} onChange={e => setH({ ...h, freelance: Number(e.target.value) })} /></div>
+        <div><Label htmlFor="rc">Roster commission ({commissions.roster.min}–{commissions.roster.max}% of net)</Label><Input id="rc" type="number" min={commissions.roster.min} max={commissions.roster.max} step={0.1} value={h.roster} onChange={e => setH({ ...h, roster: Number(e.target.value) })} /></div>
+        <div><Label htmlFor="fc">Freelance commission ({commissions.freelance.min}–{commissions.freelance.max}% of net)</Label><Input id="fc" type="number" min={commissions.freelance.min} max={commissions.freelance.max} step={0.1} value={h.freelance} onChange={e => setH({ ...h, freelance: Number(e.target.value) })} /></div>
       </div>
       <Button className="mt-4" onClick={() => run(() => saveHiring({ data: h }), "Recruitment settings saved")}>Save recruitment</Button>
     </div>}

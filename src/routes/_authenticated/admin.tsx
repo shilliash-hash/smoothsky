@@ -15,6 +15,7 @@ import { saveAdminData, resetAirports } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import type { AircraftEdit } from "@/lib/admin-rules";
+import { recruitmentSettings } from "@/lib/recruitment-rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { saveOperatingRules } from "@/lib/fleet.functions";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -109,7 +110,7 @@ function Admin() {
           <OperatingRulesEditor />
           <div className="divide-y divide-border">
             {data.economy.map((row) => (
-              <EconomyRow
+              row.key === "recruitment_commissions" ? <RecruitmentEditor key={JSON.stringify(row.value)} value={row.value} busy={busy} onSave={value => persist({ data: { kind: "economy", key: row.key, value } })} /> : <EconomyRow
                 key={`${row.key}:${JSON.stringify(row.value)}`}
                 row={row}
                 busy={busy}
@@ -381,6 +382,22 @@ function Admin() {
       </Tabs>
     </AppShell>
   );
+}
+function RecruitmentEditor({ value, busy, onSave }: { value: unknown; busy: boolean; onSave: (value: unknown) => Promise<boolean> }) {
+  const [settings, setSettings] = useState(() => recruitmentSettings(value));
+  return <form className="border-y border-border py-5" onSubmit={e => { e.preventDefault(); void onSave(settings); }}>
+    <h2 className="text-xl font-semibold">Pilot recruitment</h2>
+    <div className="mt-4 grid gap-5 sm:grid-cols-2">
+      {(["roster", "freelance"] as const).map(mode => <fieldset key={mode}>
+        <legend className="text-sm font-medium">{mode === "roster" ? "Roster pilots" : "Freelance pilots"} · % of net profit</legend>
+        <div className="mt-2 grid grid-cols-3 gap-2">{(["min", "default", "max"] as const).map(key => <label key={key} className="text-xs text-muted-foreground">
+          {key === "min" ? "Minimum" : key === "max" ? "Maximum" : "Default"}
+          <Input aria-label={`${mode} ${key} commission`} className="readout mt-1" type="number" min={0} max={100} step={0.1} required value={settings[mode][key]} onChange={e => setSettings({ ...settings, [mode]: { ...settings[mode], [key]: Number(e.target.value) } })} />
+        </label>)}</div>
+      </fieldset>)}
+    </div>
+    <Button className="mt-4" size="sm" variant="outline" disabled={busy || JSON.stringify(settings) === JSON.stringify(recruitmentSettings(value))}><Save className="h-3.5 w-3.5" />Save recruitment rules</Button>
+  </form>;
 }
 function EconomyRow({
   row,

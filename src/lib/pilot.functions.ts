@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { hiringSchema, recruitmentSettings, validateHiring } from "./recruitment-rules";
 
 export const simbriefUsernameSchema = z.string().trim().regex(/^[A-Za-z0-9_.-]{1,40}$/, "Use 1–40 letters, digits, dot, dash or underscore");
 
@@ -105,8 +106,11 @@ export const getHiringCompanies = createServerFn({ method: "GET" })
 
 export const setCompanyHiring = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ hiring: z.boolean(), roster: z.number().min(35).max(50), freelance: z.number().min(20).max(30) }))
+  .inputValidator(hiringSchema)
   .handler(async ({ data, context }) => {
+    const settings = await context.supabase.rpc("recruitment_commission_settings");
+    if (settings.error) throw new Error(settings.error.message);
+    validateHiring(data, recruitmentSettings(settings.data));
     const { error } = await context.supabase.rpc("set_company_hiring", { p_hiring: data.hiring, p_roster: data.roster, p_freelance: data.freelance });
     if (error) throw new Error(error.message);
     return true;

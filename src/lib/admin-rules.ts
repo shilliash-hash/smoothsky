@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recruitmentSchema } from "./recruitment-rules";
 
 export const aircraftSchema = z.object({
   id: z.string().regex(/^[A-Z0-9_-]{2,20}$/),
@@ -21,6 +22,7 @@ export const aircraftSchema = z.object({
 });
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
 export function validateEconomyValue(key: string, value: unknown) {
+  if (key === "recruitment_commissions") return recruitmentSchema.parse(value);
   if (key === "web_simulation_enabled") return z.boolean().parse(value);
   if (["airport_capacities", "airport_fee_multipliers", "charter_by_tier"].includes(key)) {
     return z
