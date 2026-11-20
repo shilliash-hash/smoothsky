@@ -709,36 +709,42 @@ export type Database = {
           aircraft_id: string
           base_weekly_rate: number
           company_id: string
+          ended_at: string | null
           ends_at: string
           id: string
           paid_weeks: number
           renewal: boolean
           starts_at: string
           term_weeks: number
+          termination_status: string | null
           weekly_rate: number
         }
         Insert: {
           aircraft_id: string
           base_weekly_rate: number
           company_id: string
+          ended_at?: string | null
           ends_at: string
           id?: string
           paid_weeks?: number
           renewal?: boolean
           starts_at: string
           term_weeks: number
+          termination_status?: string | null
           weekly_rate: number
         }
         Update: {
           aircraft_id?: string
           base_weekly_rate?: number
           company_id?: string
+          ended_at?: string | null
           ends_at?: string
           id?: string
           paid_weeks?: number
           renewal?: boolean
           starts_at?: string
           term_weeks?: number
+          termination_status?: string | null
           weekly_rate?: number
         }
         Relationships: [
@@ -768,6 +774,7 @@ export type Database = {
           depreciation_floor_pct: number
           depreciation_pct_per_100h: number
           jeta_kg_per_litre: number
+          lease_termination_penalty_rate: number
           renewal_discount: number
           singleton: boolean
         }
@@ -780,6 +787,7 @@ export type Database = {
           depreciation_floor_pct?: number
           depreciation_pct_per_100h?: number
           jeta_kg_per_litre?: number
+          lease_termination_penalty_rate?: number
           renewal_discount?: number
           singleton?: boolean
         }
@@ -792,6 +800,7 @@ export type Database = {
           depreciation_floor_pct?: number
           depreciation_pct_per_100h?: number
           jeta_kg_per_litre?: number
+          lease_termination_penalty_rate?: number
           renewal_discount?: number
           singleton?: boolean
         }
@@ -1375,6 +1384,10 @@ export type Database = {
         }[]
       }
       lease_aircraft: { Args: { p_type: string }; Returns: string }
+      lease_termination_quote: {
+        Args: { p_aircraft_id: string }
+        Returns: Json
+      }
       leave_roster: { Args: never; Returns: undefined }
       list_used_aircraft: {
         Args: { p_aircraft: string; p_price: number }
@@ -1489,6 +1502,7 @@ export type Database = {
       }
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
       sync_lease_payments: { Args: never; Returns: undefined }
+      terminate_lease_early: { Args: { p_aircraft_id: string }; Returns: Json }
       transaction_history: {
         Args: { p_aircraft?: string; p_company: string }
         Returns: {

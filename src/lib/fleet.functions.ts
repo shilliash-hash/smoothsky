@@ -47,7 +47,24 @@ export const getAircraftFinance = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const result = await context.supabase.rpc("aircraft_finance", { p_aircraft: data.aircraft });
     if (result.error) throw new Error(result.error.message);
-    return result.data as unknown as { ownership: string; rental_paid: number; asset_value: number; revenue: number; fuel: number; airport: number; handling: number; maintenance: number; lease_paid: number; lease_accrued: number; deposit: number; daily_lease: number; ends_at: string; term_weeks: number; weekly_rate: number; returned_at: string | null; flights: number };
+    return result.data as unknown as { ownership: string; rental_paid: number; termination_fee: number; ended_at: string | null; asset_value: number; revenue: number; fuel: number; airport: number; handling: number; maintenance: number; lease_paid: number; lease_accrued: number; deposit: number; daily_lease: number; ends_at: string; term_weeks: number; weekly_rate: number; returned_at: string | null; flights: number };
+  });
+export type LeaseTerminationQuote = { deposit: number; penalty_rate: number; penalty: number; refund: number; balance_before: number; balance_after: number };
+export const quoteLeaseTermination = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ aircraft: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const result = await context.supabase.rpc("lease_termination_quote", { p_aircraft_id: data.aircraft });
+    if (result.error) throw new Error(result.error.message);
+    return result.data as unknown as LeaseTerminationQuote;
+  });
+export const terminateLeaseEarly = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ aircraft: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const result = await context.supabase.rpc("terminate_lease_early", { p_aircraft_id: data.aircraft });
+    if (result.error) throw new Error(result.error.message);
+    return result.data as unknown as LeaseTerminationQuote;
   });
 export const saveOperatingRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

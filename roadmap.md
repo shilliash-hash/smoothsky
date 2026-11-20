@@ -1,5 +1,9 @@
 # Roadmap
 
+## Early lease termination
+- [x] Add owner-only atomic termination, rounded deposit penalty, reservation/flight guards and immutable ledger entries; preserve existing contract dates and deployment variables.
+- [x] Add confirmation with synchronized balance and fee-aware financial reporting; 36 tests passed including 16 isolated SQL tests for due/future billing, rounding, repeat rejection, ownership, active flights, reservations and unchanged other leases. Signed-in C172 termination verified twice: 750 SC penalty, 2250 SC net refund, retained weekly payment/history, cleared fleet; desktop/mobile confirmation checked. Build OK; isolated 49,000-airport environment not available.
+
 ## Civil aviation terminology
 - [x] Replace player-facing FOB text with FBO, including legacy descriptions and errors; preserve database identifiers and deployment variables.
 - [x] Verify signed-in bases, dashboard, radar, leaderboard and admin plus public information; 19 existing tests passed, build OK. Player-authored company names remain unchanged.

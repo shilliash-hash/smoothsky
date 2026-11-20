@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const typeLabel: Record<string, string> = { SPOT_RENTAL: "Single-flight rental", FOB_SETUP: "FBO setup", FOB_MODULE: "FBO module", FOB_UPKEEP: "FBO upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
+const typeLabel: Record<string, string> = { LEASE_TERMINATION_FEE: "Early lease termination fee", SPOT_RENTAL: "Single-flight rental", FOB_SETUP: "FBO setup", FOB_MODULE: "FBO module", FOB_UPKEEP: "FBO upkeep", RESTRUCTURE_ASSETS: "Asset recovery", RESTRUCTURE_GRANT: "Restructuring", AIRCRAFT_PURCHASE: "Aircraft purchase", LEASE_DEPOSIT_REFUND: "Lease deposit refund", TICKET_REVENUE: "Ticket revenue", FUEL_EXPENSE: "Fuel", AIRPORT_FEES: "Airport fees", HANDLING_FEES: "Handling", MAINTENANCE_RESERVE: "Maintenance reserve", INITIAL_GRANT: "Starting capital", LEASE_DEPOSIT: "Lease deposit", LEASE_PAYMENT: "Lease payment" };
 
 function Dashboard() {
   const { data: bases } = useSuspenseQuery(basesQuery);

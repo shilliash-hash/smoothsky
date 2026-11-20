@@ -3,7 +3,8 @@ import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { aircraftFinanceQuery } from '@/lib/fleet';
-import { leaseAction } from '@/lib/fleet.functions';
+import { leaseAction, quoteLeaseTermination, terminateLeaseEarly, type LeaseTerminationQuote } from '@/lib/fleet.functions';
+import { displayTerminology } from '@/lib/display-terminology';
 import { aircraftProfit, renewalRate } from '@/lib/fleet-rules';
 import { formatCr } from '@/lib/rules';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,28 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
   const [weeks, setWeeks] = useState(4);
   const [busy, setBusy] = useState(false);
   const [confirmReturn, setConfirmReturn] = useState(false);
+  const quoteTermination = useServerFn(quoteLeaseTermination);
+  const terminate = useServerFn(terminateLeaseEarly);
+  const [termination, setTermination] = useState<LeaseTerminationQuote | null>(null);
+  async function prepareTermination() {
+    setBusy(true);
+    try {
+      const quote = await quoteTermination({ data: { aircraft } });
+      setTermination(quote);
+    } catch (e) { toast.error(displayTerminology(e instanceof Error ? e.message : 'Unable to prepare termination')); }
+    finally { setBusy(false); }
+  }
+  async function confirmTermination() {
+    if (busy || !termination) return;
+    setBusy(true);
+    try {
+      const result = await terminate({ data: { aircraft } });
+      setTermination(null);
+      await qc.invalidateQueries();
+      toast.success(`Lease terminated · ${formatCr(result.refund)} refunded · ${formatCr(result.penalty)} fee`);
+    } catch (e) { toast.error(displayTerminology(e instanceof Error ? e.message : 'Lease termination failed')); setTermination(null); }
+    finally { setBusy(false); }
+  }
   async function manage(kind: 'renew' | 'return') {
     setBusy(true);
     try {
@@ -27,10 +50,10 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Lease action failed'); }
     finally { setBusy(false); }
   }
-  const operating = f ? Number(f.fuel) + Number(f.airport) + Number(f.handling) + Number(f.maintenance) + Number(f.rental_paid ?? 0) : 0;
+  const operating = f ? Number(f.fuel) + Number(f.airport) + Number(f.handling) + Number(f.maintenance) + Number(f.rental_paid ?? 0) + Number(f.termination_fee ?? 0) : 0;
   const profit = f ? aircraftProfit(Number(f.revenue), operating, Number(f.lease_accrued)) : 0;
-  return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+  return <Dialog open onOpenChange={(open) => { if (!open && !busy) { if (termination) setTermination(null); else onClose(); } }}>
+    {!termination ? <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
       <DialogTitle>{registration}</DialogTitle>
       <DialogDescription>Aircraft financial performance & agreement</DialogDescription>
       {isPending && <p>Loading aircraft accounts…</p>}
@@ -40,15 +63,17 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
         <dl className="readout space-y-2 text-sm">
           {[["Ticket revenue", f.revenue], ["Fuel", -Number(f.fuel)], ["Airport fees", -Number(f.airport)], ["Handling", -Number(f.handling)], ["Maintenance reserve", -Number(f.maintenance)], ["Lease expense accrued", -Number(f.lease_accrued)], ["Total costs accrued", -(operating + Number(f.lease_accrued))]].map(([label, value]) => <div key={String(label)} className="flex justify-between gap-4"><dt>{label}</dt><dd className="shrink-0">{formatCr(Number(value))}</dd></div>)}
           {f.ownership === 'RENTAL' && <div className="flex justify-between gap-4"><dt>Single-flight rental</dt><dd>{formatCr(-Number(f.rental_paid ?? 0))}</dd></div>}
+          {Number(f.termination_fee) > 0 && <div className="flex justify-between gap-4"><dt>Early termination fee</dt><dd className="text-destructive">{formatCr(-Number(f.termination_fee))}</dd></div>}
           <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold"><dt>Net profit / loss</dt><dd className={profit >= 0 ? 'text-primary' : 'text-destructive'}>{formatCr(profit)}</dd></div>
         </dl>
         <dl className="readout grid grid-cols-2 gap-2 border-t border-border pt-4 text-xs">
           <dt>Daily lease allocation</dt><dd className="text-right">{formatCr(Number(f.daily_lease))} / day</dd>
           <dt>Lease payments posted</dt><dd className="text-right">{formatCr(Number(f.lease_paid))}</dd>
           <dt>Cash result (excl. deposit)</dt><dd className="text-right">{formatCr(Number(f.revenue) - operating - Number(f.lease_paid))}</dd>
-          <dt>{f.returned_at ? 'Deposit refunded' : 'Refundable deposit held'}</dt><dd className="text-right">{formatCr(Number(f.deposit))}</dd>
+          <dt>{f.returned_at ? 'Deposit refunded (net)' : 'Refundable deposit held'}</dt><dd className="text-right">{formatCr(Number(f.deposit) - (f.returned_at ? Number(f.termination_fee ?? 0) : 0))}</dd>
           {f.ownership === 'RENTAL' ? <><dt>Agreement</dt><dd className="text-right text-amber">SPOT RENTAL · 1 FLIGHT</dd></> : f.ownership === "OWNED" ? <><dt>Owned aircraft · asset value</dt><dd className="text-right">{formatCr(Number(f.asset_value))}</dd></> : <><dt>Contract term</dt><dd className="text-right">{f.term_weeks} weeks</dd>
-          <dt>Contract ends</dt><dd className="text-right">{new Date(f.ends_at).toLocaleString('en-US')}</dd></>}
+          <dt>Contract ends</dt><dd className="text-right">{new Date(f.ends_at).toLocaleString('en-US')}</dd>
+          {f.ended_at && <><dt>Terminated early</dt><dd className="text-right">{new Date(f.ended_at).toLocaleString('en-US')}</dd></>}</>}
         </dl>
         {f.ownership === 'RENTAL' ? <p className="text-xs text-amber">{f.returned_at ? 'Rental returned' : 'Automatically returned after completion or cancellation'} · no weekly payments</p> : f.ownership === "OWNED" ? <p className="text-xs text-primary">Owned outright · no lease payments</p> : f.returned_at ? <p className="text-muted-foreground">Aircraft returned</p> : Date.now() >= Date.parse(f.ends_at) ? <div className="space-y-3 border-t border-border pt-4">
           <p className="text-sm text-amber">Contract expired · Dispatch suspended</p>
@@ -56,8 +81,20 @@ export function AircraftDetails({ aircraft, registration, renewalDiscount, baseR
           <p className="readout text-xs">Renewal: {formatCr(renewalRate(baseRate, renewalDiscount))} / week · {(renewalDiscount * 100).toFixed(0)}% discount</p>
           <Button disabled={busy || !Number.isInteger(weeks) || weeks < 1 || weeks > 52} onClick={() => manage('renew')} className="w-full">Renew lease</Button>
           {confirmReturn ? <div className="space-y-2"><p className="text-sm">Return this aircraft and release {formatCr(Number(f.deposit))}?</p><div className="flex gap-2"><Button variant="destructive" disabled={busy} onClick={() => manage('return')}>Confirm return</Button><Button variant="outline" onClick={() => setConfirmReturn(false)}>Keep aircraft</Button></div></div> : <Button variant="outline" disabled={busy} onClick={() => setConfirmReturn(true)} className="w-full">Return aircraft & recover deposit</Button>}
-        </div> : <p className="text-xs text-muted-foreground">Weekly rate: {formatCr(Number(f.weekly_rate))} · Return or renew available at expiry</p>}
+        </div> : <div className="space-y-3 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Weekly rate: {formatCr(Number(f.weekly_rate))} · Full deposit return or renewal available at expiry</p><Button variant="outline" className="w-full" disabled={busy} onClick={() => void prepareTermination()}>Terminate Lease Early</Button></div>}
       </>}
-    </DialogContent>
+    </DialogContent> :
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg" onEscapeKeyDown={(e) => { if (busy) e.preventDefault(); }} onInteractOutside={(e) => { if (busy) e.preventDefault(); }}>
+        <DialogTitle>Terminate Lease Early · {registration}</DialogTitle>
+        <DialogDescription>This decision is final. The aircraft is returned immediately, and all future weekly payments stop. The already-paid current week is not refunded.</DialogDescription>
+        {termination && <><dl className="readout space-y-3 text-sm">
+          <div className="flex justify-between gap-4"><dt>Deposit paid</dt><dd className="shrink-0">{formatCr(termination.deposit)}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Termination fee ({(termination.penalty_rate * 100).toFixed(0)}%)</dt><dd className="shrink-0 text-destructive">−{formatCr(termination.penalty)}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Deposit refund</dt><dd className="shrink-0 text-primary">+{formatCr(termination.refund)}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Current balance</dt><dd className="shrink-0">{formatCr(termination.balance_before)}</dd></div>
+          <div className="flex justify-between gap-4 border-t border-border pt-3 font-semibold"><dt>Balance after termination</dt><dd className="shrink-0 text-primary">{formatCr(termination.balance_after)}</dd></div>
+        </dl><p className="text-xs text-muted-foreground">Due obligations are included. Final balance reflects any new obligations due at confirmation.</p></>}
+        <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setTermination(null)}>Keep aircraft</Button><Button variant="destructive" disabled={busy || !termination} onClick={() => void confirmTermination()}>{busy ? 'Returning aircraft…' : 'Confirm termination'}</Button></div>
+      </DialogContent>}
   </Dialog>;
 }
