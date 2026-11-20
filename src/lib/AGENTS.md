@@ -4,3 +4,5 @@
 - Recruitment defaults/ranges live in economy_config; SQL validates owner-selected rates and applies defaults only to new companies, preserving existing rates and dispatched-flight snapshots.
 
 - Single-flight rentals use atomic owner/tier-checked SQL acquisition and terminal-flight retirement, never deletion; no lease contracts, while ledger charges count in aircraft/company P&L and dividends.
+
+- Dispatch previews reuse flight_quote_full in owner-scoped additive RPCs after the 60/40 result limits; alternatives quote only six nearest eligible ports within 150 NM then rank these by margin. Invalid quotes remain null with a reason; cargo settings are part of query identity — avoids economic drift, unbounded quotation work and shared-search regressions.

@@ -1,5 +1,11 @@
 # Roadmap
 
+## Dispatch destination profitability
+- [x] Add owner-scoped bounded destination estimates using flight_quote_full, plus up to six alternatives within 150 NM; existing search RPCs, settlement, radar and deployment variables unchanged. Alternatives select six nearest eligible ports before quoting/ranking, rather than quoting every airport within the radius.
+- [x] Add Best Deals/Nearest sorting, top-three positive deals, revenue/margin readouts and one-click alternatives with current cargo settings; unavailable estimates show their reason rather than a fabricated zero.
+- [x] 88 SQL/regression tests passed, including a 49,501-airport fixture, 60/40/6 limits, owner denial, radius/range/runway/tiers/date line, cargo forwarding, FBO savings and sort rules. Signed-in desktop/mobile: 60 results, local sort, PL-0152 estimate exactly matched the full 188.13 SC quote; selecting PL-0018 updated the route; EPBY search returned one result. Alternatives were not requested before selection. No runtime errors or horizontal overflow; build OK.
+- [x] Timing measured and limitation reported: first result in development 2.85–2.96 s, 60-result request 524–580 ms, alternatives 125–254 ms. The requested full-page 0.3 s threshold is not achieved; isolated production timing remains unverified.
+
 ## World radar activity and tier catalogue
 - [x] Add safe paginated worldwide ground/activity aggregates without changing private flight access; anonymous/authenticated grants verified.
 - [x] Load up to 500 tier airports plus all priority ports, scoped supplies in batches of 200, and global ground/activity markers; Dispatch, Flight Deck styling and deployment variables unchanged.

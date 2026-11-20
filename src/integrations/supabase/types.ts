@@ -1243,6 +1243,15 @@ export type Database = {
         Args: { p_hours: number; p_price: number }
         Returns: number
       }
+      dispatch_destination_estimate: {
+        Args: {
+          p_aircraft_id: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+        }
+        Returns: Json
+      }
       dispatch_flight:
         | {
             Args: { p_aircraft: string; p_destination: string }
@@ -1318,6 +1327,42 @@ export type Database = {
         Returns: Json
       }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
+      get_destination_alternatives: {
+        Args: {
+          p_aircraft_id: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_radius_nm?: number
+          p_target_icao: string
+          p_tiers?: number[]
+        }
+        Returns: {
+          airport: Json
+          distance_from_target_nm: number
+          distance_nm: number
+          estimate_error: string
+          estimated_margin: number
+          estimated_revenue: number
+          margin_diff_vs_target: number
+        }[]
+      }
+      get_dispatch_destination_deals: {
+        Args: {
+          p_aircraft_id: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_query?: string
+          p_tiers?: number[]
+        }
+        Returns: {
+          airport: Json
+          distance_nm: number
+          estimate_error: string
+          estimated_margin: number
+          estimated_revenue: number
+          is_fbo: boolean
+        }[]
+      }
       get_dispatch_nearby_airports: {
         Args: { p_aircraft_id: string; p_tiers?: number[] }
         Returns: {

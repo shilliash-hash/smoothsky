@@ -3,7 +3,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Play, Check, X, Radar } from "lucide-react";
+import { Plane, Play, Check, X, Radar, TrendingUp, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
-import { distanceNm, flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
+import { flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { fuelLabel, plannedFuel } from "@/lib/fleet-rules";
 import { flightNumberSchema } from "@/lib/flight-number";
-import { dispatchAirportTiers } from "@/lib/dispatch-airports";
-import { airportsNear, useAirportSearch, MIN_SEARCH_CHARS } from "@/lib/airport-search";
+import { dispatchAirportTiers, sortDestinationDeals, topDestinationDeals, type DealSort } from "@/lib/dispatch-airports";
+import { useDispatchDeals } from "@/lib/dispatch-deals";
+import { DestinationAlternatives } from "@/components/game/DestinationAlternatives";
 import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
@@ -68,6 +69,7 @@ function Dispatch() {
   const numberValid = flightNumberSchema.safeParse(flightNumber ?? d.nextFlightNumber ?? "").success;
   const [filter, setFilter] = useState("");
   const [explicitTiers, setTiers] = useState<number[] | null>(null);
+  const [dealSort, setDealSort] = useState<DealSort>("best");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [busy, setBusy] = useState(false);
   const webSimAllowed = d.rules["web_simulation_enabled"] === true;
@@ -83,6 +85,7 @@ function Dispatch() {
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
+  const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
@@ -115,33 +118,10 @@ function Dispatch() {
     return () => {
       active = false;
     };
-  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo, reserveMinutes]);
-  const searching = filter.trim().length >= MIN_SEARCH_CHARS;
-  const found = useAirportSearch(filter, tiers, origin?.icao, selected?.type?.minimum_runway_ft ?? 0);
-  const nearby = useQuery({
-    queryKey: ["airports-near", selected?.id, origin?.icao, selected?.type?.range_nm, [...tiers].sort().join("")],
-    queryFn: () => selected ? airportsNear(selected.id, tiers) : Promise.resolve([]),
-    enabled: !!origin && !!selected?.type && !searching,
-    staleTime: 300_000,
-  });
-  const pool = searching ? (found.data ?? []) : (nearby.data ?? []);
-  const destinations = useMemo(
-    () =>
-      !origin || !selected?.type
-        ? []
-        : pool
-            .filter(
-              (a) =>
-                a.icao !== origin.icao &&
-                distanceNm(origin, a) <= (selected.type?.range_nm ?? 0) &&
-                (!a.longest_runway_ft ||
-                  a.longest_runway_ft >= (selected.type?.minimum_runway_ft ?? 0)),
-            )
-            .map((a) => ({ ...a, nm: distanceNm(origin, a) }))
-            .sort((a, b) => (filter.trim() ? 0 : a.nm - b.nm))
-            .slice(0, 100),
-    [pool, origin, selected, filter],
-  );
+  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo, reserveMinutes, rulesKey]);
+  const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, cargoQuoteKg, allCargo, rulesKey);
+  const destinations = useMemo(() => sortDestinationDeals(tiers.length ? deals.data ?? [] : [], dealSort), [deals.data, dealSort, tiers.length]);
+  const topDeals = useMemo(() => topDestinationDeals(destinations), [destinations]);
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
@@ -237,7 +217,12 @@ function Dispatch() {
                 placeholder="ICAO, airport or city"
               />
               <div className="mt-3"><TierPills tiers={tiers} onChange={setTiers} /></div>
-              <div className="mt-3 max-h-[440px] overflow-y-auto divide-y divide-border">
+              <div className="mt-3 flex items-center gap-2" role="group" aria-label="Destination sorting">
+                <Button size="sm" variant={dealSort === "best" ? "default" : "outline"} aria-pressed={dealSort === "best"} onClick={() => setDealSort("best")}><TrendingUp className="h-3 w-3" />Best Deals</Button>
+                <Button size="sm" variant={dealSort === "nearest" ? "default" : "outline"} aria-pressed={dealSort === "nearest"} onClick={() => setDealSort("nearest")}><Navigation className="h-3 w-3" />Nearest</Button>
+                {(deals.isFetching || deals.searchPending) && <span className="text-xs text-muted-foreground" role="status">Updating…</span>}
+              </div>
+              <div aria-label="Destination results" aria-busy={deals.isFetching || deals.searchPending} className="mt-3 max-h-[440px] overflow-y-auto divide-y divide-border">
                 {destinations.map((a) => (
                   <Button
                     key={a.icao}
@@ -246,18 +231,23 @@ function Dispatch() {
                     onClick={() => setDestination(a.icao)}
                     className={`h-auto w-full justify-between gap-3 rounded-none py-3 text-left ${destination === a.icao ? "bg-accent" : ""}`}
                   >
-                    <span className="min-w-0">
-                      <span className="readout text-primary">{a.icao}</span>
+                    <span className="min-w-0 whitespace-normal">
+                      <span className="flex flex-wrap items-center gap-2"><span className="readout text-primary">{a.icao}</span>{topDeals.has(a.icao) && <span className="readout text-[10px] text-amber">TOP DEAL</span>}{a.is_fbo && <span className="text-[10px] text-primary">Company FBO</span>}</span>
                       <span className="block whitespace-normal text-xs text-muted-foreground">
-                        {a.name}
+                        {a.name}{a.city && ` · ${a.city}`}
                       </span>
+                      {a.estimate_error && <span className="mt-1 block text-xs text-amber">{displayTerminology(a.estimate_error)}</span>}
                     </span>
-                    <span className="readout shrink-0 text-xs">{Math.round(a.nm)} NM</span>
+                    <span className="readout shrink-0 text-right text-xs">
+                      <span className="block text-muted-foreground">{Math.round(a.distance_nm)} NM</span>
+                      <span className={`mt-1 block ${a.estimated_margin !== null && a.estimated_margin >= 0 ? "text-primary" : "text-amber"}`}>{a.estimated_margin === null ? "Est. unavailable" : `Est. ${a.estimated_margin > 0 ? "+" : ""}${formatCr(a.estimated_margin)}`}</span>
+                      {a.estimated_revenue !== null && <span className="mt-1 block text-[10px] text-muted-foreground">Income: {formatCr(a.estimated_revenue)}</span>}
+                    </span>
                   </Button>
                 ))}
-                {(searching ? found.error : nearby.error) && <p role="alert" className="py-4 text-destructive">Airport search unavailable. Please try again.</p>}
+                {deals.error && <p role="alert" className="py-4 text-destructive">Airport search unavailable. Please try again.</p>}
                 {destinations.length === 0 && (
-                  <p className="py-8 text-muted-foreground">{(searching ? found.isFetching : nearby.isFetching) ? "Loading destinations…" : "No matching reachable airports."}</p>
+                  <p className="py-8 text-muted-foreground">{deals.isFetching || deals.searchPending ? "Loading destinations…" : "No matching reachable airports."}</p>
                 )}
               </div>
             </section>
@@ -355,6 +345,7 @@ function Dispatch() {
                   {destination ? "Calculating…" : "No destination selected"}
                 </p>
               )}
+              <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={cargoQuoteKg} allCargo={allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
             </section>
           </div>
         )
