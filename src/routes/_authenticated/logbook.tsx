@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { companyQuery } from "@/lib/game";
 import { logbookQuery, logbookResult } from "@/lib/logbook";
 import { formatCr } from "@/lib/rules";
+import { FlightDebrief } from "@/components/game/FlightDebrief";
 
 export const Route = createFileRoute("/_authenticated/logbook")({
   loader: async ({ context }) => {
@@ -76,7 +77,7 @@ function Logbook() {
     <div className="mt-6 overflow-x-auto border-y border-border">
       <table className="w-full min-w-[960px] text-left text-sm">
         <thead className="bg-panel text-xs uppercase text-muted-foreground"><tr>
-          <th className="p-3">Landing (UTC)</th><th className="p-3">Flight</th><th className="p-3">Aircraft</th><th className="p-3">Route</th><th className="p-3 text-right">Hours</th><th className="p-3 text-right">PAX</th><th className="p-3 text-right">Net (SC)</th>
+          <th className="p-3">Landing (UTC)</th><th className="p-3">Flight</th><th className="p-3">Aircraft</th><th className="p-3">Route</th><th className="p-3 text-right">Hours</th><th className="p-3 text-right">PAX</th><th className="p-3 text-right">Net (SC)</th><th className="p-3">Debrief</th>
         </tr></thead>
         <tbody>{filtered.map(f => {
           const result = logbookResult(f);
@@ -88,6 +89,7 @@ function Logbook() {
             <td className="readout p-3 text-right">{result.hours.toFixed(2)}</td>
             <td className="readout p-3 text-right">{f.passengers}</td>
             <td className={`readout whitespace-nowrap p-3 text-right ${result.net === null ? "text-muted-foreground" : result.net >= 0 ? "text-success" : "text-destructive"}`}>{result.net === null ? "—" : `${result.net > 0 ? "+" : ""}${formatCr(result.net)}`}</td>
+            <td className="p-3"><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} /></td>
           </tr>;
         })}</tbody>
       </table>

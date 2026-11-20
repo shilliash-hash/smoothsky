@@ -1,5 +1,9 @@
 # Roadmap
 
+## Passenger landing tips
+- [x] Add ACARS-only passenger tips with balanced, idempotent ledger posting, frozen database-backed rules and profitability/commission reporting; preserve existing leases and historical settlements.
+- [x] Add touchdown and tip breakdown in Dispatch/Logbook and ledger label; 77 tests passed. Signed-in ACARS HTTP report awarded 23.76 SC on 237.57 SC tickets at -61 fpm, duplicate report rejected (409), entry and debrief read back on desktop/mobile; no console errors, build OK, deployment variables unchanged. Real simulator hardware not connected.
+
 ## Early lease termination
 - [x] Add owner-only atomic termination, rounded deposit penalty, reservation/flight guards and immutable ledger entries; preserve existing contract dates and deployment variables.
 - [x] Add confirmation with synchronized balance and fee-aware financial reporting; 36 tests passed including 16 isolated SQL tests for due/future billing, rounding, repeat rejection, ownership, active flights, reservations and unchanged other leases. Signed-in C172 termination verified twice: 750 SC penalty, 2250 SC net refund, retained weekly payment/history, cleared fleet; desktop/mobile confirmation checked. Build OK; isolated 49,000-airport environment not available.

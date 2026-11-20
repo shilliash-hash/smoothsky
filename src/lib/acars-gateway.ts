@@ -21,7 +21,7 @@ export const positionSchema = z.object({
 });
 export const pirepSchema = z.object({
   fuel_used_gal: z.number().min(0).max(100000),
-  landing_rate_fpm: z.number().min(-5000).max(1000),
+  landing_rate_fpm: z.number().min(-5000).max(1000).optional(),
   flight_time_hours: z.number().min(0).max(30),
 });
 

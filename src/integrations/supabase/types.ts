@@ -768,6 +768,8 @@ export type Database = {
         Row: {
           all_cargo_capacity_bonus: number
           avgas_kg_per_litre: number
+          butter_landing_max_fpm: number
+          butter_tip_rate: number
           cargo_airport_fee_discount: number
           cargo_pax_rate_ratio: number
           default_lease_weeks: number
@@ -777,10 +779,15 @@ export type Database = {
           lease_termination_penalty_rate: number
           renewal_discount: number
           singleton: boolean
+          smooth_landing_max_fpm: number
+          smooth_landing_min_fpm: number
+          smooth_tip_rate: number
         }
         Insert: {
           all_cargo_capacity_bonus?: number
           avgas_kg_per_litre?: number
+          butter_landing_max_fpm?: number
+          butter_tip_rate?: number
           cargo_airport_fee_discount?: number
           cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
@@ -790,10 +797,15 @@ export type Database = {
           lease_termination_penalty_rate?: number
           renewal_discount?: number
           singleton?: boolean
+          smooth_landing_max_fpm?: number
+          smooth_landing_min_fpm?: number
+          smooth_tip_rate?: number
         }
         Update: {
           all_cargo_capacity_bonus?: number
           avgas_kg_per_litre?: number
+          butter_landing_max_fpm?: number
+          butter_tip_rate?: number
           cargo_airport_fee_discount?: number
           cargo_pax_rate_ratio?: number
           default_lease_weeks?: number
@@ -803,6 +815,9 @@ export type Database = {
           lease_termination_penalty_rate?: number
           renewal_discount?: number
           singleton?: boolean
+          smooth_landing_max_fpm?: number
+          smooth_landing_min_fpm?: number
+          smooth_tip_rate?: number
         }
         Relationships: []
       }
@@ -1412,6 +1427,16 @@ export type Database = {
       new_acars_key: { Args: never; Returns: string }
       next_flight_number: { Args: never; Returns: string }
       passenger_capacity: { Args: { p_airport: string }; Returns: number }
+      passenger_landing_tip: {
+        Args: {
+          p_pax: number
+          p_rules: Json
+          p_source: string
+          p_telemetry: Json
+          p_tickets: number
+        }
+        Returns: Json
+      }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
       pay_due_dividends: { Args: { p_company: string }; Returns: undefined }
       pilot_balance: { Args: { p_user: string }; Returns: number }

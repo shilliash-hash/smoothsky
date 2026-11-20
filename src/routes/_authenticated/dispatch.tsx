@@ -24,6 +24,7 @@ import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
 import { adminAccessQuery } from '@/lib/admin';
 import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
+import { FlightDebrief } from '@/components/game/FlightDebrief';
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -422,9 +423,9 @@ function Dispatch() {
                     </Button>
                   )}
                   {f.status === "COMPLETED" && (
-                    <span className="readout text-primary">
+                    <><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} /><span className="readout text-primary">
                       {formatCr((f.settlement as Quote)?.net ?? 0)}
-                    </span>
+                    </span></>
                   )}
                 </div>
               </div>
