@@ -7,3 +7,10 @@ describe("FOB ownership and recovery", () => {
   it("blocks investments with overdue debt", () => { expect(canInvest("DELINQUENT")).toBe(false); expect(canInvest("INSOLVENT")).toBe(false); expect(canInvest("CONSTRAINED")).toBe(true); });
   it("requires explicit restructuring confirmation", () => { expect(baseActionSchema.safeParse({ action: "restructure", confirmation: "" }).success).toBe(false); expect(baseActionSchema.safeParse({ action: "restructure", confirmation: "RESTRUCTURE" }).success).toBe(true); });
 });
+import { fboScaledCost as scaledCost } from "./bases-rules";
+describe("FBO size multipliers", () => {
+  const m = [0.7, 0.85, 1, 1.25, 1.6, 2, 2.5];
+  it("Size 3 keeps the base price", () => expect(scaledCost(5000, m, 3)).toBe(5000));
+  it("Size 1 is 30% cheaper", () => expect(scaledCost(5000, m, 1)).toBe(3500));
+  it("Size 7 costs 2.5x", () => expect(scaledCost(250, m, 7)).toBe(625));
+});

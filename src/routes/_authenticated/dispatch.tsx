@@ -250,6 +250,9 @@ function Dispatch() {
                   <p className="py-8 text-muted-foreground">{deals.isFetching || deals.searchPending ? "Loading destinations…" : "No matching reachable airports."}</p>
                 )}
               </div>
+              <div className="mt-4">
+                <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={cargoQuoteKg} allCargo={allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
+              </div>
             </section>
             <section className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
               <SimbriefImport
@@ -347,7 +350,6 @@ function Dispatch() {
                   {destination ? "Calculating…" : "No destination selected"}
                 </p>
               )}
-              <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={cargoQuoteKg} allCargo={allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
             </section>
           </div>
         )

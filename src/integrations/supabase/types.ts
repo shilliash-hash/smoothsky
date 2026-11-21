@@ -1329,6 +1329,7 @@ export type Database = {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
       }
+      fob_size_multiplier: { Args: { p_icao: string }; Returns: number }
       fob_weekly_cost: { Args: { p_base: string }; Returns: number }
       get_destination_alternatives: {
         Args: {

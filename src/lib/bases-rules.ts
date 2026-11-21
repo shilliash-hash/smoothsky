@@ -11,3 +11,12 @@ export function canOpenBase(type: "MAIN" | "SATELLITE", bases: { base_type: stri
   return type === "MAIN" ? !bases.some(b => b.base_type === "MAIN") : bases.some(b => b.base_type === "MAIN") && bases.filter(b => b.base_type === "SATELLITE").length < 2;
 }
 export function canInvest(status: FinancialHealth["status"]) { return status === "HEALTHY" || status === "CONSTRAINED"; }
+/** FBO base setup/upkeep multiplier for an airport size (1–7); Size 3 is the 1.00 baseline. Mirrors SQL fob_size_multiplier. */
+export function fboSizeMultiplier(multipliers: unknown, size: number | null | undefined): number {
+  if (!Array.isArray(multipliers) || size == null) return 1;
+  const value = Number(multipliers[Math.min(7, Math.max(1, Math.round(size))) - 1]);
+  return Number.isFinite(value) ? value : 1;
+}
+export function fboScaledCost(base: number, multipliers: unknown, size: number | null | undefined): number {
+  return Math.round(base * fboSizeMultiplier(multipliers, size) * 100) / 100;
+}

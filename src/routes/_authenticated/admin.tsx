@@ -455,7 +455,7 @@ function EconomyRow({
                 aria-label={`${displayTerminology(row.key.replaceAll("_", " "))} ${index + 1}`}
                 type="number"
                 min="0"
-                step={Number.isInteger(Number(row.value instanceof Array ? row.value[index] : item)) ? "1" : "0.1"}
+                step={row.key === "charter_by_tier" ? "1" : "0.05"}
                 className="readout mt-1 px-2"
                 value={item}
                 onChange={(e) => {

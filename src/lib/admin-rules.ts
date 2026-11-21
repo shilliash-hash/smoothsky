@@ -29,6 +29,7 @@ export function validateEconomyValue(key: string, value: unknown) {
   if (key === "short_hop_min_multiplier") return z.number().finite().min(0).max(1).parse(value);
   if (key === "web_simulation_enabled") return z.boolean().parse(value);
   if (key === "demand_factor_by_size") return z.array(z.number().finite().min(0).max(1)).length(7).parse(value);
+  if (key === "fob_size_multipliers") return z.array(z.number().finite().min(0.1).max(10)).length(7).parse(value);
   if (key === "hub_fare_bonus_by_size") return z.array(z.number().finite().min(0).max(2)).length(7).parse(value);
   if (["airport_capacities", "airport_fee_multipliers", "charter_by_tier"].includes(key)) {
     return z
