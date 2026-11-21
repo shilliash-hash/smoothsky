@@ -7,6 +7,8 @@ import { Plane, Play, Check, X, Radar, TrendingUp, Navigation } from "lucide-rea
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -232,7 +234,7 @@ function Dispatch() {
                     className={`h-auto w-full justify-between gap-3 rounded-none py-3 text-left ${destination === a.icao ? "bg-accent" : ""}`}
                   >
                     <span className="min-w-0 whitespace-normal">
-                      <span className="flex flex-wrap items-center gap-2"><span className="readout text-primary">{a.icao}</span>{topDeals.has(a.icao) && <span className="readout text-[10px] text-amber">TOP DEAL</span>}{a.is_fbo && <span className="text-[10px] text-primary">Company FBO</span>}</span>
+                      <span className="flex flex-wrap items-center gap-2"><span className="readout text-primary">{a.icao}</span><span aria-label={`Airport tier ${a.size}`} className={cn(badgeVariants({ variant: "outline" }), "readout shrink-0 rounded-sm border-border bg-muted px-1.5 py-0 text-[10px] leading-4 text-muted-foreground")}>T{a.size}</span>{topDeals.has(a.icao) && <span className="readout text-[10px] text-amber">TOP DEAL</span>}{a.is_fbo && <span className="text-[10px] text-primary">Company FBO</span>}</span>
                       <span className="block whitespace-normal text-xs text-muted-foreground">
                         {a.name}{a.city && ` · ${a.city}`}
                       </span>

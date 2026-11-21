@@ -1,5 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useDestinationAlternatives } from "@/lib/dispatch-deals";
 import { formatCr } from "@/lib/rules";
 import { displayTerminology } from "@/lib/display-terminology";
@@ -21,7 +23,7 @@ export function DestinationAlternatives({ aircraftId, originIcao, target, tiers,
         const difference = a.estimated_margin === null ? null : selectedMargin === null ? a.margin_diff_vs_target : a.estimated_margin - selectedMargin;
         return <Button key={a.icao} variant="ghost" onClick={() => onSelect(a.icao)} className="h-auto w-full justify-between gap-3 rounded-none py-3 text-left" aria-label={`Select alternative ${a.icao}`}>
           <span className="min-w-0 whitespace-normal">
-            <span className="readout text-primary">{a.icao} · {a.city || a.name}</span>
+            <span className="flex flex-wrap items-center gap-2"><span className="readout text-primary">{a.icao}</span><span aria-label={`Airport tier ${a.size}`} className={cn(badgeVariants({ variant: "outline" }), "readout shrink-0 rounded-sm border-border bg-muted px-1.5 py-0 text-[10px] leading-4 text-muted-foreground")}>T{a.size}</span><span className="readout text-primary">· {a.city || a.name}</span></span>
             <span className="mt-1 block text-xs text-muted-foreground">{Math.round(a.distance_from_target_nm)} NM from {target} · {Math.round(a.distance_nm)} NM route</span>
             {a.estimate_error && <span className="mt-1 block text-xs text-amber">{displayTerminology(a.estimate_error)}</span>}
           </span>
