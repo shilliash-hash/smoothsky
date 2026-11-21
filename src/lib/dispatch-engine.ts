@@ -8,10 +8,14 @@ export type Coordinates = { lat: number; lon: number };
 export type Economy = Record<string, number | boolean | number[]>;
 export type CharterSnapshot = { base_rate: number; rate: number; multiplier: number; threshold_nm: number; reduced: boolean };
 // Display the frozen SQL quote, rather than recalculating its rounded distance.
-export function ticketRevenueBreakdown(revenue: number, passengers: number, tier: number, rates: readonly number[], charter?: CharterSnapshot) {
+export type DemandSnapshot = { raw_passengers: number; factor: number; hub_bonus: number; destination_size: number };
+export function ticketRevenueBreakdown(revenue: number, passengers: number, tier: number, rates: readonly number[], charter?: CharterSnapshot, hubBonus = 0) {
+  const baseRevenue = Math.round((revenue / (1 + hubBonus)) * 100) / 100;
+  const hubRevenue = Math.round((revenue - baseRevenue) * 100) / 100;
+  revenue = baseRevenue;
   const surchargePerPassenger = charter?.rate ?? rates[tier - 1] ?? 0;
   const charterRevenue = Math.round(passengers * surchargePerPassenger * 100) / 100;
-  return { surchargePerPassenger, charterRevenue, isShortHop: charter?.reduced ?? false, thresholdNm: charter?.threshold_nm, reductionPercent: Math.round((1 - (charter?.multiplier ?? 1)) * 100), distanceRevenue: Math.round((revenue - charterRevenue) * 100) / 100 };
+  return { surchargePerPassenger, charterRevenue, isShortHop: charter?.reduced ?? false, thresholdNm: charter?.threshold_nm, reductionPercent: Math.round((1 - (charter?.multiplier ?? 1)) * 100), distanceRevenue: Math.round((revenue - charterRevenue) * 100) / 100, hubRevenue, hubPercent: Math.round(hubBonus * 100) };
 }
 export const coordinates = (p: Coordinates): [number, number] => [p.lon, p.lat];
 export const distanceNm = (a: Coordinates, b: Coordinates) =>

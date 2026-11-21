@@ -69,3 +69,12 @@ describe("flight economy and radar", () => {
       ),
     ).toBe(0.5));
 });
+
+describe("hub fare bonus breakdown", () => {
+  it("separates a +25% hub bonus from distance revenue", () => {
+    const b = ticketRevenueBreakdown(125, 1, 1, [0], undefined, 0.25);
+    expect(b.hubRevenue).toBe(25);
+    expect(b.distanceRevenue).toBe(100);
+    expect(b.hubPercent).toBe(25);
+  });
+});

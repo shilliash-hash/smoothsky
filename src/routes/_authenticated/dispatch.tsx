@@ -86,7 +86,7 @@ function Dispatch() {
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
-  const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier, quote.short_hop_charter) : null;
+  const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier, quote.short_hop_charter, quote.demand?.hub_bonus ?? 0) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
   const fuelPlan = quote ? plannedFuel(quote.fuel_gal, reserveMinutes, Number(selected?.type?.fuel_burn_gph ?? 0)) : null;
@@ -291,6 +291,8 @@ function Dispatch() {
                     {quote.passengers} passengers · {quote.cargo_kg ?? 0} kg cargo · {Math.round(quote.distance_nm)} NM ·{" "}
                     {Math.round(quote.minutes)} min
                   </p>
+                  {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
+                  {quote.runway_unpaved && <p className="mt-1 text-xs text-amber">[UNPAVED] No paved runway nearby — remote strip fallback</p>}
                   <dl className="readout mt-5 space-y-3">
                     {[
                       ["Ticket revenue", quote.ticket_revenue ?? quote.revenue],
@@ -303,7 +305,7 @@ function Dispatch() {
                       <div key={String(label)} className="flex justify-between gap-3 text-sm">
                         <dt className="min-w-0">{label}{label === "Ticket revenue" && revenueBreakdown && quote && (
                           <span className="block text-xs text-muted-foreground">
-                            (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax{revenueBreakdown.isShortHop && <span className="text-amber"> (-{revenueBreakdown.reductionPercent}% short-hop: {Math.round(quote.distance_nm)} NM / {revenueBreakdown.thresholdNm} NM)</span>})
+                            (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax{revenueBreakdown.isShortHop && <span className="text-amber"> (-{revenueBreakdown.reductionPercent}% short-hop: {Math.round(quote.distance_nm)} NM / {revenueBreakdown.thresholdNm} NM)</span>}{revenueBreakdown.hubRevenue > 0 && <span className="text-primary"> incl. +{revenueBreakdown.hubPercent}% Hub {destination} bonus: {formatCr(revenueBreakdown.hubRevenue)}</span>})
                           </span>
                         )}{label === "Handling fee" && quote.fob_discounts && (quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) > 0 && <span className="block text-xs text-primary">{(quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) === 2 ? "Free · Company FBO hubs" : "−50% · Company FBO"}</span>}</dt>
                         <dd className="shrink-0">{formatCr(Number(value))}</dd>

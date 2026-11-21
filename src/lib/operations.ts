@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getOperations } from "./operations.functions";
-import type { CharterSnapshot } from "./dispatch-engine";
+import type { CharterSnapshot, DemandSnapshot } from "./dispatch-engine";
 export const operationsQuery = queryOptions({
   queryKey: ["operations"],
   queryFn: async () => {
@@ -20,6 +20,8 @@ export type Quote = {
   passengers: number;
   revenue: number;
   short_hop_charter?: CharterSnapshot;
+  demand?: DemandSnapshot;
+  runway_unpaved?: boolean;
   rules: { fare_per_nm: number; charter_by_tier: number[] };
   fuel_gal: number;
   fuel_cost: number;

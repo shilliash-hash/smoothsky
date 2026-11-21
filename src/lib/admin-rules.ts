@@ -3,7 +3,7 @@ import { recruitmentSchema } from "./recruitment-rules";
 
 export const aircraftSchema = z.object({
   id: z.string().regex(/^[A-Z0-9_-]{2,20}$/),
-  tier: z.number().int().min(1).max(4),
+  tier: z.number().int().min(1).max(7),
   manufacturer: z.string().trim().min(1).max(100),
   model: z.string().trim().min(1).max(100),
   pax: z.number().int().min(1).max(1000),
@@ -19,6 +19,7 @@ export const aircraftSchema = z.object({
   fuel_capacity_gal: z.number().positive(),
   minimum_runway_ft: z.number().int().nonnegative(),
   active: z.boolean(),
+  unpaved_capable: z.boolean().default(false),
 });
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
 export function validateEconomyValue(key: string, value: unknown) {
@@ -27,6 +28,8 @@ export function validateEconomyValue(key: string, value: unknown) {
   if (key === "short_hop_threshold_nm") return z.number().int().min(10).max(300).parse(value);
   if (key === "short_hop_min_multiplier") return z.number().finite().min(0).max(1).parse(value);
   if (key === "web_simulation_enabled") return z.boolean().parse(value);
+  if (key === "demand_factor_by_size") return z.array(z.number().finite().min(0).max(1)).length(7).parse(value);
+  if (key === "hub_fare_bonus_by_size") return z.array(z.number().finite().min(0).max(2)).length(7).parse(value);
   if (["airport_capacities", "airport_fee_multipliers", "charter_by_tier"].includes(key)) {
     return z
       .array(key === "airport_capacities" ? z.number().positive() : z.number().nonnegative())

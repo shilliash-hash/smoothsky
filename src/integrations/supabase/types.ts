@@ -32,6 +32,7 @@ export type Database = {
           range_nm: number
           security_deposit: number
           tier: number
+          unpaved_capable: boolean
           weekly_rate: number
         }
         Insert: {
@@ -51,6 +52,7 @@ export type Database = {
           range_nm: number
           security_deposit: number
           tier: number
+          unpaved_capable?: boolean
           weekly_rate: number
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           range_nm?: number
           security_deposit?: number
           tier?: number
+          unpaved_capable?: boolean
           weekly_rate?: number
         }
         Relationships: []
@@ -1572,6 +1575,10 @@ export type Database = {
       replenish_broker_market: { Args: never; Returns: undefined }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      runway_is_unpaved: {
+        Args: { p_runway_ft: number; p_size: number; p_surface: string }
+        Returns: boolean
+      }
       search_airports: {
         Args: {
           p_limit?: number

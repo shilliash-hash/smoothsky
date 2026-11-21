@@ -38,3 +38,13 @@ describe("airport fuel and admin validation", () => {
   it("a configured purchase price of 50000 SC is accepted", () =>
     expect(aircraftSchema.shape.purchase_price.parse(50000)).toBe(50000));
 });
+
+describe("hub-and-spoke economy arrays", () => {
+  it("accepts 7 demand factors within 0–1 and rejects above 1", () => {
+    expect(validateEconomyValue("demand_factor_by_size", [0.65, 0.85, 0.85, 1, 1, 1, 1])).toHaveLength(7);
+    expect(() => validateEconomyValue("demand_factor_by_size", [1.2, 1, 1, 1, 1, 1, 1])).toThrow();
+  });
+  it("requires exactly 7 hub bonuses", () => {
+    expect(() => validateEconomyValue("hub_fare_bonus_by_size", [0, 0.35])).toThrow();
+  });
+});

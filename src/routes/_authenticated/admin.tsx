@@ -65,6 +65,7 @@ const freshAircraft: AircraftEdit = {
   fuel_capacity_gal: 56,
   minimum_runway_ft: 1500,
   active: true,
+  unpaved_capable: false,
 };
 function Admin() {
   const { data } = useSuspenseQuery(adminDataQuery);
@@ -273,6 +274,13 @@ function Admin() {
                   />
                   Available for leasing
                 </label>
+                <label className="flex items-center gap-3 text-sm">
+                  <Switch
+                    checked={editing.unpaved_capable}
+                    onCheckedChange={(unpaved_capable) => setEditing({ ...editing, unpaved_capable })}
+                  />
+                  Bush / Unpaved Capable
+                </label>
               </div>
               <Button className="mt-5" disabled={busy}>
                 <Save className="h-4 w-4" />
@@ -289,6 +297,7 @@ function Admin() {
                   <th>Range</th>
                   <th>Deposit</th>
                   <th>Weekly lease</th><th>Purchase price</th>
+                  <th>Bush / Unpaved</th>
                   <th />
                 </tr>
               </thead>
@@ -307,6 +316,7 @@ function Admin() {
                     <td>{a.range_nm} NM</td>
                     <td>{formatCr(Number(a.security_deposit))}</td>
                     <td>{formatCr(Number(a.weekly_rate))}</td><td>{formatCr(Number(a.purchase_price))}</td>
+                    <td><Switch aria-label={`Bush / Unpaved Capable ${a.id}`} checked={a.unpaved_capable} disabled={busy} onCheckedChange={(unpaved_capable) => void persist({ data: { kind: "aircraft", create: false, aircraft: { ...a, fuel_type: a.fuel_type === "100LL" ? "100LL" : "Jet-A", unpaved_capable } } })} /></td>
                     <td>
                       <Button
                         variant="outline"
@@ -426,7 +436,7 @@ function EconomyRow({
     >
       <div>
         <label htmlFor={row.key} className="text-sm font-medium capitalize">
-          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : row.key === "short_hop_threshold_nm" ? "Short-Hop Threshold (NM)" : row.key === "short_hop_min_multiplier" ? "Short-Hop Minimum Charter Multiplier" : displayTerminology(row.key.replaceAll("_", " "))}
+          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : row.key === "short_hop_threshold_nm" ? "Short-Hop Threshold (NM)" : row.key === "short_hop_min_multiplier" ? "Short-Hop Minimum Charter Multiplier" : row.key === "demand_factor_by_size" ? "Passenger Demand by Destination Size" : row.key === "hub_fare_bonus_by_size" ? "Hub Fare Bonus by Destination Size" : displayTerminology(row.key.replaceAll("_", " "))}
         </label>
         <p className="mt-1 text-xs text-muted-foreground">{displayTerminology(row.description)}</p>
       </div>
