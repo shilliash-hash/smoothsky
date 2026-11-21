@@ -51,6 +51,7 @@ beforeAll(async () => {
   await db.exec(definition('0027_cargo_and_special_missions.sql', 'flight_quote_full'));
   await db.exec(sql('0040_company_fbo_free_handling.sql'));
   await db.exec(sql('0045_short_hop_charter_reduction.sql'));
+  await db.exec(sql('0049_short_hop_linear_ramp.sql').replace(/^INSERT[\s\S]*?WHERE key='short_hop_charter_multiplier';/,''));
   const bounded = sql('0041_bounded_dispatch_and_radar_airports.sql');
   await db.exec(bounded.slice(bounded.indexOf('CREATE OR REPLACE FUNCTION public.airport_distance_nm'), bounded.indexOf('DO $migration$')));
   await db.exec(sql('0042_airport_search_nullable_code_ordering.sql'));
@@ -59,14 +60,19 @@ beforeAll(async () => {
 beforeEach(async () => {
   await db.exec(`SELECT set_config('test.user','${owner}',false); SELECT set_config('test.distance','',false); SELECT set_config('smoothsky.cargo','',false);
     TRUNCATE company_fobs; UPDATE aircraft_types SET tier=1;
-    INSERT INTO economy_config VALUES('short_hop_threshold_nm','80'),('short_hop_charter_multiplier','0.5') ON CONFLICT(key) DO UPDATE SET value=excluded.value;`);
+    INSERT INTO economy_config VALUES('short_hop_threshold_nm','80'),('short_hop_charter_multiplier','0.5'),('short_hop_min_multiplier','0.2') ON CONFLICT(key) DO UPDATE SET value=excluded.value;`);
 });
 afterAll(() => db.close());
 describe('production short-hop charter pricing', () => {
-  it.each([50, 79.999])('halves charter below 80 NM (%s) but preserves distance fare', async nm => {
+  it.each([[0, 0.2], [40, 0.6], [50, 0.7], [79.999, 1]])('ramps charter linearly below 80 NM: %s NM gives multiplier %s', async (nm, multiplier) => {
     const q = await quote(nm);
-    expect(q.short_hop_charter).toMatchObject({ rate: 32.5, multiplier: 0.5, reduced: true });
-    expect(q.revenue).toBe(Math.round(3 * (nm * 0.18 + 32.5) * 100) / 100);
+    expect(q.short_hop_charter.multiplier).toBeCloseTo(multiplier, 4);
+    expect(q.short_hop_charter.reduced).toBe(true);
+    expect(q.revenue).toBe(Math.round(3 * (nm * 0.18 + q.short_hop_charter.rate) * 100) / 100);
+  });
+  it('rounds the multiplier to whole basis points, with no cliff at the threshold', async () => {
+    expect((await quote(38)).short_hop_charter.multiplier).toBe(0.58);
+    expect((await quote(79)).short_hop_charter.rate).toBeCloseTo(64.35, 2);
   });
   it.each([80, 80.001, 120])('pays full charter at and above 80 NM (%s)', async nm => {
     const q = await quote(nm);
@@ -78,32 +84,32 @@ describe('production short-hop charter pricing', () => {
     expect(q.distance_nm).toBe(80);
     expect(q.short_hop_charter.reduced).toBe(true);
   });
-  it.each([[1,32.5],[2,25],[3,17.5],[4,10],[5,0],[6,0],[7,0]])('applies tier %s short-hop rate %s', async (tier, rate) => {
+  it.each([[1,45.5],[2,35],[3,24.5],[4,14],[5,0],[6,0],[7,0]])('applies tier %s short-hop rate %s', async (tier, rate) => {
     await db.query('UPDATE aircraft_types SET tier=$1', [tier]);
     expect((await quote(50)).short_hop_charter.rate).toBe(rate);
   });
   it('uses editable settings and retains previous quote snapshots', async () => {
     const frozen = await quote(50);
-    await db.exec(`UPDATE economy_config SET value='0.75' WHERE key='short_hop_charter_multiplier'; UPDATE economy_config SET value='40' WHERE key='short_hop_threshold_nm'`);
+    await db.exec(`UPDATE economy_config SET value='0.5' WHERE key='short_hop_min_multiplier'; UPDATE economy_config SET value='40' WHERE key='short_hop_threshold_nm'`);
     expect((await quote(50)).short_hop_charter.rate).toBe(65);
-    expect((await quote(30)).short_hop_charter.rate).toBe(48.75);
-    expect(frozen.revenue).toBe(124.5);
+    expect((await quote(20)).short_hop_charter.rate).toBe(48.75);
+    expect(frozen.revenue).toBe(163.5);
   });
   it('keeps FBO handling halves/waivers with reduced revenue', async () => {
-    expect((await quote(50)).handling_fee).toBe(12.45);
+    expect((await quote(50)).handling_fee).toBe(16.35);
     await db.exec(`INSERT INTO company_fobs VALUES(gen_random_uuid(),'${company}','ORIG',false,false,false,NULL)`);
-    expect((await quote(50)).handling_fee).toBe(6.23);
+    expect((await quote(50)).handling_fee).toBe(8.18);
     await db.exec(`INSERT INTO company_fobs VALUES(gen_random_uuid(),'${company}','SHORT',false,true,false,NULL)`);
     const q = await quote(50);
     expect(q.handling_fee).toBe(0);
     expect(q.landing_fee).toBe(16);
-    expect(q.revenue).toBe(124.5);
+    expect(q.revenue).toBe(163.5);
   });
   it.each([false,true])('shares reduced fare with cargo while preserving cargo mechanics (all cargo %s)', async allCargo => {
     const q = await quote(50, 100, allCargo);
-    expect(q.cargo_revenue).toBe(24.9);
-    expect(q.ticket_revenue).toBe(allCargo ? 0 : 124.5);
-    expect(q.revenue).toBe(allCargo ? 24.9 : 149.4);
+    expect(q.cargo_revenue).toBe(32.7);
+    expect(q.ticket_revenue).toBe(allCargo ? 0 : 163.5);
+    expect(q.revenue).toBe(allCargo ? 32.7 : 196.2);
     expect(q.landing_fee).toBe(allCargo ? 12 : 20);
     expect((await quote(80,100,allCargo)).cargo_revenue).toBe(47.64);
   });

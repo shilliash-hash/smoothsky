@@ -303,7 +303,7 @@ function Dispatch() {
                       <div key={String(label)} className="flex justify-between gap-3 text-sm">
                         <dt className="min-w-0">{label}{label === "Ticket revenue" && revenueBreakdown && quote && (
                           <span className="block text-xs text-muted-foreground">
-                            (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax{revenueBreakdown.isShortHop && <span className="text-amber"> (-{revenueBreakdown.reductionPercent}% short-hop {"<"} {revenueBreakdown.thresholdNm} NM)</span>})
+                            (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax{revenueBreakdown.isShortHop && <span className="text-amber"> (-{revenueBreakdown.reductionPercent}% short-hop: {Math.round(quote.distance_nm)} NM / {revenueBreakdown.thresholdNm} NM)</span>})
                           </span>
                         )}{label === "Handling fee" && quote.fob_discounts && (quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) > 0 && <span className="block text-xs text-primary">{(quote.fob_discounts.handling_origin + quote.fob_discounts.handling_destination) === 2 ? "Free · Company FBO hubs" : "−50% · Company FBO"}</span>}</dt>
                         <dd className="shrink-0">{formatCr(Number(value))}</dd>

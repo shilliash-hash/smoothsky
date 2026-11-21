@@ -426,7 +426,7 @@ function EconomyRow({
     >
       <div>
         <label htmlFor={row.key} className="text-sm font-medium capitalize">
-          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : displayTerminology(row.key.replaceAll("_", " "))}
+          {row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : row.key === "short_hop_threshold_nm" ? "Short-Hop Threshold (NM)" : row.key === "short_hop_min_multiplier" ? "Short-Hop Minimum Charter Multiplier" : displayTerminology(row.key.replaceAll("_", " "))}
         </label>
         <p className="mt-1 text-xs text-muted-foreground">{displayTerminology(row.description)}</p>
       </div>
@@ -466,9 +466,9 @@ function EconomyRow({
           id={row.key}
           aria-label={displayTerminology(row.key.replaceAll("_", " "))}
           type="number"
-          min={row.key === "spot_rental_multiplier" ? 0.01 : undefined}
-          max={row.key === "spot_rental_multiplier" ? 1 : undefined}
-          step={row.key === "spot_rental_multiplier" ? "0.01" : Number.isInteger(Number(row.value)) ? "1" : "0.1"}
+          min={row.key === "spot_rental_multiplier" ? 0.01 : row.key === "short_hop_min_multiplier" ? 0 : row.key === "short_hop_threshold_nm" ? 10 : undefined}
+          max={row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? 1 : row.key === "short_hop_threshold_nm" ? 300 : undefined}
+          step={row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? "0.01" : row.key === "short_hop_threshold_nm" ? "1" : Number.isInteger(Number(row.value)) ? "1" : "0.1"}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className="readout"
