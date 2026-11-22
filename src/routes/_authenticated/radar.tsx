@@ -193,7 +193,14 @@ function Radar() {
           </span>
           <span className="text-primary">✈ Your flight</span>
           <span className="text-radar-pax">◔ Passenger pool · % full</span>
-          <span className="text-radar-range">◯ Aircraft range</span>
+          <span className="flex items-center gap-2 text-radar-range">
+            <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full border border-current" />
+            Payload range · PAX/Cargo
+          </span>
+          <span className="flex items-center gap-2 text-amber">
+            <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full border border-dashed border-current" />
+            Ferry range · 100% empty
+          </span>
           <span className="text-radar-activity">◎ Pulse · Active airport (7 days)</span>
           <span className="text-amber">⚑ Company FBO</span>
         </div>
