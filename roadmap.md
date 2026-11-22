@@ -1,5 +1,9 @@
 # Roadmap
 
+## Dashboard global flight board
+- [x] Add Global beside Active/Recent using the existing safe, paginated radar feed, with airline/aircraft identity, own-flight badge and UTC ETA; preserve company views and deployment vars.
+- [x] Four radar tests passed; signed-in desktop/mobile Global, Active/Recent and manual refresh verified without errors or overflow. Live network returned zero active flights, so airborne live-row verification remains unavailable; supplemental browser-only sample rows verified airline/model, YOU, UTC ETA, READY and automatic 5-second removal/count updates. No player flights created or modified; build OK.
+
 ## Administrator account cleanup
 - [x] Add admin-only, self-protected company reset/account cleanup with transactional fuel cancellation, foreign-key-safe removal and a tightly scoped ledger DELETE exception.
 - [x] Add authenticated reset/delete actions and typed confirmation dialogs in Users & companies; preserve Flight Deck and deployment vars. Personal hangars are excluded from player company mapping; other companies retain deleted pilots' history with attribution detached.
