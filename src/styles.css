@@ -243,7 +243,7 @@
 @keyframes board-arrival { from { transform: translateY(3px); } to { transform: translateY(0); } }
 .world-hero { position: relative; isolation: isolate; overflow: hidden; }
 .world-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--hero-shade), transparent), linear-gradient(0deg, var(--background), transparent 35%); }
-.world-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 75% 68%; mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.75) 28%, black 58%); -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.75) 28%, black 58%); }
+.world-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 75% 68%; filter: blur(1.5px) brightness(0.92); transform: scale(1.02); mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.75) 28%, black 58%); -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.75) 28%, black 58%); }
 @media (max-width: 640px) { .world-hero::after { background: linear-gradient(90deg, var(--hero-shade), color-mix(in oklch, var(--background) 65%, transparent)); } }
 @media (prefers-reduced-motion: reduce) { .flight-board-row { animation: none; } }
 
