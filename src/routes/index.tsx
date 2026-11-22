@@ -77,7 +77,7 @@ function Index() {
       <main className="pb-24">
         {entryError && <p role="alert" className="mb-4 text-destructive">Unable to open your account. Please try signing in again.</p>}
         <section className="world-hero">
-          <img src={apron.url} alt="" aria-hidden="true" width={1672} height={941} fetchPriority="high" className="world-hero-image" />
+          <img src="/landing-hero.png" alt="" aria-hidden="true" width={1472} height={841} fetchPriority="high" className="world-hero-image" />
           <div className="mx-auto max-w-6xl px-6 pb-16 pt-14 md:pb-20 md:pt-20">
           <p className="readout flex items-center gap-2 text-xs uppercase text-amber"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Global operations terminal</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight md:text-7xl">
