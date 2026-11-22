@@ -1,5 +1,10 @@
 # Roadmap
 
+## Weight-budget planning — stage one
+- [x] Added catalogue masses for all nine types and a shared SQL trip-plus-reserve weight budget with 80 kg passengers, bounded passenger/cargo loads, overweight-mission rejection and MTOW landing fees (2.5 SC/t default). Existing discovery/radar and commercial dispatch range limits remain until stage two; payload controls remain until stage three. New unconfigured types fail safely until their masses are configured.
+- [x] New quotes freeze trip/reserve gallons, exact density, price and 80% fuel floor; verified ACARS settlement adjusts fuel expense/net before ledger and commission. WEB_MANUAL keeps estimated burn; old dispatched flights retain their quotes. Unused reserve is not billed, cancellation and ingestion protections unchanged. Configuration rows added without overwriting admin tuning; optional seed script preserves defaults in separately imported environments.
+- [x] 140 tests passed, including 38 applied-migration integration cases for masses, reserve, cargo, missions, dispatch readback, fuel floor, historical estimates, FBO prices, owner denial and idempotent settlement. Live schema confirmed nine configured types, default settings and denied anonymous helper access. Signed-in EPGD–EPBY Commercial/Ferry quotes read back two weight snapshots, displayed updated landing fees and 0-payload Ferry; no runtime errors/overflow, build OK. No live player flight dispatched/settled or simulator ACARS run; settlement exercised in isolated SQL. Flight Deck and deployment vars unchanged.
+
 ## Dashboard radar panorama
 - [x] Add a decorative radar sweep and generated night-fjord panorama behind the dashboard header and translucent Home Base; no data or deployment changes.
 - [x] Signed-in desktop (1280×1800), current viewport (737×735) and mobile (390×844) checked: image loaded, no overflow or runtime errors, reduced motion stops sweep, Manage bases navigation removes dashboard-only artwork. Preview build OK.

@@ -23,6 +23,8 @@ export const aircraftSchema = z.object({
 });
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
 export function validateEconomyValue(key: string, value: unknown) {
+  if (key === "passenger_weight_kg") return z.number().finite().positive().parse(value);
+  if (key === "fuel_billing_floor_pct") return z.number().finite().min(0).max(1).parse(value);
   if (key === "dispatch_usable_range_pct") return z.number().finite().min(0.05).max(1).parse(value);
   if (key === "recruitment_commissions") return recruitmentSchema.parse(value);
   if (key === "spot_rental_multiplier") return z.number().finite().min(0.01).max(1).parse(value);

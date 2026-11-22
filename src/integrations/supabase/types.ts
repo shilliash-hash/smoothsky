@@ -19,6 +19,7 @@ export type Database = {
           active: boolean
           cargo_kg: number
           cruise_kts: number
+          empty_weight_kg: number
           engine: string
           fuel_burn_gph: number
           fuel_capacity_gal: number
@@ -27,6 +28,7 @@ export type Database = {
           manufacturer: string
           minimum_runway_ft: number
           model: string
+          mtow_kg: number
           pax: number
           purchase_price: number
           range_nm: number
@@ -39,6 +41,7 @@ export type Database = {
           active?: boolean
           cargo_kg: number
           cruise_kts: number
+          empty_weight_kg?: number
           engine: string
           fuel_burn_gph?: number
           fuel_capacity_gal?: number
@@ -47,6 +50,7 @@ export type Database = {
           manufacturer: string
           minimum_runway_ft?: number
           model: string
+          mtow_kg?: number
           pax: number
           purchase_price?: number
           range_nm: number
@@ -59,6 +63,7 @@ export type Database = {
           active?: boolean
           cargo_kg?: number
           cruise_kts?: number
+          empty_weight_kg?: number
           engine?: string
           fuel_burn_gph?: number
           fuel_capacity_gal?: number
@@ -67,6 +72,7 @@ export type Database = {
           manufacturer?: string
           minimum_runway_ft?: number
           model?: string
+          mtow_kg?: number
           pax?: number
           purchase_price?: number
           range_nm?: number
@@ -1308,6 +1314,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finalize_flight_weight: { Args: { q: Json }; Returns: Json }
+      flight_fuel_billing: {
+        Args: { p_source: string; p_telemetry: Json; q: Json }
+        Returns: Json
+      }
       flight_quote: {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
@@ -1328,6 +1339,10 @@ export type Database = {
       }
       flight_quote_without_fobs: {
         Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
+      flight_weight_budget: {
+        Args: { p_distance_nm: number; p_type: string }
         Returns: Json
       }
       fob_size_multiplier: { Args: { p_icao: string }; Returns: number }

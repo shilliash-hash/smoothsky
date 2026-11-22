@@ -386,6 +386,13 @@
       "when": 1795341441585,
       "tag": "0054_ferry_flights_range_enforcement",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795355235979,
+      "tag": "0055_weight_budget_stage_one",
+      "breakpoints": true
     }
   ]
 }
