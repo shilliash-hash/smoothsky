@@ -32,7 +32,9 @@ export function CompanyResults() {
   const margin = revenue > 0 ? (net / revenue) * 100 : null;
   const peak = rows.reduce<(typeof rows)[number] | null>((b, r) => (!b || r.net > b.net ? r : b), null);
   const key = mode === "cash" ? "cash" : "net";
-  const max = Math.max(0, ...rows.map(r => r[key])), min = Math.min(0, ...rows.map(r => r[key]));
+  const shown = mode === "split" ? (["revenue", "expenses"] as const) : ([key] as const);
+  const max = Math.max(0, ...rows.flatMap(r => shown.map(k => r[k])));
+  const min = Math.min(0, ...rows.flatMap(r => shown.map(k => r[k])));
   const split = `${(max / (max - min || 1)) * 100}%`;
   return <section className="instrument min-w-0 p-5">
     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -62,13 +64,12 @@ export function CompanyResults() {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis dataKey="day" tickFormatter={s => String(s).slice(5)} minTickGap={40} stroke="var(--muted-foreground)" tick={{ fontSize: 10 }} />
-          <YAxis width={55} stroke="var(--muted-foreground)" tick={{ fontSize: 10 }} />
+          <YAxis width={55} stroke="var(--muted-foreground)" tick={{ fontSize: 10 }} tickFormatter={v => formatCr(Number(v))} />
           <Tooltip content={<HudTooltip />} cursor={{ stroke: "var(--amber)", strokeDasharray: "3 3" }} />
           <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeDasharray="4 4" />
-          {mode === "split" ? <>
-            <Area type="monotone" dataKey="revenue" name="Revenue" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.12} strokeWidth={2} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="expenses" name="Costs" stroke="var(--amber)" strokeWidth={2} dot={false} isAnimationActive={false} />
-          </> : <Area type="monotone" dataKey={key} stroke="url(#cr-stroke)" fill="url(#cr-fill)" strokeWidth={2} dot={false} activeDot={{ r: 3, fill: "var(--amber)" }} isAnimationActive={false} />}
+          {mode === "split" && <Area type="monotone" dataKey="revenue" name="Revenue" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.12} strokeWidth={2} dot={false} isAnimationActive={false} />}
+          {mode === "split" && <Line type="monotone" dataKey="expenses" name="Costs" stroke="var(--amber)" strokeWidth={2} dot={false} isAnimationActive={false} />}
+          {mode !== "split" && <Area type="monotone" dataKey={key} stroke="url(#cr-stroke)" fill="url(#cr-fill)" strokeWidth={2} dot={false} activeDot={{ r: 3, fill: "var(--amber)" }} isAnimationActive={false} />}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
