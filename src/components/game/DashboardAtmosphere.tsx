@@ -4,7 +4,7 @@ import fjord from "@/assets/dashboard-fjord.webp.asset.json";
 export function DashboardAtmosphere() {
   return (
     <div className="dashboard-atmosphere" aria-hidden="true">
-      <img className="dashboard-terrain" src={fjord.url} alt="" fetchPriority="high" />
+      <img className="dashboard-terrain" src="/dashboard-fjord.webp" alt="" fetchPriority="high" />
       <div className="dashboard-terrain-shade" />
       <svg className="dashboard-radar" viewBox="0 0 600 600" fill="none">
         <defs>
