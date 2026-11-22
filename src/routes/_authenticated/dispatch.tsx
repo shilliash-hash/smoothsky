@@ -1,8 +1,9 @@
 import { displayTerminology } from "@/lib/display-terminology";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, ClientOnly } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import type { RouteWaypoint } from "@/lib/route-waypoints";
 import { Plane, Play, Check, X, Radar, TrendingUp, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
@@ -31,6 +32,7 @@ import { FlightDebrief } from '@/components/game/FlightDebrief';
 import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
+const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
@@ -72,6 +74,8 @@ function Dispatch() {
   const [aircraft, setAircraft] = useState(search["aircraft"] ?? "");
   const [destination, setDestination] = useState(search["destination"] ?? "");
   const [flightNumber, setFlightNumber] = useState<string | null>(null);
+  const [route, setRoute] = useState<RouteWaypoint[] | null>(null);
+  const [routeMode, setRouteMode] = useState<"route" | "direct">("route");
   const numberValid = flightNumberSchema.safeParse(flightNumber ?? d.nextFlightNumber ?? "").success;
   const [filter, setFilter] = useState("");
   const [explicitTiers, setTiers] = useState<number[] | null>(null);
@@ -156,16 +160,18 @@ function Dispatch() {
   const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, payload.cargoKg, payload.allCargo, rulesKey);
   const destinations = useMemo(() => sortDestinationDeals(tiers.length ? deals.data ?? [] : [], dealSort), [deals.data, dealSort, tiers.length]);
   const topDeals = useMemo(() => topDestinationDeals(destinations), [destinations]);
+  const activeRoute = route && route[0]?.ident === origin?.icao && route[route.length - 1]?.ident === destination ? route : null;
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { ...payload, simulation: simulationEnabled } : {}) } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { ...payload, simulation: simulationEnabled, ...(activeRoute && routeMode === "route" ? { routeWaypoints: activeRoute } : {}) } : {}) } });
       if (kind === "dispatch") {
         setFlightNumber(null);
         setCargoKg(0);
         setCargoQuoteKg(0);
         setFlightMode("commercial");
         setDestination("");
+        setRoute(null);
         setQuoteResult(null);
       }
       await qc.invalidateQueries();
@@ -298,8 +304,19 @@ function Dispatch() {
                 onImport={(plan) => {
                   if (plan.flightNumber && flightNumberSchema.safeParse(plan.flightNumber).success) setFlightNumber(plan.flightNumber);
                   if (plan.destination) setDestination(plan.destination);
+                  setRoute(plan.route); setRouteMode("route");
                 }}
               />
+              {activeRoute && <div className="mb-5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="readout text-xs uppercase text-muted-foreground">{routeMode === "route" ? `SimBrief route · ${activeRoute.length - 2} fixes` : "Direct great circle"}</p>
+                  <Button size="sm" variant="outline" onClick={() => setRouteMode(routeMode === "route" ? "direct" : "route")}>{routeMode === "route" ? <><X className="mr-1 h-3 w-3" />Reset to direct</> : "Show SimBrief route"}</Button>
+                </div>
+                <ClientOnly fallback={<div className="h-[320px] border border-border" />}>
+                  <Suspense fallback={<div className="h-[320px] border border-border" />}><RoutePreviewMap points={activeRoute} mode={routeMode} /></Suspense>
+                </ClientOnly>
+                <p className="mt-1 text-[11px] text-muted-foreground">Visual only — prices and fuel use the direct distance.</p>
+              </div>}
               <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
               {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}

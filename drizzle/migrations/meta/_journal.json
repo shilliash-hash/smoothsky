@@ -442,6 +442,13 @@
       "when": 1795366421782,
       "tag": "0062_admin_cleanup_ledger_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795374455851,
+      "tag": "0063_flight_route_waypoints",
+      "breakpoints": true
     }
   ]
 }

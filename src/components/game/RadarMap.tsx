@@ -4,6 +4,8 @@ import type { Operations, Airport } from "@/lib/operations";
 import { liveRadarPosition, type LiveRadarFlight } from '@/lib/live-radar';
 import type { WorldActivity } from '@/lib/radar-world';
 import { fuelLabel } from "@/lib/fleet-rules";
+import { routeWaypointsSchema } from "@/lib/route-waypoints";
+import { drawRoute } from "./route-layer";
 import {
   distanceNm,
   rangeRing,
@@ -218,7 +220,10 @@ export default function RadarMap({
       for (const f of flights) {
         const a = { lat: f.origin_lat, lon: f.origin_lon },
           b = { lat: f.destination_lat, lon: f.destination_lon };
-        L.geoJSON(routeArc(a, b), {
+        const p = liveRadarPosition(f, Date.now());
+        const planned = f.id === focusedFlight ? routeWaypointsSchema.safeParse(f.route_waypoints) : null;
+        if (planned?.success) drawRoute(layer, planned.data, f.status === "EN_ROUTE" ? p : null);
+        else L.geoJSON(routeArc(a, b), {
           style: {
              color: root.getPropertyValue(f.is_own ? "--primary" : "--amber").trim(),
             weight: 2,
@@ -226,7 +231,6 @@ export default function RadarMap({
             dashArray: "4 5",
           },
         }).addTo(layer);
-        const p = liveRadarPosition(f, Date.now());
         if (!p) continue;
         L.marker([p.lat, p.lon], {
           icon: L.divIcon({
@@ -248,7 +252,7 @@ export default function RadarMap({
     draw();
     const timer = setInterval(draw, 1000);
     return () => clearInterval(timer);
-  }, [flights, onFlight, layers.flights]);
+  }, [flights, onFlight, layers.flights, focusedFlight]);
   return (
     <div
       ref={div}

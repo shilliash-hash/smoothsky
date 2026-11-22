@@ -606,6 +606,7 @@ export type Database = {
           pilot_funding: number
           pilot_id: string | null
           pilot_mode: string | null
+          route_waypoints: Json | null
           rules_snapshot: Json
           settlement: Json | null
           status: string
@@ -630,6 +631,7 @@ export type Database = {
           pilot_funding?: number
           pilot_id?: string | null
           pilot_mode?: string | null
+          route_waypoints?: Json | null
           rules_snapshot: Json
           settlement?: Json | null
           status?: string
@@ -654,6 +656,7 @@ export type Database = {
           pilot_funding?: number
           pilot_id?: string | null
           pilot_mode?: string | null
+          route_waypoints?: Json | null
           rules_snapshot?: Json
           settlement?: Json | null
           status?: string
@@ -1463,6 +1466,7 @@ export type Database = {
           origin_lat: number
           origin_lon: number
           registration: string
+          route_waypoints: Json
           status: string
         }[]
       }
@@ -1665,6 +1669,10 @@ export type Database = {
       }
       set_company_supporter: {
         Args: { p_company: string; p_supporter: boolean }
+        Returns: undefined
+      }
+      set_flight_route: {
+        Args: { p_flight: string; p_waypoints: Json }
         Returns: undefined
       }
       set_stake_offer: { Args: { p_pct: number }; Returns: undefined }

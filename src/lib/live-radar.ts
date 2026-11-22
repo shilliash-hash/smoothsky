@@ -4,7 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { flightPosition } from './dispatch-engine';
 
 type RadarRow = Database['public']['Functions']['get_live_radar_flights']['Returns'][number];
-type NullableTelemetry = 'last_lat' | 'last_lon' | 'last_altitude_ft' | 'last_groundspeed_kts' | 'last_heading' | 'last_telemetry_at' | 'departed_at' | 'eta_at';
+type NullableTelemetry = 'route_waypoints' | 'last_lat' | 'last_lon' | 'last_altitude_ft' | 'last_groundspeed_kts' | 'last_heading' | 'last_telemetry_at' | 'departed_at' | 'eta_at';
 // SQL function result introspection does not preserve nullable expressions.
 export type LiveRadarFlight = Omit<RadarRow, NullableTelemetry> & { [K in NullableTelemetry]: RadarRow[K] | null };
 export const liveRadarQuery = queryOptions({

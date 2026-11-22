@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { liveRadarPosition, liveRadarProgress, type LiveRadarFlight } from './live-radar';
 
 const flight: LiveRadarFlight = {
-  id: 'flight', flight_number: 'SKY101', status: 'EN_ROUTE', execution_source: 'ACARS_AGENT',
+  id: 'flight', route_waypoints: null, flight_number: 'SKY101', status: 'EN_ROUTE', execution_source: 'ACARS_AGENT',
   origin_icao: 'EPWA', destination_icao: 'CYYR', origin_lat: 52, origin_lon: 21,
   destination_lat: 53, destination_lon: -60, last_lat: 55, last_lon: -20,
   last_heading: 270, last_altitude_ft: 30000, last_groundspeed_kts: 400,

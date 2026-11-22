@@ -1,3 +1,4 @@
+import { parseSimbriefRoute, type RouteWaypoint } from "@/lib/route-waypoints";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -22,7 +23,7 @@ export const regenerateAcarsKey = createServerFn({ method: "POST" })
     return data as string;
   });
 
-export type SimbriefPlan = { origin: string; destination: string; flightNumber: string | null; passengers: number | null; aircraft: string | null; generatedAt: string | null };
+export type SimbriefPlan = { origin: string; destination: string; flightNumber: string | null; passengers: number | null; aircraft: string | null; generatedAt: string | null; route: RouteWaypoint[] | null };
 
 export const importSimbrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -44,6 +45,7 @@ export const importSimbrief = createServerFn({ method: "POST" })
       flightNumber: num || null,
       passengers: Number.isFinite(pax) ? pax : null,
       aircraft: ofp["aircraft"]?.icaocode ?? null,
+      route: parseSimbriefRoute(ofp),
       generatedAt: ofp["params"]?.time_generated ? new Date(Number(ofp["params"].time_generated) * 1000).toISOString() : null,
     };
   });

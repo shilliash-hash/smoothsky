@@ -1,3 +1,4 @@
+import { routeWaypointsSchema } from "@/lib/route-waypoints";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -77,6 +78,7 @@ export const flightAction = createServerFn({ method: "POST" })
       mission: z.string().uuid().optional(),
       simulation: z.boolean().optional(),
       targetFuelGal: z.number().min(0).max(1000000).optional(),
+      routeWaypoints: routeWaypointsSchema.optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -101,6 +103,10 @@ export const flightAction = createServerFn({ method: "POST" })
       if (data.action === "dispatch" && data.simulation === false && typeof result === "string") {
         const mark = await db.rpc("mark_flight_acars" as never, { p_flight: result } as never);
         if (mark.error) throw new Error(mark.error.message);
+      }
+      if (data.action === "dispatch" && data.routeWaypoints && typeof result === "string") {
+        // Visual-only route; a failure here must not undo a successful dispatch.
+        await db.rpc("set_flight_route", { p_flight: result, p_waypoints: data.routeWaypoints as never });
       }
       return result;
     }
