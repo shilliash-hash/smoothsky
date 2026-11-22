@@ -414,6 +414,13 @@
       "when": 1795360729999,
       "tag": "0058_deals_use_selected_cargo",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795365468933,
+      "tag": "0059_lease_and_rental_tier_licence_guards",
+      "breakpoints": true
     }
   ]
 }

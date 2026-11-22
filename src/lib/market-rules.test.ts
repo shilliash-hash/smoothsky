@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { acquisitionBlock, acquisitionDue, hasRentalLicense, spotRentalPrice } from './market-rules';
+import { acquisitionBlock, acquisitionDue, canAcquireWithLicense, hasRentalLicense, spotRentalPrice } from './market-rules';
 const health = { status: 'HEALTHY' as const, balance: 30000, weekly_obligations: 0, debt: 0, next_payment_due: null };
 describe('market acquisition guards', () => {
+  for (const mode of ['lease', 'rent'] as const) {
+    it(`${mode} permits baseline T1–T3`, () => {
+      for (const tier of [1, 2, 3]) expect(canAcquireWithLicense(mode, tier, [1, 2, 3])).toBe(true);
+    });
+    it(`${mode} blocks every unlicensed T4–T7`, () => {
+      for (const tier of [4, 5, 6, 7]) expect(canAcquireWithLicense(mode, tier, [1, 2, 3])).toBe(false);
+    });
+    it(`${mode} requires the exact tier rather than a higher or lower rating`, () => {
+      for (const tier of [4, 5, 6, 7]) {
+        expect(canAcquireWithLicense(mode, tier, [1, 2, 3, tier])).toBe(true);
+        expect(canAcquireWithLicense(mode, tier, [tier - 1, tier + 1])).toBe(false);
+      }
+    });
+  }
+  it('does not change outright purchase eligibility', () => expect(canAcquireWithLicense('buy', 4, [1, 2, 3])).toBe(true));
   it('defaults to 20% of the weekly rate', () => { expect(spotRentalPrice(950)).toBe(190); expect(spotRentalPrice(2600)).toBe(520); });
   it('recalculates rental price and affordability with the configured rate', () => {
     expect(spotRentalPrice(950, 0.25)).toBe(238);

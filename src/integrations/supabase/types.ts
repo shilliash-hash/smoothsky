@@ -1205,6 +1205,10 @@ export type Database = {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
       }
+      assert_aircraft_tier_license: {
+        Args: { p_tier: number }
+        Returns: undefined
+      }
       assert_company_investment: { Args: never; Returns: undefined }
       buy_personal_aircraft: {
         Args: { p_registration?: string; p_type: string }

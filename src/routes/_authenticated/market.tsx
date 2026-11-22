@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/game/AppShell";
 import { basesQuery } from "@/lib/bases";
 import { canInvest } from "@/lib/bases-rules";
-import { acquisitionBlock, acquisitionDue, DEFAULT_SPOT_RENTAL_MULTIPLIER, hasRentalLicense, spotRentalPrice, type AcquisitionMode } from '@/lib/market-rules';
+import { acquisitionBlock, acquisitionDue, canAcquireWithLicense, DEFAULT_SPOT_RENTAL_MULTIPLIER, spotRentalPrice, type AcquisitionMode } from '@/lib/market-rules';
 import { registrationRule } from '@/lib/registration-rules';
 
 const rentalCareerQuery = queryOptions({ queryKey: ["career"], queryFn: () => getCareer() });
@@ -61,7 +61,7 @@ function Market() {
   const rule = registrationRule(registrationRules, c.home_base?.country);
   const block = acquisitionBlock({ health: bases.health, ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
   const purchaseType = types.find(t=>t.id===purchasing);
-  const confirmationBlock = purchaseType ? block ?? (mode === 'rent' && !hasRentalLicense(purchaseType.tier, career.type_ratings) ? `Requires Tier ${purchaseType.tier} license` : mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && purchaseType.purchase_price <= 0 ? 'Not for sale' : balance < acquisitionDue(mode, purchaseType, rentalMultiplier) ? 'Insufficient funds' : null) : null;
+  const confirmationBlock = purchaseType ? (!canAcquireWithLicense(mode, purchaseType.tier, career.type_ratings) ? `Requires Tier ${purchaseType.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && purchaseType.purchase_price <= 0 ? 'Not for sale' : balance < acquisitionDue(mode, purchaseType, rentalMultiplier) ? 'Insufficient funds' : null)) : null;
   async function confirmAcquisition() {
     if (!purchaseType || busy || confirmationBlock) return;
     setBusy(purchaseType.id);
@@ -99,7 +99,7 @@ function Market() {
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {types.filter(t=>t.active).map((t) => {
           const afford = canAffordLease(balance, t);
-          const reason = block ?? (mode === 'rent' && !hasRentalLicense(t.tier, career.type_ratings) ? `Requires Tier ${t.tier} license` : mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && t.purchase_price <= 0 ? 'Not for sale' : (mode === 'lease' ? !afford : balance < acquisitionDue(mode, t, rentalMultiplier)) ? 'Insufficient funds' : null);
+          const reason = !canAcquireWithLicense(mode, t.tier, career.type_ratings) ? `Requires Tier ${t.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && t.purchase_price <= 0 ? 'Not for sale' : (mode === 'lease' ? !afford : balance < acquisitionDue(mode, t, rentalMultiplier)) ? 'Insufficient funds' : null);
           return (
             <div key={t.id} className="instrument flex flex-col p-5">
               <div className="flex items-center justify-between">

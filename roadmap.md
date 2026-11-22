@@ -1,5 +1,9 @@
 # Roadmap
 
+## Market licence gates
+- [x] Require exact T4+ ratings for leasing and spot rental in both offers/confirmation and transactional acquisition; keep aircraft listed and current rental duration/settlement unchanged.
+- [x] 34 tests passed; applied guards confirmed. Signed-in market showed disabled T4–T7 buttons for both modes; all eight direct acquisition requests rejected without changing fleet. Desktop/mobile checked without runtime errors or overflow; build OK. No player acquisition or licence purchase performed.
+
 ## Weight-budget planning — stage one
 - [x] Added catalogue masses for all nine types and a shared SQL trip-plus-reserve weight budget with 80 kg passengers, bounded passenger/cargo loads, overweight-mission rejection and MTOW landing fees (2.5 SC/t default). Existing discovery/radar and commercial dispatch range limits remain until stage two; payload controls remain until stage three. New unconfigured types fail safely until their masses are configured.
 - [x] New quotes freeze trip/reserve gallons, exact density, price and 80% fuel floor; verified ACARS settlement adjusts fuel expense/net before ledger and commission. WEB_MANUAL keeps estimated burn; old dispatched flights retain their quotes. Unused reserve is not billed, cancellation and ingestion protections unchanged. Configuration rows added without overwriting admin tuning; optional seed script preserves defaults in separately imported environments.
