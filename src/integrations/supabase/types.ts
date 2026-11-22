@@ -1279,6 +1279,7 @@ export type Database = {
         }
         Returns: string
       }
+      dispatch_usable_range_pct: { Args: never; Returns: number }
       economy_number: { Args: { p_key: string }; Returns: number }
       economy_number_or: {
         Args: { p_default: number; p_key: string }

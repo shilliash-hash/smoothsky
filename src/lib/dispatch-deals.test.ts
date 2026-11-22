@@ -20,6 +20,7 @@ beforeAll(async () => {
     CREATE TABLE aircraft_types(id text,range_nm int,minimum_runway_ft int,tier int);
     CREATE TABLE fleet_aircraft(id uuid,company_id uuid,aircraft_type_id text,location_icao text,returned_at timestamptz);
     CREATE TABLE company_fobs(company_id uuid,airport_icao text,closed_at timestamptz);
+    CREATE TABLE economy_config(key text PRIMARY KEY,value jsonb);
     CREATE TABLE quote_calls(destination text,cargo int,all_cargo boolean);
     CREATE FUNCTION flight_quote_full(p_aircraft uuid,p_destination text,p_cargo_kg integer DEFAULT 0,p_all_cargo boolean DEFAULT false) RETURNS jsonb LANGUAGE plpgsql AS $$
     DECLARE revenue numeric; handling numeric;
@@ -38,9 +39,11 @@ beforeAll(async () => {
   await db.exec(definitions);
   await db.exec(sql('0042_airport_search_nullable_code_ordering.sql'));
   await db.exec(sql('0044_dispatch_destination_deals.sql'));
+  await db.exec(sql('0052_dispatch_usable_range.sql'));
 }, 30000);
 beforeEach(async () => {
   await db.exec(`SELECT set_config('test.user','${owner}',false); TRUNCATE airports,company_fobs,quote_calls;
+    DELETE FROM economy_config WHERE key='dispatch_usable_range_pct';
     UPDATE aircraft_types SET range_nm=300; UPDATE fleet_aircraft SET returned_at=NULL;
     INSERT INTO airports VALUES('ORIG','ORG','Origin','Origin',3,0,0,5000),('TARGET',NULL,'Target','Target',3,1,0,5000);
     INSERT INTO airports(icao,name,city,size,lat,lon,longest_runway_ft) SELECT 'A'||lpad(i::text,4,'0'),'Airport '||i,'City',3,i*0.01,0,3000 FROM generate_series(1,100) i;`);
@@ -48,6 +51,25 @@ beforeEach(async () => {
 afterAll(() => db.close());
 
 describe('bounded private destination estimates', () => {
+  it('limits nearby, exact-code search and alternatives to 75% of aircraft range, even in All-Cargo', async () => {
+    await db.exec("INSERT INTO airports VALUES('EDGEIN',NULL,'In','In',3,3.74,0,5000),('EDGEOUT',NULL,'Out','Out',3,3.76,0,5000); UPDATE airports SET lat=3.5 WHERE icao='TARGET'");
+    await db.exec(`INSERT INTO company_fobs VALUES('${company}','EDGEIN',NULL),('${company}','EDGEOUT',NULL)`);
+    const nearbyRows = (await deals()).rows;
+    expect(nearbyRows.some(r => r.airport.icao === 'EDGEIN')).toBe(true);
+    expect(nearbyRows.some(r => r.airport.icao === 'EDGEOUT')).toBe(false);
+    expect((await deals('EDGEOUT',0,true)).rows).toHaveLength(0);
+    expect((await deals('EDGEIN')).rows).toHaveLength(1);
+    const alt = (await alternatives()).rows.map(r => r.airport.icao);
+    expect(alt).toContain('EDGEIN');
+    expect(alt).not.toContain('EDGEOUT');
+  });
+  it('reads changed range settings immediately without changing aircraft specs', async () => {
+    await db.exec("INSERT INTO airports VALUES('DISTANT',NULL,'Distant','Distant',3,4,0,5000)");
+    expect((await deals('DISTANT')).rows).toHaveLength(0);
+    await db.exec("INSERT INTO economy_config VALUES('dispatch_usable_range_pct','0.85')");
+    expect((await deals('DISTANT')).rows).toHaveLength(1);
+    await expect(db.exec("UPDATE economy_config SET value='1.1' WHERE key='dispatch_usable_range_pct'")).rejects.toThrow();
+  });
   it('quotes at most 60 nearby results even with a 49,501-airport catalogue', async () => {
     await db.exec("INSERT INTO airports(icao,name,city,size,lat,lon,longest_runway_ft) SELECT 'W'||i,'World','World',4,50,50,5000 FROM generate_series(1,49399) i");
     expect((await db.query<{ n: number }>('SELECT count(*)::int n FROM airports')).rows[0]?.n).toBe(49501);

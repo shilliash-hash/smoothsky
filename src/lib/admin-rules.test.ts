@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { fuelProjection, fuelCapacity, validateEconomyValue, aircraftSchema } from "./admin-rules";
 describe("airport fuel and admin validation", () => {
+  it("accepts 75% dispatch range and configurable 5% steps, rejecting invalid fractions", () => {
+    expect(validateEconomyValue("dispatch_usable_range_pct", 0.75)).toBe(0.75);
+    expect(validateEconomyValue("dispatch_usable_range_pct", 0.70)).toBe(0.70);
+    expect(validateEconomyValue("dispatch_usable_range_pct", 1)).toBe(1);
+    for (const value of [0, -1, 1.01, "0.75", NaN, Infinity]) expect(() => validateEconomyValue("dispatch_usable_range_pct", value)).toThrow();
+  });
   it("accepts a configurable 0.20 spot rental multiplier", () => {
     expect(validateEconomyValue("spot_rental_multiplier", 0.20)).toBe(0.20);
     expect(validateEconomyValue("spot_rental_multiplier", 0.25)).toBe(0.25);

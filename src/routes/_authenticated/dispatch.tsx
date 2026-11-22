@@ -88,6 +88,7 @@ function Dispatch() {
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
+  const usableRangePct = Number(d.rules["dispatch_usable_range_pct"] ?? 0.75);
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier, quote.short_hop_charter, quote.demand?.hub_bonus ?? 0) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
@@ -195,7 +196,7 @@ function Dispatch() {
         </select>
         <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
           <span>{origin?.name ?? "No available aircraft"}</span>
-          <span>{selected?.type?.range_nm ?? 0} NM range</span>
+          <span>{Math.floor((selected?.type?.range_nm ?? 0) * usableRangePct)} NM destination limit · {Math.round(usableRangePct * 100)}% range</span>
           <span>{formatCr(d.balance)} available</span>
         </div>
       </section>

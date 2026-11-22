@@ -1,5 +1,10 @@
 # Roadmap
 
+## Dispatch range discovery — stage one
+- [x] Limit nearby/Best Deals/Nearest, exact-code search and alternatives in owner-scoped SQL to the live economy range fraction (default 0.75); preserve 60/40/6 bounds and shared quote/dispatch/settlement/radar behaviour.
+- [x] Add Admin Economy input with 0.05 steps, validation and missing-row fallback/upsert; show whole-NM and whole-percent range in Dispatch. Default row added separately from DDL; replayed migrations retain the SQL fallback in unseeded environments.
+- [x] 54 tests passed, build OK; signed-in 1800-NM King Air displayed a 1350-NM destination limit, 60 results and working Nearest/selection. Admin saved/read back 0.70 then restored 0.75; mobile has no overflow or runtime errors. Deployment variables unchanged. Ferry, dispatch enforcement and ACARS changes intentionally excluded; this buffer is not a fuel/MTOW guarantee.
+
 ## Accessible pilot progression
 - [x] Grant baseline T1–T3 to new and existing pilots without removing paid ratings; applied backfill has zero missing baseline profiles. Leasing prices/eligibility and single-flight rental settlement unchanged; no independent freelancer rental system added.
 - [x] Allow owners to buy higher ratings directly from their own company, with company-before-profile locks, synchronized obligations, idempotent ledger charges, expenses/dividend accounting and profile payment readouts. Freelancers retain wallet-funded higher training.
