@@ -449,6 +449,27 @@
       "when": 1795374455851,
       "tag": "0063_flight_route_waypoints",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795376176271,
+      "tag": "0064_divert_continuation",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1795376334907,
+      "tag": "0065_divert_frozen_rules_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795376508672,
+      "tag": "0066_divert_lease_retention",
+      "breakpoints": true
     }
   ]
 }

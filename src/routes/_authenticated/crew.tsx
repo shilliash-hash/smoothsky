@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { distanceNm } from "@/lib/dispatch-engine";
 import { formatCr } from "@/lib/rules";
 import { getPilotOps, pilotFlight, type PilotAircraft } from "@/lib/pilot.functions";
+import { DivertControls } from "@/components/game/DivertControls";
 
 export const Route = createFileRoute("/_authenticated/crew")({
   head: () => ({ meta: [
@@ -85,7 +86,7 @@ function Crew() {
     <p className="mt-3 text-muted-foreground">Crew operations are for Pilot Only careers. Airline owners dispatch their own fleet in Dispatch.</p>
   </AppShell>;
 
-  const active = ops?.flights.filter(f => f.status === "DISPATCHED" || f.status === "EN_ROUTE") ?? [];
+  const active = ops?.flights.filter(f => f.status === "DISPATCHED" || f.status === "EN_ROUTE" || f.status === "DIVERTED") ?? [];
   const done = ops?.flights.filter(f => f.status === "COMPLETED") ?? [];
   const groups: PilotAircraft["mode"][] = ["PERSONAL", "ROSTER", "FREELANCE"];
 
@@ -156,6 +157,7 @@ function Crew() {
           <div><span className="readout text-primary">{f.flight_number}</span> · {f.registration} · {f.origin_icao} → {f.destination_icao} <span className="text-xs text-muted-foreground">({modeLabel[f.mode]}, {f.passengers} pax)</span>
             {eta && !arrived && <div className="readout text-xs text-muted-foreground">Arrives in {Math.ceil((eta - now) / 1000)} s</div>}</div>
           <div className="flex gap-2">
+            {f.status === "DIVERTED" && <DivertControls flight={f.id} destination={f.destination_icao} state={f.divert_state} />}
             {f.status === "DISPATCHED" && <><Button size="sm" disabled={busy} onClick={() => run(() => act({ data: { action: "start", flight: f.id } }), "Test flight started")}><Play className="h-3.5 w-3.5" /> Fly (test)</Button>
               <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => act({ data: { action: "cancel", flight: f.id } }), "Flight cancelled")}><X className="h-3.5 w-3.5" /> Cancel</Button></>}
             {f.status === "EN_ROUTE" && <Button size="sm" disabled={busy || !arrived} onClick={() => run(() => act({ data: { action: "settle", flight: f.id } }), "Flight completed")}><Check className="h-3.5 w-3.5" /> Complete</Button>}

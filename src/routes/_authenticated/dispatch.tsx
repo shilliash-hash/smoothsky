@@ -32,6 +32,7 @@ import { FlightDebrief } from '@/components/game/FlightDebrief';
 import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
+import { DivertControls } from '@/components/game/DivertControls';
 const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
@@ -161,10 +162,10 @@ function Dispatch() {
   const destinations = useMemo(() => sortDestinationDeals(tiers.length ? deals.data ?? [] : [], dealSort), [deals.data, dealSort, tiers.length]);
   const topDeals = useMemo(() => topDestinationDeals(destinations), [destinations]);
   const activeRoute = route && route[0]?.ident === origin?.icao && route[route.length - 1]?.ident === destination ? route : null;
-  async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
+  async function run(kind: "dispatch" | "start" | "settle" | "cancel" | "divert", flight?: string, alternate?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { ...payload, simulation: simulationEnabled, ...(activeRoute && routeMode === "route" ? { routeWaypoints: activeRoute } : {}) } : {}) } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination: alternate ?? destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { ...payload, simulation: simulationEnabled, ...(activeRoute && routeMode === "route" ? { routeWaypoints: activeRoute } : {}) } : {}) } });
       if (kind === "dispatch") {
         setFlightNumber(null);
         setCargoKg(0);
@@ -176,7 +177,7 @@ function Dispatch() {
       }
       await qc.invalidateQueries();
       toast.success(
-        kind === "settle"
+        kind === "divert" ? "Divert landing recorded — contract on hold" : kind === "settle"
           ? "Flight settled in Smooth Coins"
           : kind === "start"
             ? "Test flight airborne"
@@ -448,7 +449,8 @@ function Dispatch() {
                     />
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className={cn("flex flex-wrap gap-2", f.status === "DIVERTED" && "w-full min-w-0")}>
+                  {f.status === "DIVERTED" && <DivertControls flight={f.id} destination={f.destination_icao} state={f.divert_state} />}
                   {f.status === "DISPATCHED" && !acars && (
                     <>
                       <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} title={!simulationEnabled ? "Web simulation disabled — fly via ACARS" : undefined} onClick={() => run("start", f.id)}>
@@ -456,6 +458,12 @@ function Dispatch() {
                         Start test flight · {String(d.rules["simulation_time_scale"])}×
                       </Button>
                     </>
+                  )}
+                  {f.status === "EN_ROUTE" && !acars && (
+                    <Button size="sm" variant="outline" disabled={busy || progress < 1 || !simulationEnabled} onClick={() => {
+                      const alternate = prompt("Test divert — alternate airport ICAO");
+                      if (alternate?.trim()) void run("divert", f.id, alternate.trim().toUpperCase());
+                    }}><Navigation className="h-4 w-4" />Divert (test)</Button>
                   )}
                   {f.status === "EN_ROUTE" && !acars && (
                     <Button disabled={busy || progress < 1} onClick={() => run("settle", f.id)}>
@@ -471,7 +479,7 @@ function Dispatch() {
                       variant="outline"
                       disabled={busy}
                       onClick={() => {
-                        if (confirm(`Cancel flight ${f.flight_number}? The aircraft returns to ${f.origin_icao} and no revenue is paid.`)) void run("cancel", f.id);
+                        if (confirm(f.divert_state ? `Cancel continuation ${f.flight_number}? New fuel uplift is refunded; the contract stays on hold at ${f.origin_icao}.` : `Cancel flight ${f.flight_number}? The aircraft returns to ${f.origin_icao} and no revenue is paid.`)) void run("cancel", f.id);
                       }}
                     >
                       <X className="h-4 w-4" />

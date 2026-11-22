@@ -1,5 +1,10 @@
 # Roadmap
 
+## Divert & continuation
+- [x] Add verified alternate landings, leg cost/tank accounting, locked payload, continuation and abandonment without changing mission deadlines or deployment vars; expired lease return blocked, renewal retains contract lock.
+- [x] Add Flight Deck controls for diverted contracts and refuelling the continuation in Dispatch and Crew.
+- [x] SQL regression/security tests and signed-in disposable-airline EPGD→EPMB→EPBY passed: 3 PAX retained, 270.58 SC paid only on final arrival. Second EPBY→EPMB divert abandoned through UI, aircraft AVAILABLE at EPMB. Desktop/mobile tank and MTOW panel checked without overflow/runtime errors. Test account/company removed through admin UI; no existing player modified. Actual desktop simulator and Pilot Only flight remain unverified; existing-format key-checked ACARS calls exercised rather than claiming a desktop flight.
+
 ## Dashboard global flight board
 - [x] Add Global beside Active/Recent using the existing safe, paginated radar feed, with airline/aircraft identity, own-flight badge and UTC ETA; preserve company views and deployment vars.
 - [x] Four radar tests passed; signed-in desktop/mobile Global, Active/Recent and manual refresh verified without errors or overflow. Live network returned zero active flights, so airborne live-row verification remains unavailable; supplemental browser-only sample rows verified airline/model, YOU, UTC ETA, READY and automatic 5-second removal/count updates. No player flights created or modified; build OK.

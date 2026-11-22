@@ -595,6 +595,7 @@ export type Database = {
           departed_at: string | null
           destination_icao: string
           distance_nm: number
+          divert_state: Json | null
           estimate: Json
           estimated_minutes: number
           execution_source: string
@@ -620,6 +621,7 @@ export type Database = {
           departed_at?: string | null
           destination_icao: string
           distance_nm: number
+          divert_state?: Json | null
           estimate: Json
           estimated_minutes: number
           execution_source?: string
@@ -645,6 +647,7 @@ export type Database = {
           departed_at?: string | null
           destination_icao?: string
           distance_nm?: number
+          divert_state?: Json | null
           estimate?: Json
           estimated_minutes?: number
           execution_source?: string
@@ -1233,6 +1236,10 @@ export type Database = {
       buy_stake: { Args: { p_company: string; p_pct: number }; Returns: string }
       buy_type_rating: { Args: { p_group: string }; Returns: undefined }
       buy_used_aircraft: { Args: { p_listing: string }; Returns: string }
+      cancel_continuation: {
+        Args: { f: Database["public"]["Tables"]["flights"]["Row"] }
+        Returns: undefined
+      }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       cancel_used_listing: { Args: { p_listing: string }; Returns: undefined }
       cargo_capacity: { Args: { p_airport: string }; Returns: number }
@@ -1322,6 +1329,19 @@ export type Database = {
         Returns: string
       }
       dispatch_usable_range_pct: { Args: never; Returns: number }
+      divert_action: {
+        Args: { p_action: string; p_flight: string; p_target_fuel_gal?: number }
+        Returns: Json
+      }
+      divert_leg_quote: {
+        Args: {
+          dest: string
+          f: Database["public"]["Tables"]["flights"]["Row"]
+          landing_only?: boolean
+          target?: number
+        }
+        Returns: Json
+      }
       economy_number: { Args: { p_key: string }; Returns: number }
       economy_number_or: {
         Args: { p_default: number; p_key: string }
@@ -1634,6 +1654,14 @@ export type Database = {
               pax_stock: number
             }[]
           }
+      record_divert: {
+        Args: {
+          dest: string
+          evidence: Json
+          f: Database["public"]["Tables"]["flights"]["Row"]
+        }
+        Returns: Json
+      }
       recruitment_commission_settings: { Args: never; Returns: Json }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
@@ -1708,6 +1736,10 @@ export type Database = {
       start_test_flight: { Args: { p_flight: string }; Returns: undefined }
       sync_lease_payments: { Args: never; Returns: undefined }
       terminate_lease_early: { Args: { p_aircraft_id: string }; Returns: Json }
+      test_divert: {
+        Args: { p_airport: string; p_flight: string }
+        Returns: Json
+      }
       transaction_history: {
         Args: { p_aircraft?: string; p_company: string }
         Returns: {

@@ -45,7 +45,7 @@ export const getOperations = createServerFn({ method: "GET" })
     ]);
     for (const result of [r, f, l, t, n, bases]) if (result.error) throw result.error;
     const needed = new Set<string>();
-    for (const x of f.data ?? []) if (x.status === "DISPATCHED" || x.status === "EN_ROUTE") { needed.add(x.origin_icao); needed.add(x.destination_icao); }
+    for (const x of f.data ?? []) if (x.status === "DISPATCHED" || x.status === "EN_ROUTE" || x.status === "DIVERTED") { needed.add(x.origin_icao); needed.add(x.destination_icao); }
     for (const x of l.data ?? []) needed.add(x.location_icao);
     for (const x of bases.data ?? []) needed.add(x.airport_icao);
     if (company?.home_base_icao) needed.add(company.home_base_icao);
@@ -68,7 +68,7 @@ export const flightAction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      action: z.enum(["quote", "dispatch", "start", "settle", "cancel"]),
+      action: z.enum(["quote", "dispatch", "start", "settle", "cancel", "divert"]),
       aircraft: z.string().uuid().optional(),
       destination: z.string().optional(),
       flightNumber: flightNumberSchema.optional(),
@@ -111,6 +111,12 @@ export const flightAction = createServerFn({ method: "POST" })
       return result;
     }
     if (!data.flight) throw new Error("Flight required");
+    if (data.action === "divert") {
+      if (!data.destination) throw new Error("Alternate airport required");
+      const result = await db.rpc("test_divert", { p_flight: data.flight, p_airport: data.destination });
+      if (result.error) throw new Error(result.error.message);
+      return result.data;
+    }
     const { data: result, error } = await db.rpc(
       data.action === "start"
         ? "start_test_flight"
@@ -121,4 +127,15 @@ export const flightAction = createServerFn({ method: "POST" })
     );
     if (error) throw new Error(error.message);
     return result;
+  });
+
+export const divertAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ flight: z.string().uuid(), action: z.enum(["quote", "continue", "abandon"]), targetFuelGal: z.number().finite().min(0).max(1000000).optional() }))
+  .handler(async ({ data, context }) => {
+    const sync = await context.supabase.rpc("process_due_obligations");
+    if (sync.error) throw new Error(sync.error.message);
+    const result = await context.supabase.rpc("divert_action", { p_flight: data.flight, p_action: data.action, ...(data.targetFuelGal !== undefined ? { p_target_fuel_gal: data.targetFuelGal } : {}) });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
   });

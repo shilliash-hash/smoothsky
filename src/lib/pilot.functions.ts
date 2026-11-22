@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { hiringSchema, recruitmentSettings, validateHiring } from "./recruitment-rules";
+import type { Json } from "@/integrations/supabase/types";
 
 export const simbriefUsernameSchema = z.string().trim().regex(/^[A-Za-z0-9_.-]{1,40}$/, "Use 1–40 letters, digits, dot, dash or underscore");
 
@@ -136,6 +137,7 @@ export type PilotFlight = {
   id: string; flight_number: string; status: string; mode: PilotAircraft["mode"]; commission_pct: number | null; origin_icao: string; destination_icao: string;
   distance_nm: number; passengers: number; estimated_minutes: number; departed_at: string | null; completed_at: string | null; time_scale: number | null;
   net: number | null; registration: string; company_name: string;
+  divert_state?: Json;
 };
 export type PilotStake = { id: string; company_name: string; icao_code: string; pct: number; price_paid: number; acquired_at: string; locked_until: string; current_value: number; next_dividend_at: string };
 export type PilotOps = {
