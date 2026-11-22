@@ -24,18 +24,19 @@ export const Route = createFileRoute("/")({
 });
 
 const pillars = [
-  { icon: Landmark, title: "Realistic economics", points: ["1 SC ≈ 1 EUR/USD — every coin goes through a double-entry ledger", "Airport fuel refills 10%/h, passenger pools 1%/h", "Stepped charter bonuses reward small GA aircraft on thin routes", "Leases, purchases, FBO bases and weekly obligations"] },
-  { icon: Users, title: "Two career paths", points: ["Airline Owner: lease or buy aircraft, open bases, hire pilots", "Pilot: fly on a Roster contract or as a Freelancer for commission", "Earn Type Ratings to unlock bigger tiers", "Buy airline stakes for weekly dividends or a personal aircraft"] },
+  { icon: Landmark, title: "Realistic economics", points: ["1 SC ≈ 1 EUR/USD — every coin goes through a double-entry ledger", "Hub & Feeder passenger demand rewards flying traffic into major hubs", "Pay-As-You-Burn fuel settled from actual ACARS consumption", "Leases, purchases, FBO bases and weekly obligations"] },
+  { icon: Users, title: "Two career paths", points: ["Airline Owner: lease or buy aircraft, open bases, hire pilots", "Pilot: fly on a Roster contract or as a Freelancer for commission", "Fly Tier 1–3 aircraft from Day 1 with zero-commitment Spot Rentals", "Buy airline stakes for weekly dividends or a personal aircraft"] },
   { icon: Package, title: "Cargo & urgent missions", points: ["Belly cargo alongside passengers or All-Cargo with +50% capacity", "Cargo pools regenerate hourly — even at small regional fields", "MEDEVAC / transplant runs with fees waived and 2–3 h deadlines", "AOG industrial freight — late delivery halves the payout"] },
-  { icon: Radio, title: "SimBrief + Live ACARS", points: ["Import your SimBrief OFP straight into Dispatch", "Personal ACARS key streams live position to the radar", "PIREPs are validated against physics and fuel plausibility", "No simulator yet? Use the accelerated web test flight"] },
+  { icon: Radio, title: "SimBrief + Live ACARS", points: ["Import your SimBrief OFP straight into Dispatch", "Dedicated desktop ACARS client for MSFS 2020/2024 & X-Plane 11/12", "Personal ACARS key streams live position to the radar", "PIREPs are validated against flight physics and strict anti-refuel telemetry"] },
 ];
 
 const steps = [
-  "Create an account and choose your career.",
-  "Pick a home base and your first aircraft (or join an airline's roster).",
-  "Dispatch passengers, cargo or a special mission and watch it on the radar.",
-  "Settle the flight, grow your fleet and climb the leaderboard.",
+  "Fly Tier 1–3 aircraft from Day 1 with single-flight Spot Rentals — zero deposits or weekly pressure.",
+  "Not a '2nd job': weekly leases pay for themselves in 3–4 normal flights, with 75% deposit refund on early exit.",
+  "Built-in Chapter 11 safety net: reset debt and get a fresh starter grant once every 30 days without losing your logbook.",
+  "Dispatch passengers or cargo, fly in MSFS or X-Plane with live ACARS, and climb the leaderboard.",
 ];
+
 
 function Index() {
   const { telemetry } = Route.useLoaderData();
