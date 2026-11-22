@@ -130,7 +130,7 @@ function Radar() {
           <option value="">All aircraft</option>
           {d.fleet.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.registration} · {f.type?.range_nm} NM · {f.location_icao}
+              {f.registration} · {Math.floor((f.type?.range_nm ?? 0) * Number((d.rules as Record<string, unknown>)["dispatch_usable_range_pct"] ?? 0.75))}/{f.type?.range_nm} NM · {f.location_icao}
             </option>
           ))}
         </select>
@@ -175,6 +175,7 @@ function Radar() {
               rangeOnly={rangeOnly}
               layers={layers}
               densities={{ avgas: Number(overview.rules.avgas_kg_per_litre), jeta: Number(overview.rules.jeta_kg_per_litre) }}
+              usableRangePct={Number((d.rules as Record<string, unknown>)["dispatch_usable_range_pct"] ?? 0.75)}
               onAirport={onAirport}
               onFlight={onFlight}
             />

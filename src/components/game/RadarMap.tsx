@@ -19,6 +19,7 @@ export default function RadarMap({
   rangeOnly,
   layers,
   densities,
+  usableRangePct = 0.75,
   onAirport,
   onFlight,
 }: {
@@ -31,6 +32,7 @@ export default function RadarMap({
   rangeOnly: boolean;
   layers: { pax: boolean; activity: boolean; flights: boolean };
   densities: { avgas: number; jeta: number };
+  usableRangePct?: number;
   onAirport: (a: Airport) => void;
   onFlight: (f: LiveRadarFlight) => void;
 }) {
@@ -88,15 +90,20 @@ export default function RadarMap({
     const allowedPorts = new Set(airportFilter);
     const f = data.fleet.find((f) => f.id === selected);
     const origin = data.airports.find((a) => a.icao === f?.location_icao);
-    const radius = f?.type?.range_nm ?? 0;
+    const ferryRadius = f?.type?.range_nm ?? 0;
+    const radius = Math.floor(ferryRadius * usableRangePct);
     if (origin && center.current !== selected) {
       m.setView([origin.lat, origin.lon], 6);
       center.current = selected;
     }
+    if (origin && ferryRadius > radius)
+      L.geoJSON(rangeRing(origin, ferryRadius), {
+        style: { color: amber, weight: 1.5, fillOpacity: 0, dashArray: "5 6" },
+      }).bindTooltip(`Ferry range (empty) · ${Math.round(ferryRadius)} NM`, { sticky: true }).addTo(layer);
     if (origin && radius > 0)
       L.geoJSON(rangeRing(origin, radius), {
-        style: { color: range, weight: 2, fillOpacity: 0.04, dashArray: "5 6" },
-      }).addTo(layer);
+        style: { color: range, weight: 2, fillOpacity: 0.05 },
+      }).bindTooltip(`Payload range · ${radius} NM`, { sticky: true }).addTo(layer);
     const gaugePositions: L.Point[] = [];
     const airports = [...data.airports].sort((a, b) => {
       const aGrounded = groundPorts.has(a.icao);

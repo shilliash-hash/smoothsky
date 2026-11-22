@@ -89,6 +89,7 @@ function Dispatch() {
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
   const usableRangePct = Number(d.rules["dispatch_usable_range_pct"] ?? 0.75);
+  const ferry = allCargo && cargoKg === 0;
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier, quote.short_hop_charter, quote.demand?.hub_bonus ?? 0) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
@@ -196,7 +197,7 @@ function Dispatch() {
         </select>
         <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
           <span>{origin?.name ?? "No available aircraft"}</span>
-          <span>{Math.floor((selected?.type?.range_nm ?? 0) * usableRangePct)} NM destination limit · {Math.round(usableRangePct * 100)}% range</span>
+          <span>{ferry ? `${Math.floor(selected?.type?.range_nm ?? 0)} NM ferry limit · empty reposition` : `${Math.floor((selected?.type?.range_nm ?? 0) * usableRangePct)} NM destination limit · ${Math.round(usableRangePct * 100)}% range`}</span>
           <span>{formatCr(d.balance)} available</span>
         </div>
       </section>
@@ -281,6 +282,7 @@ function Dispatch() {
                   {cargoKg} / {cargoCapacity} kg {allCargo ? `· All-Cargo: +${Math.round(cargoBonus * 100)}% capacity, −${Math.round(Number(overview.rules.cargo_airport_fee_discount ?? 0.4) * 100)}% airport fees` : "· Belly cargo"}
                   {cargoCapacity === 0 && " · this aircraft carries no cargo"}
                 </p>
+                {ferry && <p className="mt-2 text-xs text-amber">Ferry flight: empty repositioning up to 100% range. No revenue, only operating costs.</p>}
               </div>
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
               <h2 className="mt-2 text-2xl">
