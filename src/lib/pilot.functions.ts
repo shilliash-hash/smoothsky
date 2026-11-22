@@ -24,7 +24,7 @@ export const regenerateAcarsKey = createServerFn({ method: "POST" })
     return data as string;
   });
 
-export type SimbriefPlan = { origin: string; destination: string; flightNumber: string | null; passengers: number | null; aircraft: string | null; generatedAt: string | null; route: RouteWaypoint[] | null };
+export type SimbriefPlan = { origin: string; destination: string; flightNumber: string | null; passengers: number | null; aircraft: string | null; generatedAt: string | null; route: RouteWaypoint[] | null; rampFuel: { value: number; unit: "kgs" | "lbs" } | null };
 
 export const importSimbrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -40,6 +40,8 @@ export const importSimbrief = createServerFn({ method: "POST" })
     const g = ofp["general"] ?? {};
     const num = `${g.icao_airline ?? ""}${g.flight_number ?? ""}`.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const pax = Number(ofp["weights"]?.pax_count ?? ofp["general"]?.passengers);
+    const ramp = Number(ofp["fuel"]?.plan_ramp);
+    const unit: "kgs" | "lbs" = String(ofp["params"]?.units ?? "kgs").toLowerCase().startsWith("lb") ? "lbs" : "kgs";
     return {
       origin: String(ofp["origin"]?.icao_code ?? "").toUpperCase(),
       destination: String(ofp["destination"]?.icao_code ?? "").toUpperCase(),
@@ -47,6 +49,7 @@ export const importSimbrief = createServerFn({ method: "POST" })
       passengers: Number.isFinite(pax) ? pax : null,
       aircraft: ofp["aircraft"]?.icaocode ?? null,
       route: parseSimbriefRoute(ofp),
+      rampFuel: Number.isFinite(ramp) && ramp > 0 ? { value: ramp, unit } : null,
       generatedAt: ofp["params"]?.time_generated ? new Date(Number(ofp["params"].time_generated) * 1000).toISOString() : null,
     };
   });

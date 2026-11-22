@@ -1654,6 +1654,7 @@ export type Database = {
               pax_stock: number
             }[]
           }
+      ramp_fuel_adjust: { Args: { p: Json; p_flight: string }; Returns: Json }
       record_divert: {
         Args: {
           dest: string

@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import type { Quote } from "@/lib/operations";
 import { formatCr } from "@/lib/rules";
+import { simLoad } from "@/lib/fuel-units";
 
 type Tank = NonNullable<Quote["tank"]>;
 
-export function FuelTankPanel({ tank, value, onChange }: { tank: Tank; value: number; onChange: (v: number) => void }) {
+export function FuelTankPanel({ tank, value, onChange, kgPerLitre }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number }) {
   const gal = (v: number) => `${Math.round(v).toLocaleString("en-US")} gal`;
   const min = Math.ceil(tank.min_target_gal);
   const max = Math.max(min, Math.floor(tank.max_target_gal));
@@ -18,6 +19,8 @@ export function FuelTankPanel({ tank, value, onChange }: { tank: Tank; value: nu
       </section>
     );
   }
+  const load = kgPerLitre && kgPerLitre > 0 ? simLoad(current, kgPerLitre) : null;
+  const n = (v: number) => Math.round(v).toLocaleString("en-US");
   const presets: [string, number][] = [["Min safe", min], ["Tanker max", max]];
   return (
     <section aria-label="Fuel in tanks" className="mt-4 border-y border-border bg-panel px-3 py-3">
@@ -35,8 +38,9 @@ export function FuelTankPanel({ tank, value, onChange }: { tank: Tank; value: nu
       <div className="mt-2 flex gap-2">
         {presets.map(([label, v]) => <Button key={label} size="sm" variant="outline" className="flex-1" onClick={() => onChange(v)}>{label}</Button>)}
       </div>
+      {load && <p className="readout mt-3 border border-amber/40 bg-background/40 px-2 py-1.5 text-xs text-amber">Sim load: {n(load.gal)} gal · {n(load.lbs)} lbs · {n(load.kg)} kg</p>}
       <p className="mt-2 text-xs text-muted-foreground">
-        Min {gal(min)} (trip + reserve, or fuel already on board) · Max {gal(max)} (tank / MTOW with this payload). Extra fuel reduces payload and stays in the tanks after landing.
+        Min {gal(min)} (trip + reserve, or fuel already on board) · Max {gal(max)} (tank / MTOW with this payload). Extra fuel reduces payload and stays in the tanks after landing. If ACARS sees more fuel in the simulator before take-off, the extra is billed as a ramp fuel adjustment.
       </p>
     </section>
   );

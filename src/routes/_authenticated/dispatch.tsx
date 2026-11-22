@@ -26,6 +26,8 @@ import { DestinationAlternatives } from "@/components/game/DestinationAlternativ
 import { RouteError } from "@/components/game/RouteError";
 import { TierPills } from "@/components/game/TierPills";
 import { SimbriefImport } from "@/components/game/SimbriefImport";
+import type { SimbriefPlan } from "@/lib/pilot.functions";
+import { simbriefRampToGallons } from "@/lib/fuel-units";
 import { adminAccessQuery } from '@/lib/admin';
 import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
 import { FlightDebrief } from '@/components/game/FlightDebrief';
@@ -90,6 +92,7 @@ function Dispatch() {
   const [cargoQuoteKg, setCargoQuoteKg] = useState(0);
   const [targetFuel, setTargetFuel] = useState<number | null>(null);
   const [targetQuoteFuel, setTargetQuoteFuel] = useState<number | null>(null);
+  const [pendingRamp, setPendingRamp] = useState<SimbriefPlan["rampFuel"]>(null);
   const [flightMode, setFlightMode] = useState<FlightMode>("commercial");
   const allCargo = flightMode !== "commercial";
   const simulationEnabled = simulation && webSimAllowed;
@@ -138,6 +141,15 @@ function Dispatch() {
     return () => clearTimeout(t);
   }, [targetFuel]);
   useEffect(() => { setTargetFuel(null); setTargetQuoteFuel(null); }, [selected?.id, destination]);
+  useEffect(() => {
+    if (!pendingRamp || !quote?.tank?.persistent) return;
+    const gal = simbriefRampToGallons(pendingRamp.value, pendingRamp.unit, fuelDensity);
+    setPendingRamp(null);
+    if (gal === null) return;
+    const v = Math.round(Math.min(quote.tank.max_target_gal, Math.max(quote.tank.min_target_gal, gal)));
+    setTargetFuel(v);
+    toast.info(`Target fuel synced from SimBrief ramp fuel: ${v} gal`);
+  }, [pendingRamp, quote, fuelDensity]);
   useEffect(() => {
     const t = setTimeout(() => setCargoQuoteKg(cargoKg), 300);
     return () => clearTimeout(t);
@@ -306,6 +318,7 @@ function Dispatch() {
                   if (plan.flightNumber && flightNumberSchema.safeParse(plan.flightNumber).success) setFlightNumber(plan.flightNumber);
                   if (plan.destination) setDestination(plan.destination);
                   setRoute(plan.route); setRouteMode("route");
+                  setPendingRamp(plan.rampFuel);
                 }}
               />
               {activeRoute && <div className="mb-5">
@@ -354,7 +367,7 @@ function Dispatch() {
                     {Math.round(quote.minutes)} min
                   </p>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
-                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} />}
+                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} />}
                   {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && cargoCapacity > 0 && cargoKg < cargoCapacity} onAutoLoad={() => setCargoKg(cargoCapacity)} />}
                   {quote.runway_unpaved && <p className="mt-1 text-xs text-amber">[UNPAVED] No paved runway nearby — remote strip fallback</p>}
                   <dl className="readout mt-5 space-y-3">

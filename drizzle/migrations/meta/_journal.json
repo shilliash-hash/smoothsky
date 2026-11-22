@@ -470,6 +470,13 @@
       "when": 1795376508672,
       "tag": "0066_divert_lease_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795383045804,
+      "tag": "0067_acars_ramp_fuel_adjustment",
+      "breakpoints": true
     }
   ]
 }
