@@ -509,6 +509,7 @@ export type Database = {
           aircraft_type_id: string
           airframe_hours: number
           company_id: string
+          current_fuel_gal: number
           id: string
           lease_deposit: number
           leased_at: string
@@ -527,6 +528,7 @@ export type Database = {
           aircraft_type_id: string
           airframe_hours?: number
           company_id: string
+          current_fuel_gal?: number
           id?: string
           lease_deposit: number
           leased_at?: string
@@ -545,6 +547,7 @@ export type Database = {
           aircraft_type_id?: string
           airframe_hours?: number
           company_id?: string
+          current_fuel_gal?: number
           id?: string
           lease_deposit?: number
           leased_at?: string
@@ -1275,6 +1278,18 @@ export type Database = {
             }
             Returns: string
           }
+      dispatch_flight_fueled: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_flight_number: string
+          p_mission?: string
+          p_target_fuel_gal?: number
+        }
+        Returns: string
+      }
       dispatch_flight_full: {
         Args: {
           p_aircraft: string
@@ -1328,6 +1343,17 @@ export type Database = {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
       }
+      flight_quote_fueled: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_mission?: string
+          p_target_fuel_gal?: number
+        }
+        Returns: Json
+      }
       flight_quote_full: {
         Args: {
           p_aircraft: string
@@ -1340,6 +1366,10 @@ export type Database = {
       }
       flight_quote_without_fobs: {
         Args: { p_aircraft: string; p_destination: string }
+        Returns: Json
+      }
+      flight_tank_plan: {
+        Args: { p_current: number; p_persistent: boolean; q: Json }
         Returns: Json
       }
       flight_weight_budget: {
@@ -1621,6 +1651,13 @@ export type Database = {
         Returns: undefined
       }
       set_stake_offer: { Args: { p_pct: number }; Returns: undefined }
+      set_target_fuel: {
+        Args: { p_aircraft: string; p_target: number }
+        Returns: {
+          cur: number
+          persistent: boolean
+        }[]
+      }
       settle_due_test_flights: { Args: never; Returns: undefined }
       settle_flight: {
         Args: { p_flight: string; p_telemetry?: Json }

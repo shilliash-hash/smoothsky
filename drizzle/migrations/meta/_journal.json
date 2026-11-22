@@ -400,6 +400,13 @@
       "when": 1795355768183,
       "tag": "0056_physical_range_dispatch_discovery",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795358022347,
+      "tag": "0057_persistent_fuel_tanks",
+      "breakpoints": true
     }
   ]
 }
