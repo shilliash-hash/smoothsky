@@ -1,5 +1,9 @@
 # Roadmap
 
+## Explicit Dispatch flight modes
+- [x] Replace the cargo switch with Commercial / All-Cargo / Ferry, preserving existing SQL payloads. All-Cargo starts at 10 kg, Ferry clears cargo and permits an empty dispatch; mode-aware ranges and Ferry recovery block commercial routes beyond the live payload limit.
+- [x] 65 tests passed; signed-in King Air modes showed 1350/1800 NM, All-Cargo minimum 10 kg, Ferry quote 0 PAX/0 cargo with enabled dispatch. EPGD → LPPT (1458 NM) offered Ferry recovery and returned a zero-revenue quote. Desktop, 860 px and mobile checked without overflow/runtime errors; build OK. Radar, settlement, database and deployment variables unchanged. No flight dispatched on the player's account.
+
 ## Dispatch range discovery — stage one
 - [x] Limit nearby/Best Deals/Nearest, exact-code search and alternatives in owner-scoped SQL to the live economy range fraction (default 0.75); preserve 60/40/6 bounds and shared quote/dispatch/settlement/radar behaviour.
 - [x] Add Admin Economy input with 0.05 steps, validation and missing-row fallback/upsert; show whole-NM and whole-percent range in Dispatch. Default row added separately from DDL; replayed migrations retain the SQL fallback in unseeded environments.

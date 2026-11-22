@@ -28,6 +28,8 @@ import { SimbriefImport } from "@/components/game/SimbriefImport";
 import { adminAccessQuery } from '@/lib/admin';
 import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
 import { FlightDebrief } from '@/components/game/FlightDebrief';
+import { FlightModeSelector } from '@/components/game/FlightModeSelector';
+import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
     search: Record<string, unknown>,
@@ -72,14 +74,15 @@ function Dispatch() {
   const [filter, setFilter] = useState("");
   const [explicitTiers, setTiers] = useState<number[] | null>(null);
   const [dealSort, setDealSort] = useState<DealSort>("best");
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteResult, setQuoteResult] = useState<{ key: string; value: Quote } | null>(null);
   const [busy, setBusy] = useState(false);
   const webSimAllowed = d.rules["web_simulation_enabled"] === true;
   const [simulation, setSimulation] = useState(webSimAllowed);
   useEffect(() => { if (!webSimAllowed) setSimulation(false); }, [webSimAllowed]);
   const [cargoKg, setCargoKg] = useState(0);
   const [cargoQuoteKg, setCargoQuoteKg] = useState(0);
-  const [allCargo, setAllCargo] = useState(false);
+  const [flightMode, setFlightMode] = useState<FlightMode>("commercial");
+  const allCargo = flightMode !== "commercial";
   const simulationEnabled = simulation && webSimAllowed;
   const [quoteError, setQuoteError] = useState("");
   const [now, setNow] = useState(d.serverTime);
@@ -89,7 +92,27 @@ function Dispatch() {
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
   const usableRangePct = Number(d.rules["dispatch_usable_range_pct"] ?? 0.75);
-  const ferry = allCargo && cargoKg === 0;
+  const ferry = flightMode === "ferry";
+  const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
+  const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
+  const payload = flightModePayload(flightMode, cargoQuoteKg, cargoCapacity);
+  const quoteKey = JSON.stringify([selected?.id, selected?.status, destination, payload.cargoKg, payload.allCargo, d.rules["fuel_reserve_minutes"], rulesKey]);
+  const quote = quoteResult?.key === quoteKey ? quoteResult.value : null;
+  const payloadPending = cargoKg !== cargoQuoteKg;
+  const rangeNm = selected?.type?.range_nm ?? 0;
+  const payloadRange = flightModeRange("commercial", rangeNm, usableRangePct);
+  const beyondPayloadRange = !ferry && quote !== null && quote.distance_nm > payloadRange;
+  const rangeError = beyondPayloadRange || commercialRangeError(quoteError);
+  const ferryAvailable = !ferry && rangeError && (quote === null || quote.distance_nm <= rangeNm);
+  function selectFlightMode(mode: FlightMode) {
+    const capacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (mode === "commercial" ? 1 : 1 + cargoBonus));
+    const next = flightModePayload(mode, cargoKg, capacity);
+    setFlightMode(mode);
+    setCargoKg(next.cargoKg);
+    setCargoQuoteKg(next.cargoKg);
+    setQuoteResult(null);
+    setQuoteError("");
+  }
   const revenueBreakdown = quote && selected?.type ? ticketRevenueBreakdown(quote.ticket_revenue ?? quote.revenue, quote.passengers, selected.type.tier, quote.rules.charter_by_tier, quote.short_hop_charter, quote.demand?.hub_bonus ?? 0) : null;
   const reserveMinutes = Number(d.rules["fuel_reserve_minutes"]);
   const fuelDensity = Number(selected?.type?.fuel_type === "100LL" ? overview.rules.avgas_kg_per_litre : overview.rules.jeta_kg_per_litre);
@@ -98,8 +121,6 @@ function Dispatch() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
-  const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
   useEffect(() => {
     if (cargoKg > cargoCapacity) setCargoKg(cargoCapacity);
   }, [cargoCapacity, cargoKg]);
@@ -108,13 +129,13 @@ function Dispatch() {
     return () => clearTimeout(t);
   }, [cargoKg]);
   useEffect(() => {
-    setQuote(null);
+    setQuoteResult(null);
     setQuoteError("");
     if (!selected || !destination) return;
     let active = true;
-    action({ data: { action: "quote", aircraft: selected.id, destination, cargoKg: cargoQuoteKg, allCargo } })
+    action({ data: { action: "quote", aircraft: selected.id, destination, ...payload } })
       .then((q) => {
-        if (active) setQuote(q as Quote);
+        if (active) setQuoteResult({ key: quoteKey, value: q as Quote });
       })
       .catch((e) => {
         if (active) setQuoteError(displayTerminology(e.message));
@@ -122,21 +143,21 @@ function Dispatch() {
     return () => {
       active = false;
     };
-  }, [selected?.id, selected?.status, destination, action, cargoQuoteKg, allCargo, reserveMinutes, rulesKey]);
-  const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, cargoQuoteKg, allCargo, rulesKey);
+  }, [selected?.id, selected?.status, destination, action, quoteKey]);
+  const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, payload.cargoKg, payload.allCargo, rulesKey);
   const destinations = useMemo(() => sortDestinationDeals(tiers.length ? deals.data ?? [] : [], dealSort), [deals.data, dealSort, tiers.length]);
   const topDeals = useMemo(() => topDestinationDeals(destinations), [destinations]);
   async function run(kind: "dispatch" | "start" | "settle" | "cancel", flight?: string) {
     setBusy(true);
     try {
-      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { cargoKg: cargoQuoteKg, allCargo, simulation: simulationEnabled } : {}) } });
+      await action({ data: { action: kind, aircraft: selected?.id, destination, flight, flightNumber: kind === "dispatch" ? (flightNumber ?? d.nextFlightNumber ?? "") : undefined, ...(kind === "dispatch" ? { ...payload, simulation: simulationEnabled } : {}) } });
       if (kind === "dispatch") {
         setFlightNumber(null);
         setCargoKg(0);
         setCargoQuoteKg(0);
-        setAllCargo(false);
+        setFlightMode("commercial");
         setDestination("");
-        setQuote(null);
+        setQuoteResult(null);
       }
       await qc.invalidateQueries();
       toast.success(
@@ -149,6 +170,7 @@ function Dispatch() {
               : simulationEnabled ? "Passengers reserved — ready for departure" : "Flight dispatched — connect your ACARS client",
       );
     } catch (e) {
+      if (kind === "dispatch" && e instanceof Error && commercialRangeError(e.message)) setQuoteError(displayTerminology(e.message));
       toast.error(e instanceof Error ? displayTerminology(e.message) : "Flight action failed");
     } finally {
       setBusy(false);
@@ -159,7 +181,7 @@ function Dispatch() {
     <AppShell company={d.company}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="readout text-xs uppercase text-amber">Operations · Passenger transport</p>
+          <p className="readout text-xs uppercase text-amber">Operations · Flight planning</p>
           <h1 className="mt-1 text-3xl font-semibold">Dispatch</h1>
         </div>
         <Button asChild variant="outline">
@@ -184,6 +206,9 @@ function Dispatch() {
           onChange={(e) => {
             setAircraft(e.target.value);
             setDestination("");
+            setFlightMode("commercial");
+            setCargoKg(0);
+            setCargoQuoteKg(0);
           }}
         >
           <option value="">Select aircraft</option>
@@ -197,7 +222,7 @@ function Dispatch() {
         </select>
         <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
           <span>{origin?.name ?? "No available aircraft"}</span>
-          <span>{ferry ? `${Math.floor(selected?.type?.range_nm ?? 0)} NM ferry limit · empty reposition` : `${Math.floor((selected?.type?.range_nm ?? 0) * usableRangePct)} NM destination limit · ${Math.round(usableRangePct * 100)}% range`}</span>
+          <span>{ferry ? `${Math.floor(rangeNm)} NM ferry limit (100%) · empty repositioning` : `${payloadRange} NM payload limit (${Math.round(usableRangePct * 100)}%) · Ferry up to ${Math.floor(rangeNm)} NM (100%)`}</span>
           <span>{formatCr(d.balance)} available</span>
         </div>
       </section>
@@ -255,7 +280,7 @@ function Dispatch() {
                 )}
               </div>
               <div className="mt-4">
-                <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={cargoQuoteKg} allCargo={allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
+                <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={payload.cargoKg} allCargo={payload.allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
               </div>
             </section>
             <section className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
@@ -270,19 +295,19 @@ function Dispatch() {
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
               {!numberValid && <p role="alert" className="mb-4 text-sm text-destructive">Flight number must contain 3–12 letters or digits and start with a letter.</p>}
               <div className="mb-5 border-y border-border py-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <label htmlFor="cargo-kg" className="text-xs uppercase text-muted-foreground">Cargo (kg)</label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <Switch checked={allCargo} onCheckedChange={setAllCargo} disabled={!selected?.type?.cargo_kg} aria-label="All-Cargo flight (no passengers)" />
-                    All-Cargo (PAX = 0)
-                  </label>
-                </div>
-                <Slider id="cargo-kg" aria-label="Cargo (kg)" className="mt-4" min={0} max={Math.max(cargoCapacity, 0)} step={10} value={[cargoKg]} onValueChange={(v) => setCargoKg(v[0] ?? 0)} disabled={cargoCapacity === 0} />
+                <FlightModeSelector value={flightMode} onChange={selectFlightMode} rangeNm={rangeNm} usableRangePct={usableRangePct} cargoAvailable={Math.floor((selected?.type?.cargo_kg ?? 0) * (1 + cargoBonus)) >= 10} />
+                {ferry ? <div className="mt-4 border-l-2 border-amber bg-panel px-3 py-3 text-sm text-amber">
+                  <p className="readout text-xs uppercase">Ferry repositioning · 0 PAX · 0 kg</p>
+                  <p className="mt-2">No revenue · fuel, airport fees and maintenance only.</p>
+                  <p className="readout mt-2 text-xs">Full range: {Math.floor(rangeNm)} NM (100%)</p>
+                </div> : <>
+                <label htmlFor="cargo-kg" className="mt-4 block text-xs uppercase text-muted-foreground">Cargo (kg)</label>
+                <Slider id="cargo-kg" aria-label="Cargo (kg)" className="mt-4" min={flightMode === "cargo" ? 10 : 0} max={Math.max(cargoCapacity, 0)} step={10} value={[cargoKg]} onValueChange={(v) => setCargoKg(v[0] ?? 0)} disabled={cargoCapacity === 0} />
                 <p className="readout mt-2 text-xs text-muted-foreground">
                   {cargoKg} / {cargoCapacity} kg {allCargo ? `· All-Cargo: +${Math.round(cargoBonus * 100)}% capacity, −${Math.round(Number(overview.rules.cargo_airport_fee_discount ?? 0.4) * 100)}% airport fees` : "· Belly cargo"}
                   {cargoCapacity === 0 && " · this aircraft carries no cargo"}
                 </p>
-                {ferry && <p className="mt-2 text-xs text-amber">Ferry flight: empty repositioning up to 100% range. No revenue, only operating costs.</p>}
+                </>}
               </div>
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
               <h2 className="mt-2 text-2xl">
@@ -293,6 +318,8 @@ function Dispatch() {
                   {quoteError}
                 </p>
               )}
+              {beyondPayloadRange && !commercialRangeError(quoteError) && <p role="alert" className="mt-4 text-amber">Route exceeds the {payloadRange} NM payload limit ({Math.round(usableRangePct * 100)}%).</p>}
+              {ferryAvailable && <Button variant="outline" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber" onClick={() => selectFlightMode("ferry")}><Plane className="h-4 w-4" />Switch to Ferry · 100% range</Button>}
               {quote ? (
                 <>
                   <p className="mt-3 text-sm text-muted-foreground">
@@ -311,7 +338,7 @@ function Dispatch() {
                       ["Maintenance reserve", -quote.maintenance],
                     ].map(([label, value]) => (
                       <div key={String(label)} className="flex justify-between gap-3 text-sm">
-                        <dt className="min-w-0">{label}{label === "Ticket revenue" && revenueBreakdown && quote && (
+                        <dt className="min-w-0">{label}{label === "Ticket revenue" && !allCargo && revenueBreakdown && quote && (
                           <span className="block text-xs text-muted-foreground">
                             (Distance: {formatCr(revenueBreakdown.distanceRevenue)} at {formatCr(quote.rules.fare_per_nm)}/pax/NM + Tier {selected?.type?.tier} charter: {formatCr(revenueBreakdown.charterRevenue)} at {formatCr(revenueBreakdown.surchargePerPassenger)}/pax{revenueBreakdown.isShortHop && <span className="text-amber"> (-{revenueBreakdown.reductionPercent}% short-hop: {Math.round(quote.distance_nm)} NM / {revenueBreakdown.thresholdNm} NM)</span>}{revenueBreakdown.hubRevenue > 0 && <span className="text-primary"> incl. +{revenueBreakdown.hubPercent}% Hub {destination} bonus: {formatCr(revenueBreakdown.hubRevenue)}</span>})
                           </span>
@@ -341,18 +368,18 @@ function Dispatch() {
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || (quote.passengers === 0 && (quote.cargo_kg ?? 0) === 0) || !numberValid
+                      busy || payloadPending || rangeError || !canDispatchPayload(flightMode, quote.passengers, quote.cargo_kg ?? 0) || !numberValid
 
                     }
                     onClick={() => run("dispatch")}
                   >
                     <Plane className="h-4 w-4" />
-                    Dispatch flight
+                    {ferry ? "Dispatch ferry flight" : "Dispatch flight"}
                   </Button>
                 </>
               ) : (
                 <p className="mt-6 text-sm text-muted-foreground">
-                  {destination ? "Calculating…" : "No destination selected"}
+                  {quoteError ? "Estimate unavailable" : destination ? "Calculating…" : "No destination selected"}
                 </p>
               )}
             </section>
