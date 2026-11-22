@@ -407,6 +407,13 @@
       "when": 1795358022347,
       "tag": "0057_persistent_fuel_tanks",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795360729999,
+      "tag": "0058_deals_use_selected_cargo",
+      "breakpoints": true
     }
   ]
 }

@@ -161,7 +161,7 @@ describe('verified fuel settlement SQL',()=>{
 describe('stage two physical-range discovery SQL',()=>{
  const stageTwo=()=>{const n=readdirSync('drizzle/migrations').find(f=>f.endsWith('_physical_range_dispatch_discovery.sql'));if(!n)throw new Error('missing');return readFileSync(`drizzle/migrations/${n}`,'utf8').split('DO $m$')[0]!;};
  const est=async(lat:number)=>{await db.query("UPDATE airports SET lat=$1 WHERE icao='DEST'",[lat]);return (await db.query<{q:{estimated_margin:number|null;estimated_revenue:number|null;estimate_error:string|null;passengers:number;cargo_kg:number;available_payload_kg:number}}>(`SELECT dispatch_destination_estimate('${aircraft}','DEST',0,false) q`)).rows[0]!.q;};
- beforeAll(async()=>{await db.exec(stageTwo());});
+ beforeAll(async()=>{await db.exec(stageTwo());await db.exec(readFileSync('drizzle/migrations/0058_deals_use_selected_cargo.sql','utf8'));});
  it('bounds discovery by tank capacity and IFR reserve, not 75% of catalogue range',async()=>{
   const r=(await db.query<{r:number}>("SELECT aircraft_physical_range_nm('C172') r")).rows[0]!.r;
   // C172: 56 gal - 45 min * 8.5 gph = 49.625 gal → 49.625/8.5*122 ≈ 712 NM, capped below MTOW mass limit
@@ -175,9 +175,11 @@ describe('stage two physical-range discovery SQL',()=>{
   expect(Number(long.estimated_revenue)/420).toBeLessThan(Number(short.estimated_revenue)/60);
   expect(sorted.map(s=>s.icao)).toContain('SHORT');
  });
- it('fills spare payload with cargo after passengers when not all-cargo',async()=>{
+ it('previews use exactly the cargo set on the slider',async()=>{
   await db.exec("UPDATE fleet_aircraft SET aircraft_type_id='C208B'");
-  const q=await est(5); expect(q.cargo_kg).toBeGreaterThan(0); expect(q.passengers*80+q.cargo_kg).toBeLessThanOrEqual(q.available_payload_kg);
+  const q=await est(5); expect(q.cargo_kg).toBe(0);
+  const withCargo=(await db.query<{q:{cargo_kg:number}}>(`SELECT dispatch_destination_estimate('${aircraft}','DEST',100,false) q`)).rows[0]!.q;
+  expect(withCargo.cargo_kg).toBe(100);
  });
  it('marks routes with zero spare payload as ferry-only',async()=>{
   await db.exec("UPDATE aircraft_types SET mtow_kg=905 WHERE id='C172'");
