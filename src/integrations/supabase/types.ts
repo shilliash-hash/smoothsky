@@ -1166,6 +1166,14 @@ export type Database = {
         Returns: undefined
       }
       act_as: { Args: { p_user: string }; Returns: string }
+      admin_cancel_cleanup_flights: {
+        Args: { p_flight_ids: string[] }
+        Returns: undefined
+      }
+      admin_cleanup_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       admin_company_supporters: {
         Args: never
         Returns: {
@@ -1173,6 +1181,10 @@ export type Database = {
           is_supporter: boolean
           user_id: string
         }[]
+      }
+      admin_delete_user_and_company: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       admin_players: {
         Args: never
@@ -1187,6 +1199,7 @@ export type Database = {
           username: string
         }[]
       }
+      admin_reset_company: { Args: { p_company_id: string }; Returns: Json }
       aircraft_finance: { Args: { p_aircraft: string }; Returns: Json }
       aircraft_physical_range_nm: { Args: { p_type: string }; Returns: number }
       aircraft_registration: {

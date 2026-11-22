@@ -421,6 +421,27 @@
       "when": 1795365468933,
       "tag": "0059_lease_and_rental_tier_licence_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795366232762,
+      "tag": "0060_admin_account_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795366311870,
+      "tag": "0061_admin_cleanup_cancellation_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795366421782,
+      "tag": "0062_admin_cleanup_ledger_guard",
+      "breakpoints": true
     }
   ]
 }

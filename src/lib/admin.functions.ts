@@ -38,6 +38,7 @@ export const getAdminData = createServerFn({ method: "GET" })
     for (const result of [economy, aircraft, users, fuel, supporters])
       if (result.error) throw new Error(result.error.message);
     return {
+      viewerUserId: context.userId,
       economy: [...(economy.data ?? []), ...(economy.data?.some(row => row.key === dispatchRangeSetting.key) ? [] : [dispatchRangeSetting]), ...(economy.data?.some(row => row.key === "recruitment_commissions") ? [] : [{ key: "recruitment_commissions", value: defaultRecruitment, description: "Pilot commission as a percentage of net flight profit." }]), ...(economy.data?.some(row => row.key === "spot_rental_multiplier") ? [] : [{ key: "spot_rental_multiplier", value: DEFAULT_SPOT_RENTAL_MULTIPLIER, description: "Single-flight rental as a fraction of the weekly rate (0.20 = 20%). No deposit or weekly commitments." }])],
       aircraft: aircraft.data ?? [],
       users: (users.data ?? []).map(user => {
@@ -46,6 +47,34 @@ export const getAdminData = createServerFn({ method: "GET" })
       }),
       fuel: fuel.data ?? [],
     };
+  });
+export const resetAdminCompany = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ companyId: z.string().uuid(), confirmation: z.literal("RESET") }))
+  .handler(async ({ data, context }) => {
+    const result = await context.supabase.rpc("admin_reset_company", { p_company_id: data.companyId });
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  });
+
+export const deleteAdminAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ userId: z.string().uuid(), confirmation: z.literal("DELETE") }))
+  .handler(async ({ data, context }) => {
+    const access = await context.supabase.rpc("is_admin");
+    if (access.error || !access.data) throw new Error("Administrator access required");
+    if (data.userId === context.userId) throw new Error("Cannot delete your own account");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const target = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (target.error || !target.data.user) throw new Error("Player account not found. Refresh the list.");
+    const cleanup = await context.supabase.rpc("admin_delete_user_and_company", { p_user_id: data.userId });
+    if (cleanup.error) throw new Error(cleanup.error.message);
+    const deleted = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (deleted.error) {
+      console.error("Account identity deletion failed after application cleanup", deleted.error.code);
+      throw new Error("Game data was removed, but the sign-in account could not be deleted. Retry Delete to finish.");
+    }
+    return { deleted: true };
   });
 export const saveAdminData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

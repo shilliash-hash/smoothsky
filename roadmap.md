@@ -1,5 +1,10 @@
 # Roadmap
 
+## Administrator account cleanup
+- [x] Add admin-only, self-protected company reset/account cleanup with transactional fuel cancellation, foreign-key-safe removal and a tightly scoped ledger DELETE exception.
+- [x] Add authenticated reset/delete actions and typed confirmation dialogs in Users & companies; preserve Flight Deck and deployment vars. Personal hangars are excluded from player company mapping; other companies retain deleted pilots' history with attribution detached.
+- [x] 35 tests passed including applied SQL cleanup, permission denial, forged scope, fuel/passenger returns and rental retirement. Signed-in disposable company leased C172 (26,050 SC, 1 aircraft), reset to 30,000 SC/0 aircraft and retained Dashboard access; Delete removed it and its Auth identity. Separate No company account deleted through UI. Own account actions hidden; desktop/mobile inspected, no page overflow; build OK. No existing player reset/deleted; active-flight cancellation tested in isolated SQL rather than shared live operations.
+
 ## Market licence gates
 - [x] Require exact T4+ ratings for leasing and spot rental in both offers/confirmation and transactional acquisition; keep aircraft listed and current rental duration/settlement unchanged.
 - [x] 34 tests passed; applied guards confirmed. Signed-in market showed disabled T4–T7 buttons for both modes; all eight direct acquisition requests rejected without changing fleet. Desktop/mobile checked without runtime errors or overflow; build OK. No player acquisition or licence purchase performed.

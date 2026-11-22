@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Save, Shield, X } from "lucide-react";
+import { Plus, Save, Shield, X, RotateCcw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { SupporterBadge } from "@/components/game/SupporterBadge";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { adminAccessQuery, adminDataQuery } from "@/lib/admin";
-import { saveAdminData, resetAirports } from "@/lib/admin.functions";
+import { saveAdminData, resetAirports, resetAdminCompany, deleteAdminAccount } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
 import type { AircraftEdit } from "@/lib/admin-rules";
@@ -81,6 +81,32 @@ function Admin() {
   const reset = useServerFn(resetAirports);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirmation, setResetConfirmation] = useState("");
+  const resetCompany = useServerFn(resetAdminCompany);
+  const deleteAccount = useServerFn(deleteAdminAccount);
+  const [playerAction, setPlayerAction] = useState<{ kind: "reset" | "delete"; player: (typeof data.users)[number] } | null>(null);
+  const [playerConfirmation, setPlayerConfirmation] = useState("");
+  const startingCapital = Number(data.economy.find(row => row.key === "starting_capital")?.value ?? 0);
+  async function confirmPlayerAction() {
+    if (!playerAction || busy) return;
+    setBusy(true);
+    try {
+      if (playerAction.kind === "reset") {
+        if (!playerAction.player.company_id) throw new Error("Company not found");
+        await resetCompany({ data: { companyId: playerAction.player.company_id, confirmation: "RESET" } });
+        toast.success("Company reset to a fresh start");
+      } else {
+        await deleteAccount({ data: { userId: playerAction.player.user_id, confirmation: "DELETE" } });
+        toast.success("Player account permanently deleted");
+      }
+      setPlayerAction(null);
+      setPlayerConfirmation("");
+    } catch (error) {
+      toast.error(error instanceof Error ? displayTerminology(error.message) : "Action failed");
+    } finally {
+      await qc.invalidateQueries();
+      setBusy(false);
+    }
+  }
   async function persist(payload: Parameters<typeof save>[0]) {
     setBusy(true);
     try {
@@ -357,7 +383,7 @@ function Admin() {
             />
           </div>
           <div className="mt-5 overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[1000px] text-left text-sm [&_th]:pr-4 [&_td]:pr-4">
               <thead className="text-muted-foreground">
                 <tr>
                   <th className="py-3">Player</th>
@@ -367,6 +393,7 @@ function Admin() {
                   <th>Fleet</th>
                   <th>Joined</th>
                   <th className="px-3">Supporter</th>
+                  <th className="pl-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -390,11 +417,30 @@ function Admin() {
                         {new Date(u.joined_at).toLocaleDateString("en-US")}
                       </td>
                       <td className="px-3"><div className="flex items-center gap-2"><Switch aria-label={`Supporter ${u.icao_code ?? u.username}`} checked={u.is_supporter} disabled={busy || !u.company_id} onCheckedChange={supporter => { if (u.company_id) void persist({ data: { kind: "supporter", company: u.company_id, supporter } }); }} />{u.is_supporter && <SupporterBadge />}</div></td>
+                      <td className="pl-3">
+                        {u.user_id === data.viewerUserId ? <span className="whitespace-nowrap text-xs text-muted-foreground">Your account</span> : <div className="flex gap-2">
+                          {u.company_id && <Button variant="outline" size="sm" className="border-amber/50 text-amber hover:bg-amber/10 hover:text-amber" disabled={busy} aria-label={`Reset company ${u.icao_code}`} onClick={() => { setPlayerAction({ kind: "reset", player: u }); setPlayerConfirmation(""); }}><RotateCcw />Reset</Button>}
+                          <Button variant="destructive" size="sm" disabled={busy} aria-label={`Delete player ${u.username}`} onClick={() => { setPlayerAction({ kind: "delete", player: u }); setPlayerConfirmation(""); }}><Trash2 />Delete</Button>
+                        </div>}
+                      </td>
                     </tr>
                   ))}
               </tbody>
             </table>
           </div>
+          <Dialog open={playerAction !== null} onOpenChange={open => { if (!open && !busy) { setPlayerAction(null); setPlayerConfirmation(""); } }}>
+            <DialogContent>
+              <DialogTitle>{playerAction?.kind === "reset" ? "Reset company?" : "Permanently delete player?"}</DialogTitle>
+              <DialogDescription>
+                {playerAction?.kind === "reset" ? <>Reset {playerAction.player.company_name} ({playerAction.player.icao_code}) to {formatCr(startingCapital)}. All company aircraft, leases, FBOs, stakes, flights and financial history will be permanently removed. The company name, ICAO code, home base and player account remain.</> : <>Permanently delete {playerAction?.player.username} ({playerAction?.player.email}), their companies, personal hangar, pilot records and sign-in account. This cannot be undone.</>}
+              </DialogDescription>
+              <label className="text-sm">Type {playerAction?.kind === "reset" ? "RESET" : "DELETE"} to confirm<Input aria-label="Player action confirmation" autoComplete="off" value={playerConfirmation} disabled={busy} onChange={e => setPlayerConfirmation(e.target.value)} className="mt-2" /></label>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" disabled={busy} onClick={() => { setPlayerAction(null); setPlayerConfirmation(""); }}>Cancel</Button>
+                <Button variant={playerAction?.kind === "reset" ? "outline" : "destructive"} className={playerAction?.kind === "reset" ? "border-amber/50 text-amber hover:bg-amber/10 hover:text-amber" : ""} disabled={busy || playerConfirmation !== (playerAction?.kind === "reset" ? "RESET" : "DELETE")} onClick={() => void confirmPlayerAction()}>{busy && <Loader2 className="animate-spin" />}{playerAction?.kind === "reset" ? "Confirm company reset" : "Confirm account deletion"}</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </AppShell>
