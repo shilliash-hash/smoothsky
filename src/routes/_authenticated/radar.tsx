@@ -130,7 +130,7 @@ function Radar() {
           <option value="">All aircraft</option>
           {d.fleet.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.registration} · {Math.floor((f.type?.range_nm ?? 0) * Number((d.rules as Record<string, unknown>)["dispatch_usable_range_pct"] ?? 0.75))}/{f.type?.range_nm} NM · {f.location_icao}
+              {f.registration} · {f.type?.range_nm} NM · {f.location_icao}
             </option>
           ))}
         </select>
@@ -175,7 +175,7 @@ function Radar() {
               rangeOnly={rangeOnly}
               layers={layers}
               densities={{ avgas: Number(overview.rules.avgas_kg_per_litre), jeta: Number(overview.rules.jeta_kg_per_litre) }}
-              usableRangePct={Number((d.rules as Record<string, unknown>)["dispatch_usable_range_pct"] ?? 0.75)}
+              usableRangePct={1}
               onAirport={onAirport}
               onFlight={onFlight}
             />
@@ -195,11 +195,7 @@ function Radar() {
           <span className="text-radar-pax">◔ Passenger pool · % full</span>
           <span className="flex items-center gap-2 text-radar-range">
             <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full border border-current" />
-            Payload range · PAX/Cargo
-          </span>
-          <span className="flex items-center gap-2 text-amber">
-            <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full border border-dashed border-current" />
-            Ferry range · 100% empty
+            Max range · payload reduced by MTOW
           </span>
           <span className="text-radar-activity">◎ Pulse · Active airport (7 days)</span>
           <span className="text-amber">⚑ Company FBO</span>

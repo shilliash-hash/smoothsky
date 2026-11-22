@@ -103,7 +103,7 @@ export default function RadarMap({
     if (origin && radius > 0)
       L.geoJSON(rangeRing(origin, radius), {
         style: { color: range, weight: 2, fillOpacity: 0.05 },
-      }).bindTooltip(`Payload range · ${radius} NM`, { sticky: true }).addTo(layer);
+      }).bindTooltip(`Max range · ${radius} NM · payload reduced by MTOW`, { sticky: true }).addTo(layer);
     const gaugePositions: L.Point[] = [];
     const airports = [...data.airports].sort((a, b) => {
       const aGrounded = groundPorts.has(a.icao);

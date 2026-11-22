@@ -92,7 +92,7 @@ function Dispatch() {
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
-  const usableRangePct = Number(d.rules["dispatch_usable_range_pct"] ?? 0.75);
+  const usableRangePct = 1;
   const ferry = flightMode === "ferry";
   const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
@@ -223,7 +223,7 @@ function Dispatch() {
         </select>
         <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
           <span>{origin?.name ?? "No available aircraft"}</span>
-          <span>{ferry ? `${Math.floor(rangeNm)} NM ferry limit (100%) · empty repositioning` : `${payloadRange} NM payload limit (${Math.round(usableRangePct * 100)}%) · Ferry up to ${Math.floor(rangeNm)} NM (100%)`}</span>
+          <span>{ferry ? `${Math.floor(rangeNm)} NM ferry limit (100%) · empty repositioning` : `Max range ${Math.floor(rangeNm)} NM · payload & fuel bounded by MTOW`}</span>
           <span>{formatCr(d.balance)} available</span>
         </div>
       </section>
@@ -319,8 +319,8 @@ function Dispatch() {
                   {quoteError}
                 </p>
               )}
-              {beyondPayloadRange && !commercialRangeError(quoteError) && <p role="alert" className="mt-4 text-amber">Route exceeds the {payloadRange} NM payload limit ({Math.round(usableRangePct * 100)}%).</p>}
-              {ferryAvailable && <Button variant="outline" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber" onClick={() => selectFlightMode("ferry")}><Plane className="h-4 w-4" />Switch to Ferry · 100% range</Button>}
+              {beyondPayloadRange && !commercialRangeError(quoteError) && <p role="alert" className="mt-4 text-amber">Route exceeds the aircraft range of {payloadRange} NM.</p>}
+              {ferryAvailable && <Button variant="outline" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber" onClick={() => selectFlightMode("ferry")}><Plane className="h-4 w-4" />Not enough MTOW/fuel for payload · Switch to empty Ferry</Button>}
               {quote ? (
                 <>
                   <p className="mt-3 text-sm text-muted-foreground">

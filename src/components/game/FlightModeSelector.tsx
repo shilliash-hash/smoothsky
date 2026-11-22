@@ -39,7 +39,7 @@ export function FlightModeSelector({ value, onChange, rangeNm, usableRangePct, c
         <Icon aria-hidden="true" />
         <span className="text-xs font-semibold">{label}</span>
         <span className="text-[10px] leading-4">{detail}</span>
-        <span className="readout text-[10px] leading-4">{flightModeRange(mode, rangeNm, usableRangePct)} NM · {mode === "ferry" ? 100 : Math.round(usableRangePct * 100)}%</span>
+        <span className="readout text-[10px] leading-4">{flightModeRange(mode, rangeNm, usableRangePct)} NM · {mode === "ferry" ? "Empty ferry" : "MTOW budget"}</span>
       </Button>)}
     </div>
   </fieldset>;
