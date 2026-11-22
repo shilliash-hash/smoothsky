@@ -393,6 +393,13 @@
       "when": 1795355235979,
       "tag": "0055_weight_budget_stage_one",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795355768183,
+      "tag": "0056_physical_range_dispatch_discovery",
+      "breakpoints": true
     }
   ]
 }

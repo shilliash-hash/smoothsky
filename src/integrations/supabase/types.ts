@@ -1185,6 +1185,7 @@ export type Database = {
         }[]
       }
       aircraft_finance: { Args: { p_aircraft: string }; Returns: Json }
+      aircraft_physical_range_nm: { Args: { p_type: string }; Returns: number }
       aircraft_registration: {
         Args: { p_requested?: string; p_type: string }
         Returns: string

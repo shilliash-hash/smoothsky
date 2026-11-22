@@ -157,3 +157,32 @@ describe('verified fuel settlement SQL',()=>{
  });
  it('requires verified ingestion before changing any ledger entry',async()=>{await prepare();await db.exec("SELECT set_config('smoothsky.acars_settlement','',false)");await expect(settle()).rejects.toThrow('verified telemetry ingestion');});
 });
+
+describe('stage two physical-range discovery SQL',()=>{
+ const stageTwo=()=>{const n=readdirSync('drizzle/migrations').find(f=>f.endsWith('_physical_range_dispatch_discovery.sql'));if(!n)throw new Error('missing');return readFileSync(`drizzle/migrations/${n}`,'utf8').split('DO $m$')[0]!;};
+ const est=async(lat:number)=>{await db.query("UPDATE airports SET lat=$1 WHERE icao='DEST'",[lat]);return (await db.query<{q:{estimated_margin:number|null;estimated_revenue:number|null;estimate_error:string|null;passengers:number;cargo_kg:number;available_payload_kg:number}}>(`SELECT dispatch_destination_estimate('${aircraft}','DEST',0,false) q`)).rows[0]!.q;};
+ beforeAll(async()=>{await db.exec(stageTwo());});
+ it('bounds discovery by tank capacity and IFR reserve, not 75% of catalogue range',async()=>{
+  const r=(await db.query<{r:number}>("SELECT aircraft_physical_range_nm('C172') r")).rows[0]!.r;
+  // C172: 56 gal - 45 min * 8.5 gph = 49.625 gal → 49.625/8.5*122 ≈ 712 NM, capped below MTOW mass limit
+  expect(r).toBeGreaterThan(640*0.75); expect(r).toBeLessThan(720);
+ });
+ it('auto-loads fewer passengers on long legs and Best Deals sorting reflects reduced payload',async()=>{
+  const short=await est(1), long=await est(7);
+  expect(long.passengers).toBeLessThan(short.passengers);
+  expect(long.available_payload_kg).toBeLessThan(short.available_payload_kg);
+  const sorted=[{icao:'LONG',...long},{icao:'SHORT',...short}].sort((a,b)=>(b.estimated_margin??-1e9)-(a.estimated_margin??-1e9));
+  expect(Number(long.estimated_revenue)/420).toBeLessThan(Number(short.estimated_revenue)/60);
+  expect(sorted.map(s=>s.icao)).toContain('SHORT');
+ });
+ it('fills spare payload with cargo after passengers when not all-cargo',async()=>{
+  await db.exec("UPDATE fleet_aircraft SET aircraft_type_id='C208B'");
+  const q=await est(5); expect(q.cargo_kg).toBeGreaterThan(0); expect(q.passengers*80+q.cargo_kg).toBeLessThanOrEqual(q.available_payload_kg);
+ });
+ it('marks routes with zero spare payload as ferry-only',async()=>{
+  await db.exec("UPDATE aircraft_types SET mtow_kg=905 WHERE id='C172'");
+  const q=await est(5); await db.exec("UPDATE aircraft_types SET mtow_kg=1157 WHERE id='C172'");
+  expect(q.estimate_error ?? '').toMatch(/Ferry only|MTOW/);
+  expect(q.estimated_margin).toBeNull();
+ });
+});
