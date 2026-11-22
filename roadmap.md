@@ -1,5 +1,9 @@
 # Roadmap
 
+## Dashboard radar panorama
+- [x] Add a decorative radar sweep and generated night-fjord panorama behind the dashboard header and translucent Home Base; no data or deployment changes.
+- [x] Signed-in desktop (1280×1800), current viewport (737×735) and mobile (390×844) checked: image loaded, no overflow or runtime errors, reduced motion stops sweep, Manage bases navigation removes dashboard-only artwork. Preview build OK.
+
 ## Flight Deck visual upgrade
 - [x] Shared split-flap readouts and read-only owner-scoped operational board beside Fleet; active/recent tabs, refresh, true pilot modes and UTC times. Active query is separate from bounded recent history; no settlement actions added.
 - [x] Refresh Index with generated airport-apron imagery and anonymous aggregate telemetry only; no public player flight records or fabricated traffic.

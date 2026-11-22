@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OperationalFlightsBoard } from "@/components/game/OperationalFlightsBoard";
 import { FidsReadout } from "@/components/game/FidsReadout";
+import { DashboardAtmosphere } from "@/components/game/DashboardAtmosphere";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -61,27 +62,30 @@ function Dashboard() {
 
   return (
     <AppShell company={c}>
-      <div className="flex items-center gap-4">
-        <div>
+      <section className="dashboard-panorama">
+      <DashboardAtmosphere />
+      <div className="dashboard-heading relative flex items-center gap-4">
+        <div className="min-w-0">
           <p className="readout text-xs uppercase text-amber">{c.icao_code} · Operations Center · SmoothSky Network</p>
-          <h1 className="mt-1 text-3xl font-semibold">{c.name}</h1>
+          <h1 className="mt-1 break-words text-3xl font-semibold">{c.name}</h1>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
+      <div className="dashboard-kpis relative mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><SmoothCoin className="h-5 w-5 text-xs" /> Balance</div>
           <p className="readout mt-2 text-3xl text-primary">{formatCr(balance)}</p>
           {bases.health && <div className="mt-3 space-y-2"><p className={`readout text-xs ${healthTone[bases.health.status]}`}>● {bases.health.status}</p><p className="text-xs text-muted-foreground">{formatCr(bases.health.weekly_obligations)} / week committed</p>{bases.health.debt > 0 && <p className="text-xs text-destructive">Outstanding debt {formatCr(bases.health.debt)}</p>}{bases.health.next_payment_due && <p className="text-xs text-muted-foreground">Next due {new Date(bases.health.next_payment_due).toLocaleDateString("en-US")}</p>}{bases.health.status === "INSOLVENT" && <Button size="sm" variant="destructive" onClick={() => setRestructure(true)}>Restructure company</Button>}</div>}
         </div>
         <CompanyResults />
-        <div className="instrument p-5">
+        <div className="instrument dashboard-home-base p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>
           <p className="mt-2 text-2xl text-amber"><FidsReadout value={hb?.icao ?? "—"} /></p>
           <p className="text-sm text-muted-foreground">{hb?.name}, {hb?.city} · {hb?.lat.toFixed(3)}, {hb?.lon.toFixed(3)}</p>
           <p className="mt-2 text-xs text-success">{bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type ? `● ${bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type} FBO active` : "Home airport · No FBO installed"}</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/bases">Manage bases · {bases.bases.length} active</Link></Button>
         </div>
       </div>
+      </section>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
       <section className="min-w-0">

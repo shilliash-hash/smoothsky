@@ -103,6 +103,10 @@
   --fids-edge: oklch(0.34 0.015 155);
   --deck-grid: oklch(0.82 0.105 155 / 0.035);
   --hero-shade: oklch(0.18 0.027 163 / 0.94);
+  --dashboard-glass: color-mix(in oklch, var(--panel) 87%, transparent);
+  --dashboard-base-glass: color-mix(in oklch, var(--panel) 68%, transparent);
+  --dashboard-terrain-overlay: linear-gradient(90deg, var(--background) 2%, color-mix(in oklch, var(--background) 85%, transparent) 28%, color-mix(in oklch, var(--background) 25%, transparent) 75%), linear-gradient(0deg, var(--background), transparent 30%);
+  --dashboard-radar-mask: linear-gradient(90deg, transparent, oklch(0 0 0) 24%, oklch(0 0 0) 80%, transparent);
   --background: oklch(0.18 0.027 163);
   --foreground: oklch(0.94 0.012 145);
   --card: oklch(0.23 0.035 163);
@@ -179,6 +183,49 @@
   border-bottom: 1px solid var(--border);
   padding-bottom: 1.25rem;
 }
+.deck-content > .dashboard-panorama {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 1.75rem;
+}
+.dashboard-atmosphere {
+  position: absolute;
+  inset: -2rem -1.5rem -1rem;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+.dashboard-terrain, .dashboard-terrain-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dashboard-terrain { object-fit: cover; object-position: 75% center; }
+.dashboard-terrain-shade { background: var(--dashboard-terrain-overlay); }
+.dashboard-heading { min-height: 116px; }
+.dashboard-radar {
+  position: absolute;
+  width: 540px;
+  height: 540px;
+  top: -175px;
+  left: 28%;
+  opacity: 0.7;
+  mask-image: var(--dashboard-radar-mask);
+}
+.dashboard-radar-grid { stroke: var(--primary); stroke-width: 1; opacity: 0.22; }
+.dashboard-radar-echoes { stroke: var(--primary); stroke-width: 1.5; opacity: 0.6; }
+.dashboard-radar-sweep { transform-origin: 300px 300px; animation: dashboard-sweep 24s linear infinite; }
+.dashboard-kpis > .instrument { background: var(--dashboard-glass); }
+.dashboard-kpis > .dashboard-home-base { background: var(--dashboard-base-glass); border-color: color-mix(in oklch, var(--primary) 35%, var(--border)); backdrop-filter: blur(3px); }
+@keyframes dashboard-sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@media (max-width: 1023px) {
+  .dashboard-radar { left: 22%; top: -135px; width: 440px; height: 440px; }
+  .dashboard-terrain { object-position: 85% center; }
+  .dashboard-heading { min-height: 132px; }
+}
+@media (max-width: 640px) {
+  .dashboard-atmosphere { inset-inline: -1rem; }
+  .dashboard-radar { left: 15%; top: -75px; width: 360px; height: 360px; opacity: 0.45; }
+  .dashboard-terrain { object-position: 82% center; }
+  .dashboard-kpis > .dashboard-home-base { background: var(--dashboard-glass); }
+}
+@media (prefers-reduced-motion: reduce) { .dashboard-radar-sweep { animation: none; transform: rotate(35deg); } }
 .fids-readout { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fids-character {
   position: relative;
