@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { accountHome } from "@/lib/account-home";
-import aurora from "@/assets/smoothsky-aurora-logo.png.asset.json";
 import { getWorldTelemetry } from "@/lib/world.functions";
 import { Landmark, Users, Package, Radio, MapPin, Building2, UserRound, PlaneLanding, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/game/Logo";
+import { FidsReadout } from "@/components/game/FidsReadout";
+import apron from "@/assets/flight-deck-apron.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   loader: async () => ({ telemetry: await getWorldTelemetry().catch(() => null) }),
@@ -66,19 +67,23 @@ function Index() {
     { icon: PlaneLanding, label: "Flights completed", value: fmt(telemetry?.flights) },
   ];
   return (
-    <div className="min-h-screen">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+    <div className="deck-surface min-h-screen">
+      <header className="border-b border-border bg-panel">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Logo />
-        <Link to={home ?? "/auth"} className="text-sm text-muted-foreground hover:text-foreground">Sign in</Link>
+        <Button asChild variant="outline" size="sm"><Link to={home ?? "/auth"}>{home ? "Open Flight Deck" : "Sign in"}</Link></Button>
+      </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 pb-24">
+      <main className="pb-24">
         {entryError && <p role="alert" className="mb-4 text-destructive">Unable to open your account. Please try signing in again.</p>}
-        <section className="grid items-center gap-10 pt-12 md:grid-cols-[1.3fr_1fr] md:pt-20"><div>
-          <p className="readout text-xs uppercase text-amber">● Persistent Aviation World</p>
-          <h1 className="mt-4 max-w-4xl text-5xl font-semibold leading-tight md:text-7xl">
+        <section className="world-hero">
+          <img src={apron.url} alt="" aria-hidden="true" width={1672} height={941} fetchPriority="high" className="world-hero-image" />
+          <div className="mx-auto max-w-6xl px-6 pb-16 pt-14 md:pb-20 md:pt-20">
+          <p className="readout flex items-center gap-2 text-xs uppercase text-amber"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Global operations terminal</p>
+          <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight md:text-7xl">
             Smooth<span className="text-primary">Sky</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
+          <p className="mt-6 max-w-lg text-lg text-foreground">
             One shared sky for virtual airlines and pilots. Build a company or a flying career, move passengers and urgent freight, and keep every Smooth Coin accountable.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -86,31 +91,33 @@ function Index() {
             <Button asChild size="lg" variant="outline"><a href="#how-it-works">How SmoothSky works</a></Button>
           </div>
           </div>
-<img src="/smoothsky-aurora-logo.png" alt="SmoothSky — Persistent Aviation World" width={1254} height={1254} className="instrument w-full max-w-md justify-self-center shadow-[0_0_60px_-10px_color-mix(in_oklch,var(--primary)_45%,transparent)]" />
         </section>
 
-        <section aria-label="Live world telemetry" className="mt-16 border-y border-border py-5">
-          <p className="readout mb-4 text-xs uppercase text-amber">Live world telemetry</p>
+        <section aria-label="Live world telemetry" className="border-y border-border bg-panel py-6">
+          <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2"><p className="readout text-xs uppercase text-amber">World traffic board</p><span className="readout text-[10px] uppercase text-muted-foreground">Persistent aviation world</span></div>
           <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {stats.map((s) => (
               <div key={s.label} className="flex items-center gap-3">
                 <s.icon className="h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <dd className="readout text-2xl md:text-3xl">{s.value}</dd>
-                  <dt className="text-xs uppercase text-muted-foreground">{s.label}</dt>
+                  <dd className="text-lg text-primary md:text-2xl"><FidsReadout value={s.value} /></dd>
+                  <dt className="mt-2 text-[10px] uppercase text-muted-foreground">{s.label}</dt>
                 </div>
               </div>
             ))}
           </dl>
+          </div>
         </section>
 
-        <section id="how-it-works" className="mt-20 scroll-mt-8">
+        <div className="mx-auto max-w-6xl px-6">
+        <section id="how-it-works" className="mt-12 scroll-mt-8">
           <p className="readout text-xs uppercase text-amber">Flight manual</p>
           <h2 className="mt-2 text-3xl font-semibold">How SmoothSky works</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {pillars.map((p) => (
               <article key={p.title} className="instrument p-6">
-                <p.icon className="h-5 w-5 text-primary" />
+                <div className="flex items-center justify-between border-b border-border pb-4"><p.icon className="h-5 w-5 text-primary" /><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber" /></div>
                 <h3 className="mt-4 text-lg font-semibold">{p.title}</h3>
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                   {p.points.map((x) => <li key={x} className="flex gap-2"><span className="text-amber">›</span>{x}</li>)}
@@ -142,6 +149,8 @@ function Index() {
             <Button asChild className="mt-6 self-start"><Link to="/leaderboard">View Live Leaderboard</Link></Button>
           </div>
         </section>
+        <footer className="readout mt-16 flex flex-wrap justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground"><span>SmoothSky · Persistent Aviation World</span><span>Company · Career · Flight</span></footer>
+        </div>
       </main>
     </div>
   );

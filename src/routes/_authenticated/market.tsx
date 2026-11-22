@@ -108,7 +108,7 @@ function Market() {
               </div>
               <h3 className="mt-3 text-xl font-semibold">{t.manufacturer} {t.model}</h3>
               <p className="text-sm text-muted-foreground">{t.engine}</p>
-              <dl className="readout mt-4 grid grid-cols-2 gap-y-1 text-sm">
+              <dl className="readout mt-4 grid grid-cols-2 gap-y-2 border-y border-border py-3 text-sm">
                 <dt className="text-muted-foreground">Passengers</dt><dd className="text-right">{t.pax}</dd>
                 <dt className="text-muted-foreground">Cargo</dt><dd className="text-right">{t.cargo_kg} kg</dd>
                 <dt className="text-muted-foreground">Range</dt><dd className="text-right">{t.range_nm} NM</dd>

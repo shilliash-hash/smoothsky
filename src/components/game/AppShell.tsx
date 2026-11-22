@@ -39,7 +39,7 @@ export function AppShell({
     navigate({ to: "/auth", replace: true });
   }
   return (
-    <div className="relative min-h-screen">
+    <div className="deck-surface relative min-h-screen">
       <img
         src="/smoothsky-aurora-logo.png"
         alt=""
@@ -118,7 +118,7 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="deck-content mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }

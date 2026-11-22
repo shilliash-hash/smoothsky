@@ -83,7 +83,7 @@ function Logbook() {
           const result = logbookResult(f);
           return <tr key={f.id} className="border-t border-border">
             <td className="readout whitespace-nowrap p-3 text-muted-foreground">{f.completed_at ? new Date(f.completed_at).toLocaleString("en-GB", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}</td>
-            <td className="readout p-3 text-primary">{f.flight_number ?? "—"}</td>
+            <td className="readout p-3 text-amber">{f.flight_number ?? "—"}</td>
             <td className="p-3"><span className="readout">{f.aircraft?.registration ?? "—"}</span><div className="mt-1 text-xs text-muted-foreground">{f.aircraft?.type?.manufacturer} {f.aircraft?.type?.model}</div></td>
             <td className="p-3"><span className="readout whitespace-nowrap">{f.origin_icao} → {f.destination_icao}</span><div className="readout mt-1 text-xs text-muted-foreground">{Number(f.distance_nm).toFixed(1)} NM</div></td>
             <td className="readout p-3 text-right">{result.hours.toFixed(2)}</td>

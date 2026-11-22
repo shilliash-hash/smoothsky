@@ -23,6 +23,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { OperationalFlightsBoard } from "@/components/game/OperationalFlightsBoard";
+import { FidsReadout } from "@/components/game/FidsReadout";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -75,15 +77,16 @@ function Dashboard() {
         <CompanyResults />
         <div className="instrument p-5">
           <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-4 w-4" /> Home base</div>
-          <p className="readout mt-2 text-3xl text-amber">{hb?.icao}</p>
+          <p className="mt-2 text-2xl text-amber"><FidsReadout value={hb?.icao ?? "—"} /></p>
           <p className="text-sm text-muted-foreground">{hb?.name}, {hb?.city} · {hb?.lat.toFixed(3)}, {hb?.lon.toFixed(3)}</p>
           <p className="mt-2 text-xs text-success">{bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type ? `● ${bases.bases.find(b => b.airport_icao === c.home_base_icao)?.base_type} FBO active` : "Home airport · No FBO installed"}</p><Button asChild variant="outline" size="sm" className="mt-3"><Link to="/bases">Manage bases · {bases.bases.length} active</Link></Button>
         </div>
       </div>
 
-      <section className="mt-8">
+      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+      <section className="min-w-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Fleet <span className="text-xs text-muted-foreground">{fleet.filter(f=>f.ownership === "LEASED").length} / {Number(economy?.["max_active_leases"] ?? 3)} leased · {fleet.filter(f=>f.ownership === "OWNED").length} owned · {fleet.filter(f=>f.ownership === "RENTAL").length} rentals</span></h2>
+          <h2 className="text-lg font-semibold">Fleet <span className="block text-xs font-normal text-muted-foreground">{fleet.filter(f=>f.ownership === "LEASED").length} / {Number(economy?.["max_active_leases"] ?? 3)} leased · {fleet.filter(f=>f.ownership === "OWNED").length} owned · {fleet.filter(f=>f.ownership === "RENTAL").length} rentals</span></h2>
           <Button asChild size="sm" variant="outline"><Link to="/market">Aircraft market</Link></Button>
         </div>
         {fleet.length === 0 ? (
@@ -92,9 +95,11 @@ function Dashboard() {
             <Button asChild className="mt-4"><Link to="/market">Lease your first aircraft</Link></Button>
           </div>
         ) : (
-          <FleetCarousel companyId={c.id} fleet={fleet} contractEnd={id => overview.contracts.find(k => k.aircraft_id === id)?.ends_at} onSelect={setSelected} />
+          <FleetCarousel compact companyId={c.id} fleet={fleet} contractEnd={id => overview.contracts.find(k => k.aircraft_id === id)?.ends_at} onSelect={setSelected} />
         )}
       </section>
+      <OperationalFlightsBoard companyId={c.id} />
+      </div>
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -109,7 +114,7 @@ function Dashboard() {
         </div>
         <div className="mt-3 overflow-x-auto border-y border-border">
           <table className="w-full min-w-[760px] text-sm">
-            <thead className="text-left text-xs uppercase text-muted-foreground">
+            <thead className="bg-panel text-left text-xs uppercase text-muted-foreground">
               <tr className="border-b border-border"><th className="p-3">Date</th><th className="p-3">Type</th><th className="p-3">Description</th><th className="p-3">Accounts (Dr / Cr)</th><th className="p-3 text-right">Amount</th><th className="p-3 text-right">Balance</th></tr>
             </thead>
             <tbody className="readout">

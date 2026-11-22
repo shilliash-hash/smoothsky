@@ -77,6 +77,23 @@ export const aircraftTypesQuery = queryOptions({
   },
 });
 
+// Read-only board: active rows are not truncated by the recent-history limit.
+export const operationalBoardQuery = (companyId: string) => queryOptions({
+  queryKey: ["operational-board", companyId],
+  staleTime: 10000,
+  refetchInterval: 15000,
+  queryFn: async () => {
+    const projection = "id, company_id, flight_number, aircraft_id, origin_icao, destination_icao, status, pilot_mode, passengers, created_at, completed_at, aircraft:fleet_aircraft(registration)" as const;
+    const [active, recent] = await Promise.all([
+      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ["DISPATCHED", "EN_ROUTE"]).order("created_at", { ascending: false }),
+      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ["COMPLETED", "CANCELLED"]).order("created_at", { ascending: false }).limit(8),
+    ]);
+    if (active.error) throw active.error;
+    if (recent.error) throw recent.error;
+    return { active: active.data, recent: recent.data };
+  },
+});
+
 export const airportsQuery = queryOptions({
   queryKey: ["airports"],
   staleTime: 30000,

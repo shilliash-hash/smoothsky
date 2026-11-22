@@ -10,7 +10,7 @@ type Aircraft = { id: string; registration: string; status: string; location_ica
 const pills: { id: FleetFilter; label: string }[] = [{ id: "all", label: "All" }, { id: "available", label: "Available" }, { id: "flight", label: "In Flight" }, { id: "sale", label: "For Sale" }];
 const statusLabel: Record<string, string> = { AVAILABLE: "Available", EN_ROUTE: "In flight", DISPATCHED: "Dispatched", RESERVED: "Reserved" };
 
-export function FleetCarousel({ companyId, fleet, contractEnd, onSelect }: { companyId: string; fleet: Aircraft[]; contractEnd: (id: string) => string | undefined; onSelect: (id: string) => void }) {
+export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact = false }: { companyId: string; fleet: Aircraft[]; contractEnd: (id: string) => string | undefined; onSelect: (id: string) => void; compact?: boolean }) {
   const { data: listed = [] } = useQuery({ queryKey: ["fleet-listings", companyId], enabled: !!companyId, queryFn: async () => {
     const { data, error } = await supabase.from("used_aircraft_listings").select("fleet_aircraft_id").eq("seller_company_id", companyId).eq("status", "ACTIVE");
     if (error) throw error; return data.map(r => r.fleet_aircraft_id).filter((x): x is string => !!x);
@@ -30,7 +30,7 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect }: { com
   return <div className="mt-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Fleet status filter">
-        {pills.map(p => <button key={p.id} type="button" aria-pressed={filter === p.id} onClick={() => setFilter(p.id)} className={`readout rounded-full border px-3 py-0.5 text-xs ${filter === p.id ? "border-primary/60 bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}>{p.label}</button>)}
+        {pills.map(p => <Button key={p.id} size="sm" variant={filter === p.id ? "secondary" : "ghost"} aria-pressed={filter === p.id} onClick={() => setFilter(p.id)} className="h-8 px-2 text-xs">{p.label}</Button>)}
       </div>
       <div className="flex items-center gap-2">
         <span className="readout text-xs text-muted-foreground">{items.length ? `${view.first + 1}–${last}` : "0"} / {items.length}</span>
@@ -40,7 +40,7 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect }: { com
     </div>
     {items.length === 0 ? <p className="mt-3 border-y border-border py-6 text-center text-sm text-muted-foreground">No aircraft match this filter.</p> : <div className="relative mt-3">
       <div ref={ref} onScroll={measure} onWheel={onWheel} className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {items.map(f => <Button key={f.id} variant="outline" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => onSelect(f.id)} className="instrument block h-auto w-full shrink-0 snap-start p-4 text-left font-normal whitespace-normal md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]">
+        {items.map(f => <Button key={f.id} variant="outline" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => onSelect(f.id)} className={`instrument block h-auto w-full shrink-0 snap-start p-4 text-left font-normal whitespace-normal ${compact ? "" : "md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]"}`}>
           <div className="flex items-center justify-between gap-2">
             <span className="readout text-lg text-primary">{f.registration}</span>
             <span className="flex gap-1">{forSale.has(f.id) && <span className="rounded-sm bg-amber/15 px-2 py-0.5 text-xs text-amber">For sale</span>}<span className={`rounded-sm px-2 py-0.5 text-xs ${isAirborne(f.status) ? "bg-primary/15 text-primary" : f.status === "AVAILABLE" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{statusLabel[f.status] ?? f.status}</span></span>

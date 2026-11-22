@@ -1,5 +1,11 @@
 # Roadmap
 
+## Flight Deck visual upgrade
+- [x] Shared split-flap readouts and read-only owner-scoped operational board beside Fleet; active/recent tabs, refresh, true pilot modes and UTC times. Active query is separate from bounded recent history; no settlement actions added.
+- [x] Refresh Index with generated airport-apron imagery and anonymous aggregate telemetry only; no public player flight records or fabricated traffic.
+- [x] Add restrained common Flight Deck accents to Dispatch, Logbook, Market, Bases and Radar; preserve controls, economy and deployment vars.
+- [x] 37 regression tests passed, preview build OK; signed-in desktop/mobile six-page checks had no runtime errors or page overflow. Recent board showed real arrived/cancelled company flights and freelancer attribution, fleet navigation and refresh worked. Active empty state verified; no currently active flight available, no player flight dispatched. Image loaded; mobile board fits without scrolling sideways.
+
 ## Explicit Dispatch flight modes
 - [x] Replace the cargo switch with Commercial / All-Cargo / Ferry, preserving existing SQL payloads. All-Cargo starts at 10 kg, Ferry clears cargo and permits an empty dispatch; mode-aware ranges and Ferry recovery block commercial routes beyond the live payload limit.
 - [x] 65 tests passed; signed-in King Air modes showed 1350/1800 NM, All-Cargo minimum 10 kg, Ferry quote 0 PAX/0 cargo with enabled dispatch. EPGD → LPPT (1458 NM) offered Ferry recovery and returned a zero-revenue quote. Desktop, 860 px and mobile checked without overflow/runtime errors; build OK. Radar, settlement, database and deployment variables unchanged. No flight dispatched on the player's account.

@@ -99,6 +99,10 @@
   --provider-border: oklch(0.57 0.005 150);
   --provider-hover: oklch(0.96 0 0);
   --instrument-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04), 0 10px 30px -15px oklch(0 0 0 / 0.6);
+  --fids-face: oklch(0.22 0.009 155);
+  --fids-edge: oklch(0.34 0.015 155);
+  --deck-grid: oklch(0.82 0.105 155 / 0.035);
+  --hero-shade: oklch(0.18 0.027 163 / 0.94);
   --background: oklch(0.18 0.027 163);
   --foreground: oklch(0.94 0.012 145);
   --card: oklch(0.23 0.035 163);
@@ -166,6 +170,35 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
+
+.deck-surface {
+  background-image: linear-gradient(var(--deck-grid) 1px, transparent 1px), linear-gradient(90deg, var(--deck-grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.deck-content > :first-child {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.25rem;
+}
+.fids-readout { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fids-character {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.95em;
+  height: 1.65em;
+  border: 1px solid var(--fids-edge);
+  border-radius: 2px;
+  background: var(--fids-face);
+}
+.fids-character::after { content: ""; position: absolute; inset: 50% 0 auto; border-top: 1px solid var(--panel); pointer-events: none; }
+.flight-board-row { animation: board-arrival 180ms ease-out; }
+@keyframes board-arrival { from { transform: translateY(3px); } to { transform: translateY(0); } }
+.world-hero { position: relative; isolation: isolate; overflow: hidden; }
+.world-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--hero-shade), transparent), linear-gradient(0deg, var(--background), transparent 35%); }
+.world-hero-image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
+@media (max-width: 640px) { .world-hero::after { background: linear-gradient(90deg, var(--hero-shade), color-mix(in oklch, var(--background) 65%, transparent)); } }
+@media (prefers-reduced-motion: reduce) { .flight-board-row { animation: none; } }
 
 .leaflet-container {
   background: var(--panel);

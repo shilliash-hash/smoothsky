@@ -310,7 +310,7 @@ function Dispatch() {
                 </>}
               </div>
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
-              <h2 className="mt-2 text-2xl">
+              <h2 className="readout mt-2 border-y border-border bg-panel py-3 text-2xl text-primary">
                 {origin?.icao ?? "—"} → {destination || "—"}
               </h2>
               {quoteError && (
