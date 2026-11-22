@@ -54,3 +54,12 @@ describe("hub-and-spoke economy arrays", () => {
     expect(() => validateEconomyValue("hub_fare_bonus_by_size", [0, 0.35])).toThrow();
   });
 });
+
+import { assertAircraftMasses } from "./admin-rules";
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+d2("aircraft masses", () => {
+  i2("rejects MTOW not above empty weight", () => {
+    e2(() => assertAircraftMasses({ empty_weight_kg: 830, mtow_kg: 830 })).toThrow();
+    e2(() => assertAircraftMasses({ empty_weight_kg: 830, mtow_kg: 1157 })).not.toThrow();
+  });
+});

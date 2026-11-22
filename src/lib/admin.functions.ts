@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { aircraftSchema, fuelRuleSchema, validateEconomyValue } from "./admin-rules";
+import { aircraftSchema, assertAircraftMasses, fuelRuleSchema, validateEconomyValue } from "./admin-rules";
 import { defaultRecruitment } from "./recruitment-rules";
 import { DEFAULT_SPOT_RENTAL_MULTIPLIER } from "./market-rules";
 
@@ -100,6 +100,7 @@ export const saveAdminData = createServerFn({ method: "POST" })
         .single();
       if (result.error) throw new Error(result.error.message);
     } else if (data.kind === "aircraft") {
+      assertAircraftMasses(data.aircraft);
       const result = data.create
         ? await db.from("aircraft_types").insert(data.aircraft).select("id").single()
         : await db

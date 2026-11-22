@@ -66,6 +66,8 @@ const freshAircraft: AircraftEdit = {
   minimum_runway_ft: 1500,
   active: true,
   unpaved_capable: false,
+  empty_weight_kg: 800,
+  mtow_kg: 1150,
 };
 function Admin() {
   const { data } = useSuspenseQuery(adminDataQuery);
@@ -224,6 +226,8 @@ function Admin() {
                     ["fuel_burn_gph", "Fuel burn (gal/h)"],
                     ["fuel_capacity_gal", "Fuel capacity (gal)"],
                     ["minimum_runway_ft", "Minimum runway (ft)"],
+                    ["empty_weight_kg", "Empty weight · OEW (kg)"],
+                    ["mtow_kg", "MTOW (kg)"],
                   ] as const
                 ).map(([key, label]) => (
                   <label key={key} className="text-sm">
@@ -313,10 +317,10 @@ function Admin() {
                     <td>
                       {a.pax} / {a.cargo_kg} kg
                     </td>
-                    <td>{a.range_nm} NM</td>
+                    <td>{a.range_nm} NM<span className="block text-xs text-muted-foreground">{a.empty_weight_kg ?? "—"} / {a.mtow_kg ?? "—"} kg</span></td>
                     <td>{formatCr(Number(a.security_deposit))}</td>
                     <td>{formatCr(Number(a.weekly_rate))}</td><td>{formatCr(Number(a.purchase_price))}</td>
-                    <td><Switch aria-label={`Bush / Unpaved Capable ${a.id}`} checked={a.unpaved_capable} disabled={busy} onCheckedChange={(unpaved_capable) => void persist({ data: { kind: "aircraft", create: false, aircraft: { ...a, fuel_type: a.fuel_type === "100LL" ? "100LL" : "Jet-A", unpaved_capable } } })} /></td>
+                    <td><Switch aria-label={`Bush / Unpaved Capable ${a.id}`} checked={a.unpaved_capable} disabled={busy} onCheckedChange={(unpaved_capable) => void persist({ data: { kind: "aircraft", create: false, aircraft: { ...a, fuel_type: a.fuel_type === "100LL" ? "100LL" : "Jet-A", unpaved_capable, empty_weight_kg: Number(a.empty_weight_kg ?? 0), mtow_kg: Number(a.mtow_kg ?? 0) } } })} /></td>
                     <td>
                       <Button
                         variant="outline"
@@ -326,6 +330,8 @@ function Admin() {
                           setEditing({
                             ...a,
                             fuel_type: a.fuel_type === "100LL" ? "100LL" : "Jet-A",
+                            empty_weight_kg: Number(a.empty_weight_kg ?? 0),
+                            mtow_kg: Number(a.mtow_kg ?? 0),
                           });
                           setCreating(false);
                         }}
@@ -478,7 +484,7 @@ function EconomyRow({
           type="number"
           min={row.key === "dispatch_usable_range_pct" ? 0.05 : row.key === "spot_rental_multiplier" ? 0.01 : row.key === "short_hop_min_multiplier" ? 0 : row.key === "short_hop_threshold_nm" ? 10 : undefined}
           max={row.key === "dispatch_usable_range_pct" || row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? 1 : row.key === "short_hop_threshold_nm" ? 300 : undefined}
-          step={row.key === "dispatch_usable_range_pct" ? "0.05" : row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? "0.01" : row.key === "short_hop_threshold_nm" ? "1" : Number.isInteger(Number(row.value)) ? "1" : "0.1"}
+          step={row.key === "dispatch_usable_range_pct" || row.key === "fuel_billing_floor_pct" ? "0.05" : row.key === "passenger_weight_kg" ? "1" : row.key === "landing_fee_per_ton_mtow" ? "0.1" : row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? "0.01" : row.key === "short_hop_threshold_nm" ? "1" : Number.isInteger(Number(row.value)) ? "1" : "0.1"}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className="readout"

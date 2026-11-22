@@ -35,5 +35,6 @@ export type Quote = {
   ticket_revenue?: number;
   all_cargo?: boolean;
   mission_category?: string;
+  weight_budget?: { empty_weight_kg: number; mtow_kg: number; trip_fuel_gal: number; reserve_fuel_gal: number; planned_fuel_kg: number; available_payload_kg: number; passenger_weight_kg: number; fuel_billing_floor_pct: number; landing_fee_per_ton_mtow: number; payload_kg?: number; takeoff_weight_kg?: number; remaining_payload_kg?: number };
    fob_discounts?: { fuel: number; landing: number; handling_origin: number; handling_destination: number; handling_discount?: number; handling_savings?: number; maintenance: number; savings: number };
 };

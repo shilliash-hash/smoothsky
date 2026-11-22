@@ -20,7 +20,12 @@ export const aircraftSchema = z.object({
   minimum_runway_ft: z.number().int().nonnegative(),
   active: z.boolean(),
   unpaved_capable: z.boolean().default(false),
+  empty_weight_kg: z.number().positive(),
+  mtow_kg: z.number().positive(),
 });
+export function assertAircraftMasses(a: { empty_weight_kg: number; mtow_kg: number }) {
+  if (!(a.mtow_kg > a.empty_weight_kg)) throw new Error("MTOW must exceed empty weight");
+}
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
 export function validateEconomyValue(key: string, value: unknown) {
   if (key === "passenger_weight_kg") return z.number().finite().positive().parse(value);
