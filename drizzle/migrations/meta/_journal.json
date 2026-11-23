@@ -484,6 +484,13 @@
       "when": 1795428681684,
       "tag": "0068_daily_airport_fuel_market",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795429770851,
+      "tag": "0069_acars_persistent_fuel_burn",
+      "breakpoints": true
     }
   ]
 }

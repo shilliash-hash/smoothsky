@@ -1,5 +1,10 @@
 # Roadmap
 
+## ACARS reconnect fuel accounting
+- [x] Persist observed fuel and cumulative burn per leg; exclude initial PREFLIGHT changes and latch tracking after taxi so reconnect cannot reset it.
+- [x] Reconcile verified settlement against cumulative burn, departure/final balance, PIREP and frozen floor; retain refunds, rentals and diverted-leg accounting.
+- [x] 156 regression tests passed, including key-checked connect→positions→reconnect→PIREP→tank/ledger readback in isolated SQL, 362→106.3 gal with a restarted 25.7 gal report, preflight menu edits, phase-spoofed refuelling, rentals, continuation and exact manual/guard refunds. Applied columns and function definitions confirmed; build OK, desktop ACARS and deployment vars unchanged. A real simulator crash/reconnect flight remains unverified; no player records repaired or test flights created in the shared database.
+
 ## Daily airport fuel markets
 - [x] Add bounded daily UTC airport pricing and frozen quote integration, including continuation/FBO prices; preserve ACARS and deployment vars.
 - [x] Add admin volatility control (default 0.15, 0–0.50 in 0.01 steps) and departure/destination tankering comparison; 0 restores fixed prices.

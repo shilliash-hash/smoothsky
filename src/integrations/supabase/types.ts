@@ -592,6 +592,7 @@ export type Database = {
           company_id: string
           completed_at: string | null
           created_at: string
+          cumulative_fuel_used_gal: number
           departed_at: string | null
           destination_icao: string
           distance_nm: number
@@ -600,7 +601,9 @@ export type Database = {
           estimated_minutes: number
           execution_source: string
           flight_number: string | null
+          fuel_tracking_started: boolean
           id: string
+          last_observed_fuel_gal: number | null
           origin_icao: string
           passengers: number
           pilot_commission_pct: number | null
@@ -618,6 +621,7 @@ export type Database = {
           company_id: string
           completed_at?: string | null
           created_at?: string
+          cumulative_fuel_used_gal?: number
           departed_at?: string | null
           destination_icao: string
           distance_nm: number
@@ -626,7 +630,9 @@ export type Database = {
           estimated_minutes: number
           execution_source?: string
           flight_number?: string | null
+          fuel_tracking_started?: boolean
           id?: string
+          last_observed_fuel_gal?: number | null
           origin_icao: string
           passengers: number
           pilot_commission_pct?: number | null
@@ -644,6 +650,7 @@ export type Database = {
           company_id?: string
           completed_at?: string | null
           created_at?: string
+          cumulative_fuel_used_gal?: number
           departed_at?: string | null
           destination_icao?: string
           distance_nm?: number
@@ -652,7 +659,9 @@ export type Database = {
           estimated_minutes?: number
           execution_source?: string
           flight_number?: string | null
+          fuel_tracking_started?: boolean
           id?: string
+          last_observed_fuel_gal?: number | null
           origin_icao?: string
           passengers?: number
           pilot_commission_pct?: number | null
