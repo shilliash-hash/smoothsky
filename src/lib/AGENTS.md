@@ -16,3 +16,4 @@
 - Daily fuel markets use one revoked SQL ICAO/UTC-date multiplier across quotes/discovery and continuation; apply FBO discounts afterward and retain dispatch price snapshots for settlement/ramp adjustments — prevents day-boundary price drift.
 - ACARS fuel observations and cumulative burn persist per leg in flight columns; tracking latches after initial PREFLIGHT and verified settlement overrides client counters with server evidence. Only a new continuation resets tracking — reconnects cannot erase burn or reopen ramp refuelling.
 - Debrief comparisons read frozen estimates and settled fuel/cost/net, not tank uplift or live prices; PIREP time and prior diverted legs complete the journey, with unknown prior actual burn left unavailable — avoids misleading savings and fabricated actuals without changing accounting.
+- Public airline dossiers come only from get_public_company_profile (ICAO, non-personal), never ledger or cash data.

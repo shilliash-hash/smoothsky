@@ -65,4 +65,3 @@ use the editor.
 - Cargo/missions pass options to flight_quote_cargo via a transaction-local setting; mission board refreshes lazily, late cuts apply in settle_flight — one settlement path.
 - Homepage reads only anon aggregate counts — no player data.
 - Used market: flights-completion trigger accrues airframe hours; SQL depreciated_value prices net worth, broker and P2P listings — one valuation rule.
-- Public airline dossiers read only through the aggregate-free get_public_company_profile SQL function (by ICAO, non-personal companies) — never exposes ledger, revenue or cash data.
