@@ -6,6 +6,14 @@ import { simLoad } from "@/lib/fuel-units";
 
 type Tank = NonNullable<Quote["tank"]>;
 
+/** Standard aviation conversion: 1 gal = 6.7 lbs = 3.04 kg. */
+const SPOT_KG_PER_LITRE = 3.04 / 3.785411784;
+function spotLoad(gallons: number) {
+  const n = (v: number) => Math.round(v).toLocaleString("en-US");
+  const load = simLoad(gallons, SPOT_KG_PER_LITRE);
+  return `${n(load.gal)} gal · ${n(load.lbs)} lbs · ${n(load.kg)} kg`;
+}
+
 export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number; market?: Quote["fuel_market"] }) {
   const gal = (v: number) => `${Math.round(v).toLocaleString("en-US")} gal`;
   const min = Math.ceil(tank.min_target_gal);
@@ -15,7 +23,7 @@ export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market }: { t
     return (
       <section aria-label="Fuel in tanks" className="mt-4 border-y border-border bg-panel px-3 py-3 text-xs">
         <p className="readout uppercase text-primary">Fuel · Spot rental</p>
-        <p className="mt-1 text-muted-foreground">Fuelled to {gal(tank.target_fuel_gal)} (trip + reserve). Billed on burned fuel only after landing.</p>
+        <p className="mt-1 text-muted-foreground">Fuelled to {spotLoad(tank.target_fuel_gal)} (trip + reserve). Billed on burned fuel only after landing.</p>
         <FuelMarket market={market} persistent={false} />
       </section>
     );
