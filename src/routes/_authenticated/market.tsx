@@ -43,6 +43,7 @@ function Market() {
   const { data: career } = useSuspenseQuery(rentalCareerQuery);
   const { data: registrationRules } = useSuspenseQuery(registrationRulesQuery);
   const [mode, setMode] = useState<AcquisitionMode>("lease");
+  const [tierFilter, setTierFilter] = useState<number | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [registration, setRegistration] = useState("");
   const [weeks, setWeeks] = useState(overview.rules.default_lease_weeks);
@@ -58,6 +59,11 @@ function Market() {
   const full = fleet.filter(f=>f.ownership === "LEASED").length >= Number(economy?.['max_active_leases'] ?? 3);
 
   if (!c) return null;
+  const activeTypes = types.filter(t=>t.active);
+  const tierCounts = new Map<number, number>();
+  for (const t of activeTypes) tierCounts.set(t.tier, (tierCounts.get(t.tier) ?? 0) + 1);
+  const tiers = [...tierCounts.keys()].sort((a, b) => a - b);
+  const visibleTypes = tierFilter === null ? activeTypes : activeTypes.filter(t => t.tier === tierFilter);
   const rule = registrationRule(registrationRules, c.home_base?.country);
   const block = acquisitionBlock({ health: bases.health, ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
   const purchaseType = types.find(t=>t.id===purchasing);
@@ -96,8 +102,14 @@ function Market() {
       {mode === "lease" && <label className="mt-6 flex items-center gap-3 text-sm">Contract term (weeks)
         <Input aria-label="Contract term (weeks)" type="number" min={1} max={52} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-24" />
       </label>}
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {types.filter(t=>t.active).map((t) => {
+      <div className="mt-6 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by tier">
+        <button type="button" onClick={() => setTierFilter(null)} className={`readout rounded-sm border px-3 py-1 text-xs transition-colors ${tierFilter === null ? 'border-amber/60 bg-amber/10 text-amber' : 'border-border text-muted-foreground hover:border-amber/40 hover:text-foreground'}`}>All ({activeTypes.length})</button>
+        {tiers.map(tier => (
+          <button key={tier} type="button" onClick={() => setTierFilter(tierFilter === tier ? null : tier)} className={`readout rounded-sm border px-3 py-1 text-xs transition-colors ${tierFilter === tier ? 'border-amber/60 bg-amber/10 text-amber' : 'border-border text-muted-foreground hover:border-amber/40 hover:text-foreground'}`}>Tier {tier} ({tierCounts.get(tier)})</button>
+        ))}
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {visibleTypes.map((t) => {
           const afford = canAffordLease(balance, t);
           const reason = !canAcquireWithLicense(mode, t.tier, career.type_ratings) ? `Requires Tier ${t.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && t.purchase_price <= 0 ? 'Not for sale' : (mode === 'lease' ? !afford : balance < acquisitionDue(mode, t, rentalMultiplier)) ? 'Insufficient funds' : null);
           return (
