@@ -1,5 +1,9 @@
 # Roadmap
 
+## ACARS continuous GPS and real-time guards
+- [x] Enforce 20-minute reconnect, per-leg continuous GPS coverage, divert-aware landing validation and aircraft-specific real-time speed limits; preserve refunds, Flight Deck and deployment vars. Speed windows cover frequent packets; already airborne flights skip retrospective coverage only.
+- [x] Applied definitions, permissions and schema verified; isolated RPC flow covers connect → takeoff → tracked route → landing → settlement/readback and duplicate rejection, plus reconnect, phase spoofing, dynamic limits, fuel refunds and continuation. Real simulator/desktop ACARS verification remains unavailable in the sandbox.
+
 ## Public dossier hub cleanup
 - [x] Merge main-hub FBO capabilities, display included Handling on all active FBOs and suppress duplicate base/map markers; preserve economics and deployment vars.
 - [x] Eight tests passed; signed-in FJO dossier from Dashboard and Leaderboard shows EPGD once, Fuel + Handling and one main-hub map marker. Desktop/mobile screenshots verified without overflow or runtime errors; build OK. No database or deployment changes.

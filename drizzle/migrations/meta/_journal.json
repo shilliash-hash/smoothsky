@@ -498,6 +498,13 @@
       "when": 1795432351616,
       "tag": "0070_public_company_profile",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795437316929,
+      "tag": "0071_acars_continuous_tracking",
+      "breakpoints": true
     }
   ]
 }

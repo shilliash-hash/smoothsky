@@ -588,6 +588,7 @@ export type Database = {
       }
       flights: {
         Row: {
+          acars_tracking_required: boolean
           aircraft_id: string
           company_id: string
           completed_at: string | null
@@ -617,6 +618,7 @@ export type Database = {
           telemetry: Json | null
         }
         Insert: {
+          acars_tracking_required?: boolean
           aircraft_id: string
           company_id: string
           completed_at?: string | null
@@ -646,6 +648,7 @@ export type Database = {
           telemetry?: Json | null
         }
         Update: {
+          acars_tracking_required?: boolean
           aircraft_id?: string
           company_id?: string
           completed_at?: string | null
@@ -1171,6 +1174,14 @@ export type Database = {
       acars_connect: { Args: { p_key: string }; Returns: Json }
       acars_flight_json: {
         Args: { f: Database["public"]["Tables"]["flights"]["Row"] }
+        Returns: Json
+      }
+      acars_invalidate: {
+        Args: {
+          evidence: Json
+          f: Database["public"]["Tables"]["flights"]["Row"]
+          reason: string
+        }
         Returns: Json
       }
       acars_pilot: { Args: { p_key: string }; Returns: string }

@@ -1,6 +1,6 @@
 /** ACARS counts as online when the client reported within the last two minutes. */
 export const ACARS_ONLINE_MS = 2 * 60 * 1000;
-export const ACARS_RESUME_MS = 30 * 60 * 1000;
+export const ACARS_RESUME_MS = 20 * 60 * 1000;
 export const simulationControlsVisible = (webEnabled: boolean, isAdmin: boolean) => webEnabled || isAdmin;
 export function acarsLink(lastSeen: string | null | undefined, now: number) {
   const timestamp = lastSeen ? Date.parse(lastSeen) : NaN;
