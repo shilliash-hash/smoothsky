@@ -23,7 +23,7 @@ export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market, readO
     return (
       <section aria-label="Fuel in tanks" className="mt-4 border-y border-border bg-panel px-3 py-3 text-xs">
         <p className="readout uppercase text-primary">Fuel · Spot rental</p>
-        <p className="mt-1 text-muted-foreground">Fuelled to {spotLoad(tank.target_fuel_gal)} (trip + reserve). Billed on burned fuel only after landing.</p>
+        <p className="mt-1 text-muted-foreground">Fuelled to {spotLoad(tank.target_fuel_gal)} (MIN.Trip Fuel - remember to top up). Billed on burned fuel only after landing.</p>
         <FuelMarket market={market} persistent={false} />
       </section>
     );
