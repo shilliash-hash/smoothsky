@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Eye, Fuel, Briefcase, Wrench, Plane, CircleDot, Star } from "lucide-react";
 import { getPublicCompanyProfile } from "@/lib/leaderboard.functions";
+import { dossierBases } from "@/lib/leaderboard-rules";
 import { SupporterBadge } from "./SupporterBadge";
 
 const NetworkMiniMap = lazy(() => import("./NetworkMiniMap"));
@@ -13,10 +14,14 @@ const mapFallback = <div className="aspect-square w-full animate-pulse border bo
 
 export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const fn = useServerFn(getPublicCompanyProfile);
-  const { data: p, isLoading } = useQuery({ queryKey: ["public-company", icao], queryFn: () => fn({ data: { icao: icao! } }), enabled: open && !!icao, staleTime: 30000 });
+  const { data: p, isLoading } = useQuery({ queryKey: ["public-company", icao], queryFn: () => {
+    if (!icao) return null;
+    return fn({ data: { icao } });
+  }, enabled: open && !!icao, staleTime: 30000 });
   const [all, setAll] = useState(false);
   const flights = p ? (all ? p.flights : p.flights.slice(0, 6)) : [];
   const owned = p?.fleet.filter(f => f.ownership === "OWNED").length ?? 0;
+  const { hubBase, satellites } = dossierBases(p?.hub.icao ?? "", p?.bases ?? []);
   return <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) setAll(false); }}>
     <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
       <DialogHeader>
@@ -31,14 +36,12 @@ export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | nu
           <div className="space-y-4">
             <section><h3 className="readout mb-2 text-xs uppercase text-amber">Hubs & FBOs</h3>
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-sm"><Star className="h-3.5 w-3.5 text-amber" /><span className="readout">{p.hub.icao}</span><span className="truncate text-muted-foreground">{p.hub.name} · Main hub</span></div>
-                {p.bases.map(b => <div key={b.icao} className="flex flex-wrap items-center gap-2 text-sm">
-                  <CircleDot className="h-3.5 w-3.5 text-primary" /><span className="readout">{b.icao}</span><span className="truncate text-xs text-muted-foreground">{b.name}</span>
-                  {b.fuel && <span className="readout flex items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase"><Fuel className="h-3 w-3" />Fuel</span>}
-                  {b.handling && <span className="readout flex items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase"><Briefcase className="h-3 w-3" />Handling</span>}
-                  {b.maintenance && <span className="readout flex items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase"><Wrench className="h-3 w-3" />Maint.</span>}
+                <div className="flex flex-wrap items-center gap-2 text-sm"><Star className="h-3.5 w-3.5 shrink-0 text-amber" /><span className="readout">{p.hub.icao}</span><span className="min-w-0 break-words text-muted-foreground">{p.hub.name} · Main hub</span>{hubBase && <FboCapabilities base={hubBase} />}</div>
+                {satellites.map(b => <div key={b.icao} className="flex flex-wrap items-center gap-2 text-sm">
+                  <CircleDot className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="readout">{b.icao}</span><span className="min-w-0 break-words text-xs text-muted-foreground">{b.name} · Satellite</span>
+                  <FboCapabilities base={b} />
                 </div>)}
-                {p.bases.length === 0 && <p className="text-xs text-muted-foreground">No satellite FBOs.</p>}
+                {satellites.length === 0 && <p className="text-xs text-muted-foreground">No satellite FBOs.</p>}
               </div>
             </section>
             <section><h3 className="readout mb-2 text-xs uppercase text-amber">Fleet</h3>
@@ -67,6 +70,15 @@ export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | nu
       </>}
     </DialogContent>
   </Dialog>;
+}
+
+function FboCapabilities({ base }: { base: { fuel: boolean; handling: boolean; maintenance: boolean } }) {
+  const badge = "readout flex items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase";
+  return <>
+    {base.fuel && <span className={badge}><Fuel className="h-3 w-3" />Fuel</span>}
+    {base.handling && <span className={badge}><Briefcase className="h-3 w-3" />Handling</span>}
+    {base.maintenance && <span className={badge}><Wrench className="h-3 w-3" />Maint.</span>}
+  </>;
 }
 
 export function PublicDossierButton({ icao }: { icao: string }) {

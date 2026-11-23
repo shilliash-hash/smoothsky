@@ -1,5 +1,9 @@
 # Roadmap
 
+## Public dossier hub cleanup
+- [x] Merge main-hub FBO capabilities, display included Handling on all active FBOs and suppress duplicate base/map markers; preserve economics and deployment vars.
+- [x] Eight tests passed; signed-in FJO dossier from Dashboard and Leaderboard shows EPGD once, Fuel + Handling and one main-hub map marker. Desktop/mobile screenshots verified without overflow or runtime errors; build OK. No database or deployment changes.
+
 ## Flight debrief comparisons
 - [x] Show frozen planned vs final fuel, time and contribution margin in Logbook and Dispatch, including billing-floor indicators, original diverted contracts and legacy fallbacks.
 - [x] Nine calculation tests passed; signed-in real FJO104 debrief opened in Logbook and Dispatch with matching 174.96 SC planned/final, 3.0 gal and 0.35 h. Desktop/mobile screenshots checked with no overflow or runtime errors; build OK. Accounting, ACARS and deployment vars unchanged. Live ACARS savings/floor examples are unavailable on this account and covered by calculation tests instead.

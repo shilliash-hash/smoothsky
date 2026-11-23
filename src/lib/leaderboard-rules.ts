@@ -7,3 +7,13 @@ export function rankMovement(rank: number, previous: number | null) {
       ? { label: `▼ ${Math.abs(change)}`, tone: "text-destructive" }
       : { label: "—", tone: "text-muted-foreground" };
 }
+
+// The public RPC supplies active FBOs only; handling is included in every FBO.
+export function dossierBases<T extends { icao: string; handling: boolean }>(hubIcao: string, bases: readonly T[]) {
+  const normalizedHub = hubIcao.trim().toUpperCase();
+  const active = bases.map(base => ({ ...base, handling: true }));
+  return {
+    hubBase: active.find(base => base.icao.trim().toUpperCase() === normalizedHub),
+    satellites: active.filter(base => base.icao.trim().toUpperCase() !== normalizedHub),
+  };
+}
