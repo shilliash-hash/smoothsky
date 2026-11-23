@@ -44,11 +44,11 @@ export function AppShell({
         src="/smoothsky-aurora-logo.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none fixed right-[calc(50%+36rem+0.75rem)] top-0 z-20 hidden w-[calc((100vw-72rem)/2-2rem)] max-w-[260px] opacity-75 2xl:block"
+        className="pointer-events-none fixed right-[calc(50%+800px+0.75rem)] top-0 z-20 hidden w-[calc((100vw-1600px)/2-2rem)] max-w-[260px] opacity-75 min-[1840px]:block"
         style={{ maskImage: "radial-gradient(circle, black 45%, transparent 72%)", WebkitMaskImage: "radial-gradient(circle, black 45%, transparent 72%)" }}
       />
       <header className="relative z-10 border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             <Logo />
             {company && (
@@ -118,7 +118,7 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <main className="deck-content mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="deck-content mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }

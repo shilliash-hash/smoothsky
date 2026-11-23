@@ -1,5 +1,9 @@
 # Roadmap
 
+## Wide-screen Flight Deck layout
+- [x] Widen shared workspace/navigation to 1600px, retain responsive side spacing and reposition decorative Aurora logo outside the workspace from 1840px; no game, database, API or deployment changes.
+- [x] Signed-in seven-page checks at 2560px and 390px plus Dashboard/Dispatch at 1366px and 5120px passed: shared width capped at 1600px, no horizontal overflow, Aurora stays outside content and is hidden below 1840px; screenshots checked, no runtime errors, build OK.
+
 ## Flight debrief cash clarity
 - [x] Separate persistent-tank burn value from landing cash; retain rental burn charges, planned comparisons and contribution margin without database/API/deployment changes.
 - [x] Fifteen calculation tests passed, including 1323.53 SC landing cash vs 451.47 SC margin, rental billing, missing values and prior divert costs. Signed-in real Logbook debriefs and supplemental persistent-tank browser fixture checked on desktop/mobile without overflow; build OK. This account has only pre-persistent completed flights, so a real persistent-tank debrief remains unavailable; no player records changed.
