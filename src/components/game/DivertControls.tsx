@@ -11,6 +11,7 @@ import { divertAction } from "@/lib/operations.functions";
 import { readDivertState } from "@/lib/divert";
 import type { Quote } from "@/lib/operations";
 import { formatCr } from "@/lib/rules";
+import { ContinuationFuelNotice } from "./ContinuationFuelNotice";
 
 export function DivertControls({ flight, destination, state: raw }: { flight: string; destination: string; state: unknown }) {
   const state = readDivertState(raw);
@@ -48,7 +49,7 @@ export function DivertControls({ flight, destination, state: raw }: { flight: st
       </div>
       <Button size="sm" variant="outline" className="text-destructive" disabled={busy} onClick={() => setConfirmAbandon(true)}><X className="h-4 w-4" />Abandon contract</Button>
     </div>
-    {quote?.tank && <FuelTankPanel tank={quote.tank} value={target ?? quote.tank.target_fuel_gal} onChange={setTarget} market={quote.fuel_market} />}
+    {quote?.tank && <><ContinuationFuelNotice persistent={quote.tank.persistent} ready={false} /><FuelTankPanel tank={quote.tank} value={target ?? quote.tank.target_fuel_gal} onChange={setTarget} market={quote.fuel_market} {...(quote.weight_budget?.fuel_kg_per_gal ? { kgPerLitre: quote.weight_budget.fuel_kg_per_gal / 3.785411784 } : {})} /></>}
     {quote?.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={false} onAutoLoad={() => {}} />}
     {error && <p role="alert" className="mt-3 text-sm text-destructive">{error.message}</p>}
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

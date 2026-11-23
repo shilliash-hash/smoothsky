@@ -1,5 +1,9 @@
 # Roadmap
 
+## Divert guidance and dashboard settlement refresh
+- [x] Keep diverted flights visible with direct Dispatch actions on the board, fleet and dashboard banner; prioritize diverted aircraft and explain continuation refuelling before taxi, frozen fuel plans and cancellation vs abandonment.
+- [x] Shared 15-second board polling refreshes fleet, authoritative balance, filtered history and aircraft details; observed arrivals show ARRIVED confirmation without a reload. 74 regression tests passed, including external-settlement cache/readback and one-time arrival notification. Existing signed-in Dashboard/Dispatch checked; supplemental browser-only rental divert → Continue → arrival verified on desktop/mobile with automatic rental removal and no overflow/runtime errors. No player flight/company created, deleted or modified; real ACARS/simulator flight remains for the user's test. Database, ACARS and deployment variables unchanged; build OK.
+
 ## Unified dispatch payload controls
 - [x] Add optional selected passengers to shared quote/dispatch/discovery SQL, retaining auto-load defaults, missions, tank accounting and exact pool reservations.
 - [x] Move PAX/Cargo controls into Weight & Balance with live MTOW/fuel limits, revenue/margin preview and Auto-load best mix (highest contribution margin across feasible passenger/cargo mixes).

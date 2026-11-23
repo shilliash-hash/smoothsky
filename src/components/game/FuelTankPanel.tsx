@@ -14,7 +14,7 @@ function spotLoad(gallons: number) {
   return `${n(load.gal)} gal · ${n(load.lbs)} lbs · ${n(load.kg)} kg`;
 }
 
-export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number; market?: Quote["fuel_market"] }) {
+export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market, readOnly = false }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number; market?: Quote["fuel_market"]; readOnly?: boolean }) {
   const gal = (v: number) => `${Math.round(v).toLocaleString("en-US")} gal`;
   const min = Math.ceil(tank.min_target_gal);
   const max = Math.max(min, Math.floor(tank.max_target_gal));
@@ -43,10 +43,10 @@ export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market }: { t
           Uplift {gal(tank.added_fuel_gal)} · {tank.uplift_cost > 0 ? formatCr(tank.uplift_cost) : "0 SC"}
         </span>
       </div>
-      <Slider aria-label="Target fuel (gal)" className="mt-3" min={min} max={max} step={1} value={[current]} onValueChange={(v) => onChange(v[0] ?? min)} disabled={max <= min} />
+      {!readOnly && <><Slider aria-label="Target fuel (gal)" className="mt-3" min={min} max={max} step={1} value={[current]} onValueChange={(v) => onChange(v[0] ?? min)} disabled={max <= min} />
       <div className="mt-2 flex gap-2">
         {presets.map(([label, v]) => <Button key={label} size="sm" variant="outline" className="flex-1" onClick={() => onChange(v)}>{label}</Button>)}
-      </div>
+      </div></>}
       {load && <p className="readout mt-3 border border-amber/40 bg-background/40 px-2 py-1.5 text-xs text-amber">Sim load: {n(load.gal)} gal · {n(load.lbs)} lbs · {n(load.kg)} kg</p>}
       <FuelMarket market={market} persistent />
       <p className="mt-2 text-xs text-muted-foreground">

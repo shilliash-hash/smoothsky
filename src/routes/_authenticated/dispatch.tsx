@@ -35,6 +35,7 @@ import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
 import { DivertControls } from '@/components/game/DivertControls';
+import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
 const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
@@ -76,6 +77,11 @@ function Dispatch() {
   const search = Route.useSearch();
   const [aircraft, setAircraft] = useState(search["aircraft"] ?? "");
   const [destination, setDestination] = useState(search["destination"] ?? "");
+  useEffect(() => { if (search.aircraft) setAircraft(search.aircraft); }, [search.aircraft]);
+  useEffect(() => {
+    const focused = d.flights.find(f => f.aircraft_id === search.aircraft && (f.status === "DIVERTED" || f.status === "DISPATCHED" || f.status === "EN_ROUTE"));
+    if (focused) document.getElementById(`flight-${focused.id}`)?.scrollIntoView({ block: "center" });
+  }, [search.aircraft]);
   const [flightNumber, setFlightNumber] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteWaypoint[] | null>(null);
   const [routeMode, setRouteMode] = useState<"route" | "direct">("route");
@@ -171,7 +177,7 @@ function Dispatch() {
   }, [passengers]);
   useEffect(() => {
     setQuoteError("");
-    if (!selected || !destination) return;
+    if (!selected || selected.status !== "AVAILABLE" || !destination) return;
     let active = true;
     action({ data: { action: "quote", aircraft: selected.id, destination, ...payload } })
       .then((q) => {
@@ -262,10 +268,10 @@ function Dispatch() {
         >
           <option value="">Select aircraft</option>
           {d.fleet
-            .filter((f) => f.status === "AVAILABLE")
+            .filter((f) => f.status === "AVAILABLE" || f.id === selected?.id)
             .map((f) => (
               <option key={f.id} value={f.id}>
-                {f.registration} · {f.type?.model} · {f.location_icao}
+                {f.registration} · {f.type?.model} · {f.location_icao}{f.status !== "AVAILABLE" ? ` · ${f.status.replaceAll("_", " ")}` : ""}
               </option>
             ))}
         </select>
@@ -461,8 +467,10 @@ function Dispatch() {
             const progress = acars ? 0 : flightProgress(f, now);
             const live = (f.telemetry as { live?: { altitude_ft?: number; ground_speed_kt?: number; fuel_gal?: number; phase?: string } } | null)?.live;
             const active = f.status === "DISPATCHED" || f.status === "EN_ROUTE";
+            const continuationTank = (f.estimate as Quote | null)?.tank;
+            const continuationFuelKgPerGal = (f.estimate as Quote | null)?.weight_budget?.fuel_kg_per_gal;
             return (
-              <div key={f.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+              <div key={f.id} id={`flight-${f.id}`} className="flex scroll-mt-24 flex-wrap items-center justify-between gap-4 py-4">
                 <div>
                   <p className="readout text-primary">
                     {f.flight_number} · {f.aircraft?.registration ?? "—"} · {f.origin_icao} → {f.destination_icao}
@@ -486,6 +494,10 @@ function Dispatch() {
                 </div>
                 <div className={cn("flex flex-wrap gap-2", f.status === "DIVERTED" && "w-full min-w-0")}>
                   {f.status === "DIVERTED" && <DivertControls flight={f.id} destination={f.destination_icao} state={f.divert_state} />}
+                  {f.status === "DISPATCHED" && f.divert_state && <div className="w-full min-w-0">
+                    <ContinuationFuelNotice persistent={d.fleet.find(a => a.id === f.aircraft_id)?.ownership !== "RENTAL"} ready />
+                    {continuationTank && <FuelTankPanel tank={continuationTank} value={continuationTank.target_fuel_gal} onChange={() => {}} market={(f.estimate as Quote).fuel_market} {...(continuationFuelKgPerGal ? { kgPerLitre: continuationFuelKgPerGal / 3.785411784 } : {})} readOnly />}
+                  </div>}
                   {f.status === "DISPATCHED" && !acars && (
                     <>
                       <Button size="sm" disabled={busy || !simulationEnabled || f.execution_source !== "WEB_MANUAL"} title={!simulationEnabled ? "Web simulation disabled — fly via ACARS" : undefined} onClick={() => run("start", f.id)}>
@@ -518,7 +530,7 @@ function Dispatch() {
                       }}
                     >
                       <X className="h-4 w-4" />
-                      Cancel flight
+                      {f.divert_state ? "Cancel continuation" : "Cancel flight"}
                     </Button>
                   )}
                   {f.status === "COMPLETED" && (

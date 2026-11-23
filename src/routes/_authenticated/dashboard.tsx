@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { OperationalFlightsBoard } from "@/components/game/OperationalFlightsBoard";
 import { FidsReadout } from "@/components/game/FidsReadout";
 import { DashboardAtmosphere } from "@/components/game/DashboardAtmosphere";
+import { DashboardFlightSync } from "@/components/game/DashboardFlightSync";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: async ({ context }) => {
@@ -72,6 +73,7 @@ function Dashboard() {
         </div>
         <PublicDossierButton icao={c.icao_code} />
       </div>
+      <DashboardFlightSync key={c.id} companyId={c.id} />
 
       <div className="dashboard-kpis relative mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
         <div className="instrument p-5">

@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ACTIVE_OPERATION_STATUSES } from "./dashboard-operations";
 
 export const companyQuery = queryOptions({
   queryKey: ["company"],
@@ -83,10 +84,10 @@ export const operationalBoardQuery = (companyId: string) => queryOptions({
   staleTime: 10000,
   refetchInterval: 15000,
   queryFn: async () => {
-    const projection = "id, company_id, flight_number, aircraft_id, origin_icao, destination_icao, status, pilot_mode, passengers, created_at, completed_at, aircraft:fleet_aircraft(registration)" as const;
+    const projection = "id, company_id, flight_number, aircraft_id, origin_icao, destination_icao, status, pilot_mode, passengers, created_at, completed_at, divert_state, aircraft:fleet_aircraft(registration)" as const;
     const [active, recent] = await Promise.all([
-      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ["DISPATCHED", "EN_ROUTE"]).order("created_at", { ascending: false }),
-      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ["COMPLETED", "CANCELLED"]).order("created_at", { ascending: false }).limit(8),
+      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ACTIVE_OPERATION_STATUSES).order("created_at", { ascending: false }),
+      supabase.from("flights").select(projection).eq("company_id", companyId).in("status", ["COMPLETED", "CANCELLED"]).order("completed_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(8),
     ]);
     if (active.error) throw active.error;
     if (recent.error) throw recent.error;

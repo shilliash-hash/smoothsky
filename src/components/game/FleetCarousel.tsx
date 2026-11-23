@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCr } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { arrangeFleet, isAirborne, type FleetFilter } from "@/lib/fleet-carousel
 
 type Aircraft = { id: string; registration: string; status: string; location_icao: string; ownership: string; purchase_price: number | null; weekly_rate: number; next_payment_due: string; type?: { manufacturer: string; model: string } | null };
 const pills: { id: FleetFilter; label: string }[] = [{ id: "all", label: "All" }, { id: "available", label: "Available" }, { id: "flight", label: "In Flight" }, { id: "sale", label: "For Sale" }];
-const statusLabel: Record<string, string> = { AVAILABLE: "Available", EN_ROUTE: "In flight", DISPATCHED: "Dispatched", RESERVED: "Reserved" };
+const statusLabel: Record<string, string> = { AVAILABLE: "Available", EN_ROUTE: "In flight", DISPATCHED: "Dispatched", DIVERTED: "Diverted", RESERVED: "Reserved" };
 
 export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact = false }: { companyId: string; fleet: Aircraft[]; contractEnd: (id: string) => string | undefined; onSelect: (id: string) => void; compact?: boolean }) {
   const { data: listed = [] } = useQuery({ queryKey: ["fleet-listings", companyId], enabled: !!companyId, queryFn: async () => {
@@ -40,10 +41,11 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
     </div>
     {items.length === 0 ? <p className="mt-3 border-y border-border py-6 text-center text-sm text-muted-foreground">No aircraft match this filter.</p> : <div className="relative mt-3">
       <div ref={ref} onScroll={measure} onWheel={onWheel} className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {items.map(f => <Button key={f.id} variant="outline" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => onSelect(f.id)} className={`instrument block h-auto w-full shrink-0 snap-start p-4 text-left font-normal whitespace-normal ${compact ? "" : "md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]"}`}>
+        {items.map(f => <div key={f.id} className={`instrument w-full shrink-0 snap-start p-4 ${compact ? "" : "md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]"}`}>
+          <Button variant="ghost" aria-label={`Aircraft accounts ${f.registration}`} onClick={() => onSelect(f.id)} className="block h-auto w-full p-0 text-left font-normal whitespace-normal">
           <div className="flex items-center justify-between gap-2">
             <span className="readout text-lg text-primary">{f.registration}</span>
-            <span className="flex gap-1">{forSale.has(f.id) && <span className="rounded-sm bg-amber/15 px-2 py-0.5 text-xs text-amber">For sale</span>}<span className={`rounded-sm px-2 py-0.5 text-xs ${isAirborne(f.status) ? "bg-primary/15 text-primary" : f.status === "AVAILABLE" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{statusLabel[f.status] ?? f.status}</span></span>
+            <span className="flex gap-1">{forSale.has(f.id) && <span className="rounded-sm bg-amber/15 px-2 py-0.5 text-xs text-amber">For sale</span>}<span className={`rounded-sm px-2 py-0.5 text-xs ${f.status === "DIVERTED" ? "bg-amber/15 text-amber" : isAirborne(f.status) ? "bg-primary/15 text-primary" : f.status === "AVAILABLE" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{statusLabel[f.status] ?? f.status}</span></span>
           </div>
           <p className="mt-1 text-sm">{f.type?.manufacturer} {f.type?.model}</p>
           <dl className="readout mt-3 grid grid-cols-2 gap-1 text-xs text-muted-foreground">
@@ -52,7 +54,9 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
               <dt>Contract ends</dt><dd className="text-right text-foreground">{new Date(contractEnd(f.id) ?? f.next_payment_due).toLocaleDateString("en-US")}</dd>
               <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
           </dl>
-        </Button>)}
+          </Button>
+          {f.status === "DIVERTED" && <Button asChild variant="outline" size="sm" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber"><Link to="/dispatch" search={{ aircraft: f.id }}><Navigation className="h-4 w-4" />Resolve in Dispatch</Link></Button>}
+        </div>)}
       </div>
       {!view.atEnd && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />}
     </div>}
