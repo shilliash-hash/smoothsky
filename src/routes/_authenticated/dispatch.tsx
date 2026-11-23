@@ -33,6 +33,7 @@ import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
 import { FlightDebrief } from '@/components/game/FlightDebrief';
 import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
+import { InfoHint } from "@/components/game/InfoHint";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
 import { DivertControls } from '@/components/game/DivertControls';
 import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
@@ -424,15 +425,18 @@ function Dispatch() {
                     </div>
                   </dl>
                   {fuelPlan && <aside aria-label="Fuel planning and billing" className="mt-4 border-y border-border bg-panel px-3 py-4 text-sm">
-                    <p className="readout text-xs uppercase text-primary">Fuel · Pay-as-you-burn</p>
-                    <p className="mt-2 text-muted-foreground">Billed from actual ACARS consumption ({Math.round((quote.weight_budget?.fuel_billing_floor_pct ?? 0.8) * 100)}% estimated trip fuel minimum floor; {reserveMinutes}-min safety reserve is never charged unless consumed). {quote.tank?.persistent ? `Owned/leased: you pay ${formatCr(quote.tank.uplift_cost)} at departure for ${Math.round(quote.tank.added_fuel_gal)} gal uplift only; remaining fuel stays in the tanks for the next flight.` : "Spot rental: choose your real fuel load above; nothing is charged at departure, you pay only for fuel burned and the aircraft is returned after landing."}</p>
+                    <div className="flex items-center gap-1.5"><p className="readout text-xs uppercase text-primary">Fuel · Pay-as-you-burn</p>
+                    <InfoHint label="Fuel billing">
+                      <p>Billed from actual ACARS consumption ({Math.round((quote.weight_budget?.fuel_billing_floor_pct ?? 0.8) * 100)}% estimated trip fuel minimum floor; {reserveMinutes}-min safety reserve is never charged unless consumed). {quote.tank?.persistent ? `Owned/leased: you pay ${formatCr(quote.tank.uplift_cost)} at departure for ${Math.round(quote.tank.added_fuel_gal)} gal uplift only; remaining fuel stays in the tanks for the next flight.` : "Spot rental: choose your real fuel load above; nothing is charged at departure, you pay only for fuel burned and the aircraft is returned after landing."}</p>
+                      <p>Load at least the planned fuel before departure. Compare it with your SimBrief / aircraft EFB block fuel: taxi, contingency and alternate requirements may increase the simulator's total. Use the higher requirement; SmoothSky's estimate does not validate your simulator fuel load.</p>
+                      <p>Reserve follows the current administrator setting. Weekly lease costs are excluded from this estimate.</p>
+                    </InfoHint></div>
+                    <p className="readout mt-1 text-xs text-muted-foreground">Billing floor {Math.round((quote.weight_budget?.fuel_billing_floor_pct ?? 0.8) * 100)}% of trip fuel · reserve never charged unless burned</p>
                     <dl className="mt-3 space-y-2 text-xs">
                       <div><dt className="text-muted-foreground">Estimated trip consumption</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.tripGallons, fuelDensity)}</dd></div>
                       <div><dt className="text-muted-foreground">Required reserve · {reserveMinutes} min</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.reserveGallons, fuelDensity)}</dd></div>
                       <div><dt className="text-primary">Planned fuel including reserve</dt><dd className="readout mt-1 text-primary">{fuelLabel(fuelPlan.plannedGallons, fuelDensity)}</dd></div>
                     </dl>
-                    <p className="mt-3 text-xs text-muted-foreground">Load at least the planned fuel before departure. Compare it with your SimBrief / aircraft EFB block fuel: the same trip-plus-reserve principle applies, but taxi, contingency and alternate requirements may increase the simulator's total. Use the higher requirement; SmoothSky's estimate does not validate your simulator fuel load.</p>
-                    <p className="mt-2 text-xs text-muted-foreground">Reserve follows the current administrator setting. Weekly lease costs are excluded from this estimate.</p>
                   </aside>}
                    {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FBO savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
                   <Button

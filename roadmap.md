@@ -244,3 +244,5 @@
 - [ ] Verify and apply repair in the user's isolated 49,000-airport database — current development and production query tools both return the 7,529-airport database without CYYR.
 
 - [x] Spot rental: pilot-chosen Target Fuel counted against MTOW, SimBrief sync, divert continuation, zero-cost ACARS ramp sync, clear fuel guidance
+
+- [x] Dispatch fuel/W&B: kg/lbs and gal/ltr switch (remembered), dual-unit readouts, rule text behind amber (i) popovers
