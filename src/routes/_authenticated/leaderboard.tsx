@@ -6,6 +6,7 @@ import { Trophy } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/game/AppShell";
 import { SupporterBadge } from "@/components/game/SupporterBadge";
+import { CompanyDossier } from "@/components/game/CompanyDossier";
 import { Input } from "@/components/ui/input";
 import { leaderboardQuery } from "@/lib/leaderboard";
 import { rankMovement } from "@/lib/leaderboard-rules";
@@ -27,6 +28,7 @@ function Leaderboard() {
   const { data: rows } = useSuspenseQuery(leaderboardQuery);
   const { data: company } = useSuspenseQuery(companyQuery);
   const [search, setSearch] = useState("");
+  const [dossier, setDossier] = useState<string | null>(null);
   const [tab, setTab] = useState<"airlines" | "pilots">("airlines");
   const pilotsFn = useServerFn(getPilotLeaderboard);
   const { data: pilots = [] } = useQuery({ queryKey: ["pilot-leaderboard"], queryFn: () => pilotsFn(), enabled: tab === "pilots" });
@@ -50,7 +52,7 @@ function Leaderboard() {
     </div> : <>
     <div className="mt-4 overflow-x-auto border-y border-border">
       <table className="w-full min-w-[820px] text-left text-sm"><thead className="bg-panel text-muted-foreground"><tr><th className="p-3">Rank</th><th className="p-3">Company</th><th className="p-3">Home base</th><th className="p-3 text-right">Net worth</th><th className="p-3 text-right">Flights</th><th className="p-3 text-right">Hours</th><th className="p-3 text-right">Passengers</th></tr></thead>
-      <tbody>{filtered.map(row => { const movement = rankMovement(Number(row.rank), row.prev_week_rank); return <tr key={row.icao_code} className={`border-t border-border ${row.icao_code === company?.icao_code ? "bg-primary/5" : ""}`}>
+      <tbody>{filtered.map(row => { const movement = rankMovement(Number(row.rank), row.prev_week_rank); return <tr key={row.icao_code} tabIndex={0} title="Open public dossier" onClick={() => setDossier(row.icao_code)} onKeyDown={e => { if (e.key === "Enter") setDossier(row.icao_code); }} className={`cursor-pointer border-t border-border transition-colors hover:bg-primary/10 ${row.icao_code === company?.icao_code ? "bg-primary/5" : ""}`}>
         <td className="p-3"><span className="readout text-lg">{row.rank}</span><span className={`readout mt-1 block whitespace-nowrap text-xs ${movement.tone}`} title="Change since last week's recorded ranking">{movement.label}</span></td>
         <td className="p-3"><div className="font-semibold">{row.company_name}</div><div className="mt-1 flex flex-wrap items-center gap-2"><span className="readout text-xs text-primary">{row.icao_code}</span>{row.is_supporter && <SupporterBadge />}{row.icao_code === company?.icao_code && <span className="text-xs text-muted-foreground">Your company</span>}</div></td>
         <td className="max-w-52 p-3"><span className="readout">{row.home_base_icao}</span><div className="mt-1 text-xs text-muted-foreground">{row.home_base_name}</div></td>
@@ -59,6 +61,7 @@ function Leaderboard() {
       {filtered.length === 0 && <p className="py-10 text-center text-muted-foreground">{rows.length ? "No matching companies." : "No companies yet."}</p>}
     </div>
     </>}
+    <CompanyDossier icao={dossier} open={!!dossier} onOpenChange={o => { if (!o) setDossier(null); }} />
     <p className="mt-4 max-w-3xl text-xs leading-relaxed text-muted-foreground">Net worth = ledger cash + owned aircraft purchase value + active lease deposits + invested value of active FBOs and modules. Flight totals include completed flights; test hours use simulated flight time, not accelerated wall-clock time. Weekly positions are recorded on the first ranking visit of each UTC week.</p>
   </AppShell>;
 }

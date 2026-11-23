@@ -1527,6 +1527,10 @@ export type Database = {
           pilot_name: string
         }[]
       }
+      get_public_company_profile: {
+        Args: { p_icao_code: string }
+        Returns: Json
+      }
       get_public_leaderboard: {
         Args: never
         Returns: {

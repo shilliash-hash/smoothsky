@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SmoothCoin } from "@/components/game/SmoothCoin";
 import { AppShell } from "@/components/game/AppShell";
 import { useState } from "react";
+import { PublicDossierButton } from "@/components/game/CompanyDossier";
 import { fleetOverviewQuery, companyResultsQuery } from "@/lib/fleet";
 import { FleetCarousel } from "@/components/game/FleetCarousel";
 import { CompanyResults } from "@/components/game/CompanyResults";
@@ -64,11 +65,12 @@ function Dashboard() {
     <AppShell company={c}>
       <section className="dashboard-panorama">
       <DashboardAtmosphere />
-      <div className="dashboard-heading relative flex items-center gap-4">
+      <div className="dashboard-heading relative flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="readout text-xs uppercase text-amber">{c.icao_code} · Operations Center · SmoothSky Network</p>
           <h1 className="mt-1 break-words text-3xl font-semibold">{c.name}</h1>
         </div>
+        <PublicDossierButton icao={c.icao_code} />
       </div>
 
       <div className="dashboard-kpis relative mt-6 grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
