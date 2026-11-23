@@ -28,6 +28,7 @@ export function assertAircraftMasses(a: { empty_weight_kg: number; mtow_kg: numb
 }
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
 export function validateEconomyValue(key: string, value: unknown) {
+  if (key === "fuel_price_volatility_pct") return z.number().finite().min(0).max(0.5).multipleOf(0.01).parse(value);
   if (key === "passenger_weight_kg") return z.number().finite().positive().parse(value);
   if (key === "fuel_billing_floor_pct") return z.number().finite().min(0).max(1).parse(value);
   if (key === "dispatch_usable_range_pct") return z.number().finite().min(0.05).max(1).parse(value);

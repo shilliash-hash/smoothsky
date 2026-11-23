@@ -1,5 +1,10 @@
 # Roadmap
 
+## Daily airport fuel markets
+- [x] Add bounded daily UTC airport pricing and frozen quote integration, including continuation/FBO prices; preserve ACARS and deployment vars.
+- [x] Add admin volatility control (default 0.15, 0–0.50 in 0.01 steps) and departure/destination tankering comparison; 0 restores fixed prices.
+- [x] SQL regression tests and signed-in desktop/mobile checks passed: owned EPPW→EPWA shows 7.32 vs 8.38 SC/gal, saving 1.06 SC/gal; Tanker max requotes 28→31 gal, uplift 21.97 SC. Rental EPGD→EPWA shows daily/FBO prices without tankering controls. Admin saved/read back unchanged 0.15, no overflow/runtime errors; build OK. No player flight dispatched, no ACARS desktop flight performed; unchanged frozen-price billing verified by SQL tests.
+
 ## Divert & continuation
 - [x] Add verified alternate landings, leg cost/tank accounting, locked payload, continuation and abandonment without changing mission deadlines or deployment vars; expired lease return blocked, renewal retains contract lock.
 - [x] Add Flight Deck controls for diverted contracts and refuelling the continuation in Dispatch and Crew.

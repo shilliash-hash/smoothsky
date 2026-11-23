@@ -102,7 +102,8 @@ function Dispatch() {
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
-  const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules]);
+  const marketDay = new Date(now).toISOString().slice(0, 10);
+  const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules, marketDay]);
   const usableRangePct = 1;
   const ferry = flightMode === "ferry";
   const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
@@ -367,7 +368,7 @@ function Dispatch() {
                     {Math.round(quote.minutes)} min
                   </p>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
-                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} />}
+                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} />}
                   {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && cargoCapacity > 0 && cargoKg < cargoCapacity} onAutoLoad={() => setCargoKg(cargoCapacity)} />}
                   {quote.runway_unpaved && <p className="mt-1 text-xs text-amber">[UNPAVED] No paved runway nearby — remote strip fallback</p>}
                   <dl className="readout mt-5 space-y-3">

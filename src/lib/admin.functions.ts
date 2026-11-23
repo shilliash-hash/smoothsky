@@ -5,6 +5,7 @@ import { aircraftSchema, assertAircraftMasses, fuelRuleSchema, validateEconomyVa
 import { defaultRecruitment } from "./recruitment-rules";
 import { DEFAULT_SPOT_RENTAL_MULTIPLIER } from "./market-rules";
 
+const fuelVolatilitySetting = { key: "fuel_price_volatility_pct", value: 0.15, description: "Daily airport fuel price volatility (±fraction). 0 = fixed prices; 0.15 = ±15%. Changes at 00:00 UTC." };
 const dispatchRangeSetting = { key: "dispatch_usable_range_pct", value: 0.75, description: "Dispatch destination discovery range fraction (0.75 = 75%). Planning buffer, not a simulator fuel guarantee." };
 
 export const getAdminAccess = createServerFn({ method: "GET" })
@@ -39,7 +40,7 @@ export const getAdminData = createServerFn({ method: "GET" })
       if (result.error) throw new Error(result.error.message);
     return {
       viewerUserId: context.userId,
-      economy: [...(economy.data ?? []), ...(economy.data?.some(row => row.key === dispatchRangeSetting.key) ? [] : [dispatchRangeSetting]), ...(economy.data?.some(row => row.key === "recruitment_commissions") ? [] : [{ key: "recruitment_commissions", value: defaultRecruitment, description: "Pilot commission as a percentage of net flight profit." }]), ...(economy.data?.some(row => row.key === "spot_rental_multiplier") ? [] : [{ key: "spot_rental_multiplier", value: DEFAULT_SPOT_RENTAL_MULTIPLIER, description: "Single-flight rental as a fraction of the weekly rate (0.20 = 20%). No deposit or weekly commitments." }])],
+      economy: [...(economy.data ?? []), ...(economy.data?.some(row => row.key === fuelVolatilitySetting.key) ? [] : [fuelVolatilitySetting]), ...(economy.data?.some(row => row.key === dispatchRangeSetting.key) ? [] : [dispatchRangeSetting]), ...(economy.data?.some(row => row.key === "recruitment_commissions") ? [] : [{ key: "recruitment_commissions", value: defaultRecruitment, description: "Pilot commission as a percentage of net flight profit." }]), ...(economy.data?.some(row => row.key === "spot_rental_multiplier") ? [] : [{ key: "spot_rental_multiplier", value: DEFAULT_SPOT_RENTAL_MULTIPLIER, description: "Single-flight rental as a fraction of the weekly rate (0.20 = 20%). No deposit or weekly commitments." }])],
       aircraft: aircraft.data ?? [],
       users: (users.data ?? []).map(user => {
         const company = supporters.data?.find(row => row.user_id === user.user_id);
@@ -92,6 +93,11 @@ export const saveAdminData = createServerFn({ method: "POST" })
     if (access.error || !access.data) throw new Error("Administrator access required");
     if (data.kind === "economy") {
       const value = validateEconomyValue(data.key, data.value);
+      if (data.key === fuelVolatilitySetting.key) {
+        const result = await db.from("economy_config").upsert({ ...fuelVolatilitySetting, value }, { onConflict: "key" });
+        if (result.error) throw new Error(result.error.message);
+        return { saved: true };
+      }
       if (data.key === dispatchRangeSetting.key) {
         const result = await db.from("economy_config").upsert({ ...dispatchRangeSetting, value }, { onConflict: "key" });
         if (result.error) throw new Error(result.error.message);

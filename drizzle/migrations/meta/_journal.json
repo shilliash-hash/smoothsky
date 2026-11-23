@@ -477,6 +477,13 @@
       "when": 1795383045804,
       "tag": "0067_acars_ramp_fuel_adjustment",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795428681684,
+      "tag": "0068_daily_airport_fuel_market",
+      "breakpoints": true
     }
   ]
 }

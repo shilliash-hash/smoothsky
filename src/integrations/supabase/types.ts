@@ -1220,6 +1220,14 @@ export type Database = {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
       }
+      airport_fuel_market_multiplier: {
+        Args: { p_day?: string; p_icao: string }
+        Returns: number
+      }
+      airport_fuel_market_price: {
+        Args: { p_fuel: string; p_icao: string }
+        Returns: number
+      }
       airport_fuel_stock: {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
@@ -1373,6 +1381,15 @@ export type Database = {
       finalize_flight_weight: { Args: { q: Json }; Returns: Json }
       flight_fuel_billing: {
         Args: { p_source: string; p_telemetry: Json; q: Json }
+        Returns: Json
+      }
+      flight_fuel_market: {
+        Args: {
+          p_company: string
+          p_destination: string
+          p_fuel: string
+          p_origin: string
+        }
         Returns: Json
       }
       flight_quote: {

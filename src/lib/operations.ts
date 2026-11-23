@@ -25,6 +25,7 @@ export type Quote = {
   rules: { fare_per_nm: number; charter_by_tier: number[] };
   fuel_gal: number;
   fuel_cost: number;
+  fuel_market?: { utc_date: string; fuel_type: string; departure_icao: string; destination_icao: string; departure_price: number; destination_price: number; departure_deviation_pct: number; destination_deviation_pct: number; departure_fbo_discount: number; destination_fbo_discount: number; destination_fuel_available: boolean; destination_stock_gal: number; tankering_savings_per_gal: number };
   landing_fee: number;
   handling_fee: number;
   maintenance: number;
