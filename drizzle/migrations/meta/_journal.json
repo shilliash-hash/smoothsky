@@ -512,6 +512,13 @@
       "when": 1795439236036,
       "tag": "0072_acars_aircraft_fuel_plausibility",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1795442255817,
+      "tag": "0073_sync_company_ledger_entry_types",
+      "breakpoints": true
     }
   ]
 }
