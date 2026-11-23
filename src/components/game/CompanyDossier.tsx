@@ -23,7 +23,7 @@ export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | nu
   const owned = p?.fleet.filter(f => f.ownership === "OWNED").length ?? 0;
   const { hubBase, satellites } = dossierBases(p?.hub.icao ?? "", p?.bases ?? []);
   return <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) setAll(false); }}>
-    <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+    <DialogContent className="max-h-[90vh] w-[94vw] max-w-6xl overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex flex-wrap items-center gap-2"><span className="readout rounded-sm border border-primary px-1.5 text-sm text-primary">{p?.icao_code ?? icao}</span>{p?.name ?? "Airline dossier"}{p?.is_supporter && <SupporterBadge />}</DialogTitle>
         <DialogDescription className="readout text-xs uppercase">{p ? <>CEO {p.owner} · Main hub {p.hub.icao} ({p.hub.name}) · Fleet {p.fleet.length} ({owned} owned · {p.fleet.length - owned} leased/rented)</> : "Public operations dossier"}</DialogDescription>
@@ -31,16 +31,17 @@ export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | nu
       {isLoading && <p className="py-10 text-center text-muted-foreground">Loading dossier…</p>}
       {!isLoading && !p && <p className="py-10 text-center text-muted-foreground">This airline has no public profile.</p>}
       {p && <>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,360px)_1fr]">
           <ClientOnly fallback={mapFallback}><Suspense fallback={mapFallback}><NetworkMiniMap profile={p} /></Suspense></ClientOnly>
           <div className="space-y-4">
             <section><h3 className="readout mb-2 text-xs uppercase text-amber">Hubs & FBOs</h3>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2 text-sm"><Star className="h-3.5 w-3.5 shrink-0 text-amber" /><span className="readout">{p.hub.icao}</span><span className="min-w-0 break-words text-muted-foreground">{p.hub.name} · Main hub</span>{hubBase && <FboCapabilities base={hubBase} />}</div>
-                {satellites.map(b => <div key={b.icao} className="flex flex-wrap items-center gap-2 text-sm">
+                 {satellites.map(b => <div key={b.icao} className="flex flex-wrap items-center gap-2 text-sm">
                   <CircleDot className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="readout">{b.icao}</span><span className="min-w-0 break-words text-xs text-muted-foreground">{b.name} · Satellite</span>
                   <FboCapabilities base={b} />
                 </div>)}
+
                 {satellites.length === 0 && <p className="text-xs text-muted-foreground">No satellite FBOs.</p>}
               </div>
             </section>
@@ -74,11 +75,11 @@ export function CompanyDossier({ icao, open, onOpenChange }: { icao: string | nu
 
 function FboCapabilities({ base }: { base: { fuel: boolean; handling: boolean; maintenance: boolean } }) {
   const badge = "readout flex items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase";
-  return <>
+  return <span className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap">
     {base.fuel && <span className={badge}><Fuel className="h-3 w-3" />Fuel</span>}
     {base.handling && <span className={badge}><Briefcase className="h-3 w-3" />Handling</span>}
     {base.maintenance && <span className={badge}><Wrench className="h-3 w-3" />Maint.</span>}
-  </>;
+  </span>;
 }
 
 export function PublicDossierButton({ icao }: { icao: string }) {
