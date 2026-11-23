@@ -2,6 +2,51 @@ import { describe, expect, it } from "vitest";
 import { flightDebriefComparison } from "./flight-debrief";
 
 describe("frozen flight debrief comparisons", () => {
+  it("shows tank fuel as value, not a second landing cash charge", () => {
+    const result = flightDebriefComparison({
+      estimate: { fuel_uplift_gal: 0, fuel_cost: 581.06, net: 647.72 },
+      settlement: { fuel_cost: 872.06, net: 451.47 },
+    });
+    expect(result.isPersistentTank).toBe(true);
+    expect(result.cashCreditedAtLanding).toBeCloseTo(1323.53);
+    expect(result.finalNet).toBe(451.47);
+    expect(result.fuelSavings).toBeCloseTo(-291);
+    expect(result.netDelta).toBeCloseTo(-196.25);
+  });
+
+  it("detects persistent tanks from settlement even without an estimate", () => {
+    const result = flightDebriefComparison({ settlement: { fuel_uplift_gal: 12, fuel_cost: 872.06, net: 451.47 } });
+    expect(result.isPersistentTank).toBe(true);
+    expect(result.cashCreditedAtLanding).toBeCloseTo(1323.53);
+  });
+
+  it("keeps spot rental cash equal to net after pay-as-you-burn", () => {
+    const result = flightDebriefComparison({ settlement: { fuel_cost: 872.06, net: 451.47 } });
+    expect(result.isPersistentTank).toBe(false);
+    expect(result.cashCreditedAtLanding).toBe(451.47);
+  });
+
+  it("does not treat an uplift cost alone as evidence of tank accounting", () => {
+    const result = flightDebriefComparison({ estimate: { fuel_uplift_cost: 0 }, settlement: { fuel_cost: 60, net: -10 } });
+    expect(result.isPersistentTank).toBe(false);
+    expect(result.cashCreditedAtLanding).toBe(-10);
+  });
+
+  it("leaves persistent cash unknown when settled fuel value is missing", () => {
+    const result = flightDebriefComparison({ settlement: { fuel_uplift_gal: 0, net: 200 } });
+    expect(result.cashCreditedAtLanding).toBeNull();
+  });
+
+  it("excludes already-paid divert leg costs from the final touchdown cash", () => {
+    const legs = [{ fuel_cost: 200, landing_fee: 15 }];
+    const persistent = flightDebriefComparison({ estimate: { fuel_uplift_gal: 0 }, settlement: { fuel_cost: 100, net: 450, legs } });
+    const rental = flightDebriefComparison({ settlement: { fuel_cost: 100, net: 450, legs } });
+    expect(persistent.cashCreditedAtLanding).toBe(765);
+    expect(rental.cashCreditedAtLanding).toBe(665);
+    expect(persistent.finalFuelCost).toBe(300);
+    expect(persistent.finalNet).toBe(450);
+  });
+
   it("compares trip consumption, not full tanks or uplift payments", () => {
     const result = flightDebriefComparison({
       estimate: { weight_budget: { trip_fuel_gal: 193.1, planned_fuel_gal: 359 }, fuel_cost: 1120, fuel_uplift_cost: 0, net: 749.61 },

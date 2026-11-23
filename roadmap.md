@@ -1,5 +1,9 @@
 # Roadmap
 
+## Flight debrief cash clarity
+- [x] Separate persistent-tank burn value from landing cash; retain rental burn charges, planned comparisons and contribution margin without database/API/deployment changes.
+- [x] Fifteen calculation tests passed, including 1323.53 SC landing cash vs 451.47 SC margin, rental billing, missing values and prior divert costs. Signed-in real Logbook debriefs and supplemental persistent-tank browser fixture checked on desktop/mobile without overflow; build OK. This account has only pre-persistent completed flights, so a real persistent-tank debrief remains unavailable; no player records changed.
+
 ## ACARS aircraft plausibility
 - [x] Add once-per-leg departure minimum (70% frozen safe fuel) after PREFLIGHT and a raw-burn minimum (35% catalogue burn for PIREP hours >=0.6), retaining reconnect evidence, refund-aware cancellation and continuation handling; ACARS, Flight Deck and vars unchanged. Fuel checks are heuristics, not aircraft identification.
 - [x] 131 tests passed, including exact 70%/35%/0.6-hour boundaries, reconnect burn, short flights, forged counters, continuation departure/refund and connect → takeoff → tracked landing → settlement readback. Applied key-checked function definitions confirmed; build OK. Real simulator verification is unavailable here; no player flight modified.

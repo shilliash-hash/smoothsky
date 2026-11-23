@@ -20,7 +20,7 @@ export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight 
     ["Ticket revenue", tickets],
     ...(cargo > 0 ? [["Cargo revenue", cargo] as [string, number]] : []),
     ...(tip > 0 ? [[`Passenger Butter Tip (+${number("passenger_tip_pct") ?? 0}%)`, tip] as [string, number]] : []),
-    ["Fuel", number("fuel_cost") === null ? null : -(number("fuel_cost") ?? 0)],
+    ["Fuel", comparison.isPersistentTank ? 0 : comparison.finalFuelCost === null ? null : -comparison.finalFuelCost],
     ["Landing", comparison.finalLandingFee === null ? null : -comparison.finalLandingFee],
     ["Handling", number("handling_fee") === null ? null : -(number("handling_fee") ?? 0)],
     ["Maintenance reserve", number("maintenance") === null ? null : -(number("maintenance") ?? 0)],
@@ -44,16 +44,18 @@ export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight 
         <p className="text-xs uppercase text-amber">Financial Breakdown{flight.estimate ? " · Planned vs Final" : ""}</p>
         <dl className="readout space-y-3 text-sm">
           {rows.map(([label, value]) => <div key={label}>
-            <div className="flex items-start justify-between gap-4"><dt className="min-w-0">{label}</dt><dd className={`shrink-0 ${value !== null && value > 0 ? "text-primary" : "text-muted-foreground"}`}>{label === "Fuel" && comparison.finalFuelCost !== null ? formatCr(-comparison.finalFuelCost) : value === null ? "—" : signed(value)}</dd></div>
+            <div className="flex items-start justify-between gap-4"><dt className="min-w-0">{label === "Fuel" && comparison.isPersistentTank ? "Fuel (burned from tank)" : label}</dt><dd className={`shrink-0 ${value !== null && value > 0 ? "text-primary" : "text-muted-foreground"}`}>{value === null ? "—" : signed(value)}</dd></div>
             {label === "Fuel" && <dd className="mt-2 space-y-2 text-xs text-muted-foreground">
+              <p className={comparison.isPersistentTank ? "text-primary" : "text-amber"}>{comparison.isPersistentTank ? "Paid at uplift · no cash charge at landing" : "Pay-As-You-Burn · charged at landing"}</p>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {comparison.isPersistentTank && comparison.finalFuelCost !== null && <span>Tank burn value: {formatCr(-comparison.finalFuelCost)}</span>}
                 {comparison.actualFuelGal !== null && <span>Actual {comparison.actualFuelGal.toFixed(1)} gal</span>}
                 {comparison.actualFuelGal === null && comparison.billedFuelGal !== null && <span>Billed {comparison.billedFuelGal.toFixed(1)} gal</span>}
                 {comparison.plannedFuelGal !== null && <span>Est. {comparison.plannedFuelGal.toFixed(1)} gal{comparison.plannedFuelCost !== null ? ` · ${formatCr(-comparison.plannedFuelCost)}` : ""}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {comparison.fuelSavings !== null && <span className={`border px-2 py-1 ${comparison.fuelSavings >= 0 ? "border-primary/30 text-primary" : "border-destructive/30 text-destructive"}`}>
-                  {comparison.fuelSavings >= 0 ? "Saved" : "Overburn"} {signed(comparison.fuelSavings)}
+                  {comparison.isPersistentTank ? "Tank value · " : ""}{comparison.fuelSavings >= 0 ? "Saved" : "Overburn"} {signed(comparison.fuelSavings)}
                 </span>}
                 {comparison.floorApplied && <span className="border border-amber/30 px-2 py-1 text-amber" title={comparison.actualFuelGal !== null ? `Billed ${comparison.billedFuelGal?.toFixed(1)} gal instead of actual ${comparison.actualFuelGal.toFixed(1)} gal` : "Billing floor applied to the final leg"}>
                   {comparison.floorPct !== null ? `${Math.round(comparison.floorPct * 100)}% floor applied` : "Billing floor applied"}
@@ -63,7 +65,12 @@ export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight 
             </dd>}
           </div>)}
           <div className="border-t border-border pt-4">
-            <div className="flex flex-wrap justify-between gap-2 font-semibold"><dt>Contribution margin</dt><dd className={(comparison.finalNet ?? 0) >= 0 ? "text-primary" : "text-destructive"}>{comparison.finalNet === null ? "—" : formatCr(comparison.finalNet)}</dd></div>
+            <div className="flex flex-wrap justify-between gap-2 font-semibold"><dt className="text-amber">Cash credited at landing</dt><dd className={(comparison.cashCreditedAtLanding ?? 0) >= 0 ? "text-primary" : "text-destructive"}>{comparison.cashCreditedAtLanding === null ? "—" : signed(comparison.cashCreditedAtLanding)}</dd></div>
+            <dd className="mt-1 text-xs text-muted-foreground">{(comparison.cashCreditedAtLanding ?? 0) < 0 ? "Net cash charged to company balance at touchdown" : "Net cash added to company balance at touchdown"}</dd>
+          </div>
+          <div className="border-t border-border pt-4">
+            <div className="flex flex-wrap justify-between gap-2 font-semibold"><dt>Route contribution margin</dt><dd className={(comparison.finalNet ?? 0) >= 0 ? "text-primary" : "text-destructive"}>{comparison.finalNet === null ? "—" : formatCr(comparison.finalNet)}</dd></div>
+            {comparison.isPersistentTank && <dd className="mt-1 text-xs text-muted-foreground">After tank fuel value</dd>}
             {comparison.estimatedNet !== null && <dd className="mt-2 flex flex-wrap justify-between gap-2 text-xs">
               <span className="text-muted-foreground">vs Est. {formatCr(comparison.estimatedNet)}</span>
               {comparison.netDelta !== null && <span className={comparison.netDelta >= 0 ? "text-primary" : "text-destructive"}>Net delta: {signed(comparison.netDelta)}</span>}

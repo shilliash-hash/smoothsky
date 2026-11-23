@@ -36,6 +36,12 @@ export function flightDebriefComparison(flight: DebriefFlight) {
   const finalFuelCost = finalCost === null ? null : finalCost + sumLegs("fuel_cost");
   const estimatedNet = number(plan["net"]);
   const finalNet = number(final["net"]);
+  const isPersistentTank = Object.hasOwn(final, "fuel_uplift_gal") || Object.hasOwn(object(flight.estimate), "fuel_uplift_gal");
+  // Previous divert costs were already settled at the alternate airport.
+  const priorLegCosts = sumLegs("fuel_cost") + sumLegs("landing_fee");
+  const cashCreditedAtLanding = finalNet === null || (isPersistentTank && finalCost === null)
+    ? null
+    : finalNet + priorLegCosts + (isPersistentTank ? finalCost ?? 0 : 0);
   const reportedHours = number(pirep["flight_time_hours"]) ?? number(telemetry["flight_time_hours"]);
   const finalMinutes = reportedHours !== null ? reportedHours * 60 + sumLegs("minutes") : number(final["minutes"]) ?? flight.estimatedMinutes ?? null;
   const estimatedMinutes = number(plan["minutes"]) ?? flight.estimatedMinutes ?? null;
@@ -45,7 +51,7 @@ export function flightDebriefComparison(flight: DebriefFlight) {
   return {
     plannedFuelGal, actualFuelGal, billedFuelGal, plannedFuelCost, finalFuelCost,
     fuelSavings: plannedFuelCost !== null && finalFuelCost !== null ? plannedFuelCost - finalFuelCost : null,
-    estimatedNet, finalNet,
+    estimatedNet, finalNet, isPersistentTank, cashCreditedAtLanding,
     netDelta: estimatedNet !== null && finalNet !== null ? finalNet - estimatedNet : null,
     finalMinutes, estimatedMinutes,
     minutesDelta: finalMinutes !== null && estimatedMinutes !== null ? finalMinutes - estimatedMinutes : null,
