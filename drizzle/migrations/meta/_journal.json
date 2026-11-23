@@ -526,6 +526,13 @@
       "when": 1795456099468,
       "tag": "0074_selected_dispatch_payload",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1795456441730,
+      "tag": "0075_payload_preview_precision",
+      "breakpoints": true
     }
   ]
 }

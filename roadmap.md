@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Unified dispatch payload controls
-- [ ] Add optional selected passengers to shared quote/dispatch/discovery SQL, retaining auto-load defaults, missions, tank accounting and exact pool reservations.
-- [ ] Move PAX/Cargo controls into Weight & Balance with live MTOW/fuel limits, revenue/margin preview and Auto-load best mix.
-- [ ] Verify SQL and payload rules plus signed-in desktop/mobile quote/dispatch readback; deployment vars unchanged.
+- [x] Add optional selected passengers to shared quote/dispatch/discovery SQL, retaining auto-load defaults, missions, tank accounting and exact pool reservations.
+- [x] Move PAX/Cargo controls into Weight & Balance with live MTOW/fuel limits, revenue/margin preview and Auto-load best mix (highest contribution margin across feasible passenger/cargo mixes).
+- [x] 192 tests passed; signed-in rental, owned and disposable leased-aircraft quotes checked on desktop/mobile, Commercial/All-Cargo/Ferry and tankering checked with no overflow/runtime errors. Test dispatch recorded exactly 2 PAX + 72 kg cargo, 133 gal fuel and 2414.49/2495 kg MTOW; cancellation refunded uplift, then admin deletion removed only the test account/company/flight. Build OK, deployment vars and ACARS unchanged. Real simulator flight remains unverified.
 
 ## Wide-screen Flight Deck layout
 - [x] Widen shared workspace/navigation to 1600px, retain responsive side spacing and reposition decorative Aurora logo outside the workspace from 1840px; no game, database, API or deployment changes.

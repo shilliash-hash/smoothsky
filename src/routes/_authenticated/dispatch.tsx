@@ -178,8 +178,8 @@ function Dispatch() {
         if (active) {
           const result = q as Quote;
           setQuoteResult({ key: quoteKey, context: quoteContext, value: result });
-          if (passengers !== null && passengers === quotePassengers && passengers !== result.passengers) setPassengers(result.passengers);
-          if (cargoKg === cargoQuoteKg && cargoKg !== (result.cargo_kg ?? 0)) setCargoKg(result.cargo_kg ?? 0);
+          if (quotePassengers !== null) setPassengers(current => current === quotePassengers ? result.passengers : current);
+          setCargoKg(current => current === cargoQuoteKg ? result.cargo_kg ?? 0 : current);
         }
       })
       .catch((e) => {

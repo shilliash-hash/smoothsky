@@ -34,7 +34,7 @@ export function useDispatchDeals(aircraftId: string | undefined, originIcao: str
       if (!aircraftId) return [];
       const { data, error } = await supabase.rpc("get_dispatch_destination_deals_loaded", {
         p_aircraft_id: aircraftId, p_tiers: [...tiers], p_cargo_kg: cargoKg, p_all_cargo: allCargo,
-        p_passengers: passengers, p_target_fuel_gal: targetFuel,
+        ...(passengers !== null ? { p_passengers: passengers } : {}), ...(targetFuel !== null ? { p_target_fuel_gal: targetFuel } : {}),
         ...(query.length >= MIN_SEARCH_CHARS ? { p_query: query } : {}),
       });
       if (error) throw error;
@@ -61,7 +61,7 @@ export function useDestinationAlternatives(aircraftId: string | undefined, origi
       const { data, error } = await supabase.rpc("get_destination_alternatives_loaded", {
         p_aircraft_id: aircraftId, p_target_icao: target, p_radius_nm: 150,
         p_tiers: [...tiers], p_cargo_kg: cargoKg, p_all_cargo: allCargo,
-        p_passengers: passengers, p_target_fuel_gal: targetFuel,
+        ...(passengers !== null ? { p_passengers: passengers } : {}), ...(targetFuel !== null ? { p_target_fuel_gal: targetFuel } : {}),
       });
       if (error) throw error;
       return (data ?? []).map(row => ({
