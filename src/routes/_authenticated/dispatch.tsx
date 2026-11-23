@@ -501,7 +501,7 @@ function Dispatch() {
                     </Button>
                   )}
                   {f.status === "COMPLETED" && (
-                    <><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} /><span className="readout text-primary">
+                    <><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} estimate={f.estimate} telemetry={f.telemetry} estimatedMinutes={f.estimated_minutes} divertState={f.divert_state} /><span className="readout text-primary">
                       {formatCr((f.settlement as Quote)?.net ?? 0)}
                     </span></>
                   )}

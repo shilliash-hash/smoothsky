@@ -1,5 +1,9 @@
 # Roadmap
 
+## Flight debrief comparisons
+- [x] Show frozen planned vs final fuel, time and contribution margin in Logbook and Dispatch, including billing-floor indicators, original diverted contracts and legacy fallbacks.
+- [x] Nine calculation tests passed; signed-in real FJO104 debrief opened in Logbook and Dispatch with matching 174.96 SC planned/final, 3.0 gal and 0.35 h. Desktop/mobile screenshots checked with no overflow or runtime errors; build OK. Accounting, ACARS and deployment vars unchanged. Live ACARS savings/floor examples are unavailable on this account and covered by calculation tests instead.
+
 ## ACARS reconnect fuel accounting
 - [x] Persist observed fuel and cumulative burn per leg; exclude initial PREFLIGHT changes and latch tracking after taxi so reconnect cannot reset it.
 - [x] Reconcile verified settlement against cumulative burn, departure/final balance, PIREP and frozen floor; retain refunds, rentals and diverted-leg accounting.

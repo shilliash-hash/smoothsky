@@ -89,7 +89,7 @@ function Logbook() {
             <td className="readout p-3 text-right">{result.hours.toFixed(2)}</td>
             <td className="readout p-3 text-right">{f.passengers}</td>
             <td className={`readout whitespace-nowrap p-3 text-right ${result.net === null ? "text-muted-foreground" : result.net >= 0 ? "text-success" : "text-destructive"}`}>{result.net === null ? "—" : `${result.net > 0 ? "+" : ""}${formatCr(result.net)}`}</td>
-            <td className="p-3"><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} /></td>
+            <td className="p-3"><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} estimate={f.estimate} telemetry={f.telemetry} estimatedMinutes={f.estimated_minutes} divertState={f.divert_state} /></td>
           </tr>;
         })}</tbody>
       </table>

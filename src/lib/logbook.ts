@@ -20,7 +20,7 @@ export const logbookQuery = (companyId: string) => queryOptions({
   staleTime: 15000,
   queryFn: async () => {
     const fetchPage = (offset: number) => supabase.from("flights")
-      .select("id, aircraft_id, completed_at, flight_number, origin_icao, destination_icao, distance_nm, estimated_minutes, passengers, settlement, aircraft:fleet_aircraft!flights_aircraft_id_fkey(registration, type:aircraft_types(manufacturer, model))")
+      .select("id, aircraft_id, completed_at, flight_number, origin_icao, destination_icao, distance_nm, estimated_minutes, passengers, settlement, estimate, telemetry, divert_state, aircraft:fleet_aircraft!flights_aircraft_id_fkey(registration, type:aircraft_types(manufacturer, model))")
       .eq("company_id", companyId)
       .eq("status", "COMPLETED")
       .order("completed_at", { ascending: false })
