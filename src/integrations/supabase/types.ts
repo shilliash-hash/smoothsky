@@ -1356,6 +1356,19 @@ export type Database = {
         }
         Returns: string
       }
+      dispatch_flight_loaded: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_flight_number: string
+          p_mission?: string
+          p_passengers?: number
+          p_target_fuel_gal?: number
+        }
+        Returns: string
+      }
       dispatch_usable_range_pct: { Args: never; Returns: number }
       divert_action: {
         Args: { p_action: string; p_flight: string; p_target_fuel_gal?: number }
@@ -1441,6 +1454,18 @@ export type Database = {
         }
         Returns: Json
       }
+      flight_quote_loaded: {
+        Args: {
+          p_aircraft: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_destination: string
+          p_mission?: string
+          p_passengers?: number
+          p_target_fuel_gal?: number
+        }
+        Returns: Json
+      }
       flight_quote_without_fobs: {
         Args: { p_aircraft: string; p_destination: string }
         Returns: Json
@@ -1474,12 +1499,52 @@ export type Database = {
           margin_diff_vs_target: number
         }[]
       }
+      get_destination_alternatives_loaded: {
+        Args: {
+          p_aircraft_id: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_passengers?: number
+          p_radius_nm?: number
+          p_target_fuel_gal?: number
+          p_target_icao: string
+          p_tiers?: number[]
+        }
+        Returns: {
+          airport: Json
+          distance_from_target_nm: number
+          distance_nm: number
+          estimate_error: string
+          estimated_margin: number
+          estimated_revenue: number
+          margin_diff_vs_target: number
+        }[]
+      }
       get_dispatch_destination_deals: {
         Args: {
           p_aircraft_id: string
           p_all_cargo?: boolean
           p_cargo_kg?: number
           p_query?: string
+          p_tiers?: number[]
+        }
+        Returns: {
+          airport: Json
+          distance_nm: number
+          estimate_error: string
+          estimated_margin: number
+          estimated_revenue: number
+          is_fbo: boolean
+        }[]
+      }
+      get_dispatch_destination_deals_loaded: {
+        Args: {
+          p_aircraft_id: string
+          p_all_cargo?: boolean
+          p_cargo_kg?: number
+          p_passengers?: number
+          p_query?: string
+          p_target_fuel_gal?: number
           p_tiers?: number[]
         }
         Returns: {
@@ -1743,6 +1808,10 @@ export type Database = {
       }
       set_flight_route: {
         Args: { p_flight: string; p_waypoints: Json }
+        Returns: undefined
+      }
+      set_selected_passengers: {
+        Args: { p_passengers: number }
         Returns: undefined
       }
       set_stake_offer: { Args: { p_pct: number }; Returns: undefined }

@@ -6,12 +6,13 @@ import { useDestinationAlternatives } from "@/lib/dispatch-deals";
 import { formatCr } from "@/lib/rules";
 import { displayTerminology } from "@/lib/display-terminology";
 
-export function DestinationAlternatives({ aircraftId, originIcao, target, tiers, cargoKg, allCargo, rulesKey, selectedMargin, onSelect }: {
+export function DestinationAlternatives({ aircraftId, originIcao, target, tiers, cargoKg, allCargo, rulesKey, selectedMargin, onSelect, passengers = null, targetFuel = null }: {
   aircraftId: string | undefined; originIcao: string | undefined; target: string;
   tiers: readonly number[]; cargoKg: number; allCargo: boolean; rulesKey: string;
   selectedMargin: number | null; onSelect: (icao: string) => void;
+  passengers?: number | null; targetFuel?: number | null;
 }) {
-  const alternatives = useDestinationAlternatives(aircraftId, originIcao, target, tiers, cargoKg, allCargo, rulesKey);
+  const alternatives = useDestinationAlternatives(aircraftId, originIcao, target, tiers, cargoKg, allCargo, rulesKey, passengers, targetFuel);
   if (!target) return null;
   return <section aria-label="Destination alternatives" className="mt-6 border-t border-border pt-4">
     <h3 className="readout text-sm text-amber">Alternatives within 150 NM of {target}</h3>

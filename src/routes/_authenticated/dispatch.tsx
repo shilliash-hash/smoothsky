@@ -12,7 +12,7 @@ import { badgeVariants } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
+import { bestPayloadMix, payloadPlanning } from "@/lib/payload-planning";
 import { operationsQuery, type Quote } from "@/lib/operations";
 import { flightAction } from "@/lib/operations.functions";
 import { flightProgress, ticketRevenueBreakdown } from "@/lib/dispatch-engine";
@@ -83,13 +83,15 @@ function Dispatch() {
   const [filter, setFilter] = useState("");
   const [explicitTiers, setTiers] = useState<number[] | null>(null);
   const [dealSort, setDealSort] = useState<DealSort>("best");
-  const [quoteResult, setQuoteResult] = useState<{ key: string; value: Quote } | null>(null);
+  const [quoteResult, setQuoteResult] = useState<{ key: string; context: string; value: Quote } | null>(null);
   const [busy, setBusy] = useState(false);
   const webSimAllowed = d.rules["web_simulation_enabled"] === true;
   const [simulation, setSimulation] = useState(webSimAllowed);
   useEffect(() => { if (!webSimAllowed) setSimulation(false); }, [webSimAllowed]);
   const [cargoKg, setCargoKg] = useState(0);
   const [cargoQuoteKg, setCargoQuoteKg] = useState(0);
+  const [passengers, setPassengers] = useState<number | null>(null);
+  const [quotePassengers, setQuotePassengers] = useState<number | null>(null);
   const [targetFuel, setTargetFuel] = useState<number | null>(null);
   const [targetQuoteFuel, setTargetQuoteFuel] = useState<number | null>(null);
   const [pendingRamp, setPendingRamp] = useState<SimbriefPlan["rampFuel"]>(null);
@@ -108,10 +110,13 @@ function Dispatch() {
   const ferry = flightMode === "ferry";
   const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
-  const payload = { ...flightModePayload(flightMode, cargoQuoteKg, cargoCapacity), ...(targetQuoteFuel !== null ? { targetFuelGal: targetQuoteFuel } : {}) };
-  const quoteKey = JSON.stringify([selected?.id, selected?.status, destination, payload.cargoKg, payload.allCargo, targetQuoteFuel, d.rules["fuel_reserve_minutes"], rulesKey]);
-  const quote = quoteResult?.key === quoteKey ? quoteResult.value : null;
-  const payloadPending = cargoKg !== cargoQuoteKg;
+  const payload = { ...flightModePayload(flightMode, cargoQuoteKg, cargoCapacity), ...(quotePassengers !== null ? { passengers: quotePassengers } : {}), ...(targetQuoteFuel !== null ? { targetFuelGal: targetQuoteFuel } : {}) };
+  const quoteContext = JSON.stringify([selected?.id, selected?.status, destination, flightMode, rulesKey]);
+  const quoteKey = JSON.stringify([quoteContext, payload.cargoKg, quotePassengers, targetQuoteFuel]);
+  const confirmedQuote = quoteResult?.context === quoteContext ? quoteResult.value : null;
+  const planning = confirmedQuote ? payloadPlanning(confirmedQuote, flightMode, passengers, cargoKg, targetFuel) : null;
+  const quote = planning?.quote ?? confirmedQuote;
+  const payloadPending = cargoKg !== cargoQuoteKg || passengers !== quotePassengers || targetFuel !== targetQuoteFuel || quoteResult?.key !== quoteKey;
   const rangeNm = selected?.type?.range_nm ?? 0;
   const payloadRange = flightModeRange("commercial", rangeNm, usableRangePct);
   const beyondPayloadRange = !ferry && quote !== null && quote.distance_nm > payloadRange;
@@ -123,6 +128,10 @@ function Dispatch() {
     setFlightMode(mode);
     setCargoKg(next.cargoKg);
     setCargoQuoteKg(next.cargoKg);
+    setPassengers(mode === 'commercial' ? null : 0);
+    setQuotePassengers(mode === 'commercial' ? null : 0);
+    setTargetFuel(null);
+    setTargetQuoteFuel(null);
     setQuoteResult(null);
     setQuoteError("");
   }
@@ -142,6 +151,7 @@ function Dispatch() {
     return () => clearTimeout(t);
   }, [targetFuel]);
   useEffect(() => { setTargetFuel(null); setTargetQuoteFuel(null); }, [selected?.id, destination]);
+  useEffect(() => { setPassengers(null); setQuotePassengers(null); setCargoKg(0); setCargoQuoteKg(0); }, [selected?.id]);
   useEffect(() => {
     if (!pendingRamp || !quote?.tank?.persistent) return;
     const gal = simbriefRampToGallons(pendingRamp.value, pendingRamp.unit, fuelDensity);
@@ -156,13 +166,21 @@ function Dispatch() {
     return () => clearTimeout(t);
   }, [cargoKg]);
   useEffect(() => {
-    setQuoteResult(null);
+    const t = setTimeout(() => setQuotePassengers(passengers), 300);
+    return () => clearTimeout(t);
+  }, [passengers]);
+  useEffect(() => {
     setQuoteError("");
     if (!selected || !destination) return;
     let active = true;
     action({ data: { action: "quote", aircraft: selected.id, destination, ...payload } })
       .then((q) => {
-        if (active) setQuoteResult({ key: quoteKey, value: q as Quote });
+        if (active) {
+          const result = q as Quote;
+          setQuoteResult({ key: quoteKey, context: quoteContext, value: result });
+          if (passengers !== null && passengers === quotePassengers && passengers !== result.passengers) setPassengers(result.passengers);
+          if (cargoKg === cargoQuoteKg && cargoKg !== (result.cargo_kg ?? 0)) setCargoKg(result.cargo_kg ?? 0);
+        }
       })
       .catch((e) => {
         if (active) setQuoteError(displayTerminology(e.message));
@@ -171,7 +189,7 @@ function Dispatch() {
       active = false;
     };
   }, [selected?.id, selected?.status, destination, action, quoteKey]);
-  const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, payload.cargoKg, payload.allCargo, rulesKey);
+  const deals = useDispatchDeals(selected?.status === "AVAILABLE" ? selected.id : undefined, origin?.icao, tiers, filter, payload.cargoKg, payload.allCargo, rulesKey, quotePassengers, targetQuoteFuel);
   const destinations = useMemo(() => sortDestinationDeals(tiers.length ? deals.data ?? [] : [], dealSort), [deals.data, dealSort, tiers.length]);
   const topDeals = useMemo(() => topDestinationDeals(destinations), [destinations]);
   const activeRoute = route && route[0]?.ident === origin?.icao && route[route.length - 1]?.ident === destination ? route : null;
@@ -183,6 +201,8 @@ function Dispatch() {
         setFlightNumber(null);
         setCargoKg(0);
         setCargoQuoteKg(0);
+        setPassengers(null);
+        setQuotePassengers(null);
         setFlightMode("commercial");
         setDestination("");
         setRoute(null);
@@ -309,7 +329,7 @@ function Dispatch() {
                 )}
               </div>
               <div className="mt-4">
-                <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={payload.cargoKg} allCargo={payload.allCargo} rulesKey={rulesKey} selectedMargin={quote?.net ?? null} onSelect={setDestination} />
+                <DestinationAlternatives aircraftId={selected?.id} originIcao={origin?.icao} target={destination} tiers={tiers} cargoKg={payload.cargoKg} allCargo={payload.allCargo} rulesKey={rulesKey} passengers={quotePassengers} targetFuel={targetQuoteFuel} selectedMargin={payloadPending ? null : quote?.net ?? null} onSelect={setDestination} />
               </div>
             </section>
             <section className="border-t border-border pt-4 lg:border-t-0 lg:pt-0">
@@ -341,14 +361,7 @@ function Dispatch() {
                   <p className="readout text-xs uppercase">Ferry repositioning · 0 PAX · 0 kg</p>
                   <p className="mt-2">No revenue · fuel, airport fees and maintenance only.</p>
                   <p className="readout mt-2 text-xs">Full range: {Math.floor(rangeNm)} NM (100%)</p>
-                </div> : <>
-                <label htmlFor="cargo-kg" className="mt-4 block text-xs uppercase text-muted-foreground">Cargo (kg)</label>
-                <Slider id="cargo-kg" aria-label="Cargo (kg)" className="mt-4" min={flightMode === "cargo" ? 10 : 0} max={Math.max(cargoCapacity, 0)} step={10} value={[cargoKg]} onValueChange={(v) => setCargoKg(v[0] ?? 0)} disabled={cargoCapacity === 0} />
-                <p className="readout mt-2 text-xs text-muted-foreground">
-                  {cargoKg} / {cargoCapacity} kg {allCargo ? `· All-Cargo: +${Math.round(cargoBonus * 100)}% capacity, −${Math.round(Number(overview.rules.cargo_airport_fee_discount ?? 0.4) * 100)}% airport fees` : "· Belly cargo"}
-                  {cargoCapacity === 0 && " · this aircraft carries no cargo"}
-                </p>
-                </>}
+                </div> : allCargo ? <p className="mt-3 text-xs text-muted-foreground">All-Cargo: +{Math.round(cargoBonus * 100)}% capacity · −{Math.round(Number(overview.rules.cargo_airport_fee_discount ?? 0.4) * 100)}% airport fees</p> : null}
               </div>
               <p className="readout text-xs uppercase text-amber">Pre-flight estimate</p>
               <h2 className="readout mt-2 border-y border-border bg-panel py-3 text-2xl text-primary">
@@ -369,7 +382,15 @@ function Dispatch() {
                   </p>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
                   {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} />}
-                  {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && cargoCapacity > 0 && cargoKg < cargoCapacity} onAutoLoad={() => setCargoKg(cargoCapacity)} />}
+                  {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && planning !== null} onAutoLoad={() => {
+                    if (!confirmedQuote) return;
+                    const mix = bestPayloadMix(confirmedQuote, flightMode, targetFuel);
+                    setPassengers(mix.passengers); setCargoKg(mix.cargoKg);
+                  }} {...(planning ? { controls: { mode: flightMode, maxPax: planning.maxPax, maxCargo: planning.maxCargo, ticketRevenue: quote.ticket_revenue ?? 0, cargoRevenue: quote.cargo_revenue ?? 0,
+                    onPassengers: (v: number) => { setPassengers(v); setCargoKg(planning.cargoKg); },
+                    onCargo: (v: number) => { setPassengers(planning.passengers); setCargoKg(v); },
+                  } } : {})} />}
+                  {payloadPending && <p role="status" className="mt-2 text-xs text-muted-foreground">Confirming load estimate…</p>}
                   {quote.runway_unpaved && <p className="mt-1 text-xs text-amber">[UNPAVED] No paved runway nearby — remote strip fallback</p>}
                   <dl className="readout mt-5 space-y-3">
                     {[

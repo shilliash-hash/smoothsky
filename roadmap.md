@@ -1,5 +1,10 @@
 # Roadmap
 
+## Unified dispatch payload controls
+- [ ] Add optional selected passengers to shared quote/dispatch/discovery SQL, retaining auto-load defaults, missions, tank accounting and exact pool reservations.
+- [ ] Move PAX/Cargo controls into Weight & Balance with live MTOW/fuel limits, revenue/margin preview and Auto-load best mix.
+- [ ] Verify SQL and payload rules plus signed-in desktop/mobile quote/dispatch readback; deployment vars unchanged.
+
 ## Wide-screen Flight Deck layout
 - [x] Widen shared workspace/navigation to 1600px, retain responsive side spacing and reposition decorative Aurora logo outside the workspace from 1840px; no game, database, API or deployment changes.
 - [x] Signed-in seven-page checks at 2560px and 390px plus Dashboard/Dispatch at 1366px and 5120px passed: shared width capped at 1600px, no horizontal overflow, Aurora stays outside content and is hidden below 1840px; screenshots checked, no runtime errors, build OK.

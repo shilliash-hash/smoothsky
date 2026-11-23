@@ -18,6 +18,7 @@ export type Quote = {
   distance_nm: number;
   minutes: number;
   passengers: number;
+  payload_limits?: { max_passengers: number; max_cargo_kg: number; ticket_unit_revenue: number; cargo_unit_revenue: number; handling_rate_effective: number };
   revenue: number;
   short_hop_charter?: CharterSnapshot;
   demand?: DemandSnapshot;

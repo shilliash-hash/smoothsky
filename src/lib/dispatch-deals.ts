@@ -17,7 +17,7 @@ export type DestinationAlternative = DestinationDeal & {
   margin_diff_vs_target: number | null;
 };
 
-export function useDispatchDeals(aircraftId: string | undefined, originIcao: string | undefined, tiers: readonly number[], search: string, cargoKg: number, allCargo: boolean, rulesKey: string) {
+export function useDispatchDeals(aircraftId: string | undefined, originIcao: string | undefined, tiers: readonly number[], search: string, cargoKg: number, allCargo: boolean, rulesKey: string, passengers: number | null = null, targetFuel: number | null = null) {
   const [debounced, setDebounced] = useState(search);
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), DISPATCH_SEARCH_DEBOUNCE_MS);
@@ -26,14 +26,15 @@ export function useDispatchDeals(aircraftId: string | undefined, originIcao: str
   const query = sanitizeSearch(debounced);
   const searchPending = sanitizeSearch(search) !== query;
   const result = useQuery({
-    queryKey: ["dispatch-deals", aircraftId, originIcao, tiers.join(","), query.length >= MIN_SEARCH_CHARS ? query : "", cargoKg, allCargo, rulesKey],
+    queryKey: ["dispatch-deals", aircraftId, originIcao, tiers.join(","), query.length >= MIN_SEARCH_CHARS ? query : "", cargoKg, allCargo, rulesKey, passengers, targetFuel],
     enabled: !!aircraftId && tiers.length > 0,
     staleTime: 15_000,
     refetchInterval: 30_000,
     queryFn: async (): Promise<DestinationDeal[]> => {
       if (!aircraftId) return [];
-      const { data, error } = await supabase.rpc("get_dispatch_destination_deals", {
+      const { data, error } = await supabase.rpc("get_dispatch_destination_deals_loaded", {
         p_aircraft_id: aircraftId, p_tiers: [...tiers], p_cargo_kg: cargoKg, p_all_cargo: allCargo,
+        p_passengers: passengers, p_target_fuel_gal: targetFuel,
         ...(query.length >= MIN_SEARCH_CHARS ? { p_query: query } : {}),
       });
       if (error) throw error;
@@ -49,17 +50,18 @@ export function useDispatchDeals(aircraftId: string | undefined, originIcao: str
   return { ...result, searchPending };
 }
 
-export function useDestinationAlternatives(aircraftId: string | undefined, originIcao: string | undefined, target: string, tiers: readonly number[], cargoKg: number, allCargo: boolean, rulesKey: string) {
+export function useDestinationAlternatives(aircraftId: string | undefined, originIcao: string | undefined, target: string, tiers: readonly number[], cargoKg: number, allCargo: boolean, rulesKey: string, passengers: number | null = null, targetFuel: number | null = null) {
   return useQuery({
-    queryKey: ["dispatch-alternatives", aircraftId, originIcao, target, tiers.join(","), cargoKg, allCargo, rulesKey],
+    queryKey: ["dispatch-alternatives", aircraftId, originIcao, target, tiers.join(","), cargoKg, allCargo, rulesKey, passengers, targetFuel],
     enabled: !!aircraftId && !!target && tiers.length > 0,
     staleTime: 15_000,
     refetchInterval: 30_000,
     queryFn: async (): Promise<DestinationAlternative[]> => {
       if (!aircraftId || !target) return [];
-      const { data, error } = await supabase.rpc("get_destination_alternatives", {
+      const { data, error } = await supabase.rpc("get_destination_alternatives_loaded", {
         p_aircraft_id: aircraftId, p_target_icao: target, p_radius_nm: 150,
         p_tiers: [...tiers], p_cargo_kg: cargoKg, p_all_cargo: allCargo,
+        p_passengers: passengers, p_target_fuel_gal: targetFuel,
       });
       if (error) throw error;
       return (data ?? []).map(row => ({
