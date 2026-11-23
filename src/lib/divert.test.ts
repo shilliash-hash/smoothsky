@@ -10,6 +10,7 @@ const company = '00000000-0000-4000-8000-000000000002';
 const aircraft = '00000000-0000-4000-8000-000000000003';
 const flight = '00000000-0000-4000-8000-000000000004';
 const migrationPath = () => 'drizzle/migrations/0055_weight_budget_stage_one.sql';
+const spotRentalFuelPath = () => { const name=readdirSync('drizzle/migrations').find(f=>f.endsWith('_spot_rental_target_fuel.sql')); if (!name) throw new Error('Spot rental fuel migration missing'); return `drizzle/migrations/${name}`; };
 const catalogue = [
  ['C172',830,1157,3,0,640,122,8.5,56,'100LL'],
  ['BE58',1820,2495,5,150,1480,200,26,194,'100LL'],
@@ -70,7 +71,7 @@ beforeAll(async () => {
  CREATE FUNCTION airport_distance_nm(double precision,double precision,double precision,double precision) RETURNS double precision LANGUAGE sql AS $$ SELECT 2*3440.065*asin(sqrt(least(1.0,greatest(0.0,power(sin(radians($3-$1)/2),2)+cos(radians($1))*cos(radians($3))*power(sin(radians($4-$2)/2),2))))) $$;`);
  await db.exec(readFileSync('src/test/fixtures/divert-baseline.sql','utf8'));
  const fuel=readFileSync('drizzle/migrations/0057_persistent_fuel_tanks.sql','utf8');
- for (const name of ['flight_tank_plan','flight_weight_budget','return_cancelled_fuel']) {
+ for (const name of ['flight_tank_plan','flight_weight_budget','return_cancelled_fuel','reserve_dispatch_fuel']) {
   const fn=fuel.match(new RegExp('CREATE OR REPLACE FUNCTION public.'+name+'\\([\\s\\S]*?END (?:\\$function\\$|\\$\\$);'))?.[0];
   if (!fn) throw new Error(name+' missing'); await db.exec(fn);
  }
@@ -80,6 +81,7 @@ beforeAll(async () => {
  await db.exec(readFileSync('drizzle/migrations/0066_divert_lease_retention.sql','utf8'));
  await db.exec(readFileSync('drizzle/migrations/0067_acars_ramp_fuel_adjustment.sql','utf8'));
  await db.exec(readFileSync(process.env['ACARS_BURN_SQL'] ?? 'drizzle/migrations/0069_acars_persistent_fuel_burn.sql','utf8'));
+ await db.exec(readFileSync(spotRentalFuelPath(),'utf8'));
  await db.exec(`CREATE FUNCTION acars_flight_json(flights) RETURNS jsonb LANGUAGE sql AS $$ SELECT jsonb_build_object('id',($1).id) $$;
  CREATE TRIGGER cancelled_fuel AFTER UPDATE OF status ON flights FOR EACH ROW EXECUTE FUNCTION return_cancelled_fuel();`);
  await db.exec(readFileSync('drizzle/migrations/0032_acars_resume_window.sql','utf8'));
@@ -284,5 +286,37 @@ describe('Persistent ACARS fuel across reconnects',()=>{
   await db.exec('SAVEPOINT invalid');
   await expect(db.query(`SELECT acars_position('test',$1::jsonb)`,[JSON.stringify({lat:0,lon:0,fuel_gal:fuel,phase:'CRUISE'})])).rejects.toThrow();
   await db.exec('ROLLBACK TO SAVEPOINT invalid');expect(await fuelState()).toEqual({burn:0,observed:null,started:false});
+ });
+});
+
+describe('Spot rental chosen fuel',()=>{
+ type Tank={tank:{persistent:boolean;target_fuel_gal:number;min_target_gal:number;uplift_cost:number}};
+ it('C172 rental with 40 gal target plans 40 gal and leaves MTOW − OEW − 40 gal mass for payload',async()=>{
+  await db.exec(`UPDATE fleet_aircraft SET ownership='RENTAL'`);
+  await db.query(`SELECT * FROM set_target_fuel('${aircraft}',40)`);
+  const b=(await db.query<{q:Budget}>(`SELECT flight_weight_budget('C172',122) q`)).rows[0]?.q;
+  expect(b?.planned_fuel_gal).toBe(40);
+  expect(b?.available_payload_kg).toBeCloseTo(1157-830-40*0.72*3.785411784,6);
+ });
+ it('rental continuation honours 30 gal: reserves 30 gal at the alternate and charges 0 SC up front',async()=>{
+  await db.exec(`UPDATE fleet_aircraft SET ownership='RENTAL'`);await divert();
+  const r=(await call('quote',30)).rows[0] as {q:Tank}|undefined;
+  expect(r?.q.tank).toMatchObject({persistent:false,target_fuel_gal:30,uplift_cost:0});
+  await call('continue',30);
+  expect(await one('SELECT stock_gal::float stock FROM airport_fuel_pools')).toEqual({stock:70});
+ });
+ it('rental continuation refuses 40 gal with 3 PAX locked aboard because it breaks C172 MTOW',async()=>{
+  await db.exec(`UPDATE fleet_aircraft SET ownership='RENTAL'`);await divert();
+  await expect(call('continue',40)).rejects.toThrow('Locked payload');
+  expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='FUEL_EXPENSE'`)).toEqual({n:1});
+ });
+ it('rental ramp fuel 40 gal raises the 28 gal plan only to the MTOW limit with 3 PAX, without charge or uplift keys',async()=>{
+  await db.exec(`UPDATE fleet_aircraft SET ownership='RENTAL'; UPDATE flights SET status='DISPATCHED',estimate=estimate-'fuel_uplift_gal'-'fuel_uplift_cost'`);
+  const r=(await db.query<{q:{added_gal:number;cost:number}}>(`SELECT ramp_fuel_adjust('${flight}','{"phase":"PREFLIGHT","fuel_gal":40}') q`)).rows[0]?.q;
+  const limit=(1157-830-240)/(0.72*3.785411784);
+  expect(r?.cost).toBe(0);expect(r?.added_gal).toBeCloseTo(limit-28,3);
+  const f=await one(`SELECT (estimate->>'target_fuel_gal')::float target,(estimate->'weight_budget'->>'planned_fuel_gal')::float planned,estimate ? 'fuel_uplift_gal' uplift FROM flights`);
+  expect(f?.['target']).toBeCloseTo(limit,3);expect(f?.['planned']).toBeCloseTo(limit,3);expect(f?.['uplift']).toBe(false);
+  expect(await one('SELECT count(*)::int n FROM company_ledger')).toEqual({n:0});
  });
 });

@@ -6,51 +6,43 @@ import { simLoad } from "@/lib/fuel-units";
 
 type Tank = NonNullable<Quote["tank"]>;
 
-/** Standard aviation conversion: 1 gal = 6.7 lbs = 3.04 kg. */
-const SPOT_KG_PER_LITRE = 3.04 / 3.785411784;
-function spotLoad(gallons: number) {
-  const n = (v: number) => Math.round(v).toLocaleString("en-US");
-  const load = simLoad(gallons, SPOT_KG_PER_LITRE);
-  return `${n(load.gal)} gal · ${n(load.lbs)} lbs · ${n(load.kg)} kg`;
-}
+/** Standard aviation conversion used when the catalogue density is unavailable: 1 gal = 6.7 lbs = 3.04 kg. */
+const FALLBACK_KG_PER_LITRE = 3.04 / 3.785411784;
 
-export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market, readOnly = false }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number; market?: Quote["fuel_market"]; readOnly?: boolean }) {
+export function FuelTankPanel({ tank, value, onChange, kgPerLitre, market, reserveGal, readOnly = false }: { tank: Tank; value: number; onChange: (v: number) => void; kgPerLitre?: number; market?: Quote["fuel_market"]; reserveGal?: number; readOnly?: boolean }) {
   const gal = (v: number) => `${Math.round(v).toLocaleString("en-US")} gal`;
+  const n = (v: number) => Math.round(v).toLocaleString("en-US");
+  const rental = !tank.persistent;
   const min = Math.ceil(tank.min_target_gal);
   const max = Math.max(min, Math.floor(tank.max_target_gal));
   const current = Math.min(max, Math.max(min, Math.round(value)));
-  if (!tank.persistent) {
-    return (
-      <section aria-label="Fuel in tanks" className="mt-4 border-y border-border bg-panel px-3 py-3 text-xs">
-        <p className="readout uppercase text-primary">Fuel · Spot rental</p>
-        <p className="mt-1 text-muted-foreground">Fuelled to {spotLoad(tank.target_fuel_gal)} (MIN.Trip Fuel - remember to top up). Billed on burned fuel only after landing.</p>
-        <FuelMarket market={market} persistent={false} />
-      </section>
-    );
-  }
-  const load = kgPerLitre && kgPerLitre > 0 ? simLoad(current, kgPerLitre) : null;
-  const n = (v: number) => Math.round(v).toLocaleString("en-US");
-  const presets: [string, number][] = [["Min safe", min], ["Tanker max", max]];
+  const load = simLoad(current, kgPerLitre && kgPerLitre > 0 ? kgPerLitre : FALLBACK_KG_PER_LITRE);
+  const comfort = reserveGal && reserveGal > 0 ? Math.min(max, Math.ceil(tank.min_target_gal + reserveGal)) : null;
+  const presets: [string, number][] = [["Min safe", min], ...(comfort !== null && comfort > min && comfort < max ? [["Comfort", comfort] as [string, number]] : []), [rental ? "Max load" : "Tanker max", max]];
+  const atMinimum = current <= min && max > min;
   return (
     <section aria-label="Fuel in tanks" className="mt-4 border-y border-border bg-panel px-3 py-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="readout text-xs uppercase text-primary">Fuel in tanks</p>
-        <p className="readout text-xs text-muted-foreground">Current {gal(tank.current_fuel_gal)}</p>
+        <p className="readout text-xs uppercase text-primary">{rental ? "Fuel · Spot rental" : "Fuel in tanks"}</p>
+        <p className="readout text-xs text-muted-foreground">{rental ? "Pay-as-you-burn" : `Current ${gal(tank.current_fuel_gal)}`}</p>
       </div>
-      <div className="readout mt-2 flex items-baseline justify-between text-sm">
+      <div className="readout mt-2 flex items-baseline justify-between gap-2 text-sm">
         <span>Target {gal(current)}</span>
-        <span className={tank.added_fuel_gal > 0 ? "text-amber" : "text-primary"}>
-          Uplift {gal(tank.added_fuel_gal)} · {tank.uplift_cost > 0 ? formatCr(tank.uplift_cost) : "0 SC"}
-        </span>
+        {rental
+          ? <span className="text-primary">0 SC now · billed after landing</span>
+          : <span className={tank.added_fuel_gal > 0 ? "text-amber" : "text-primary"}>Uplift {gal(tank.added_fuel_gal)} · {tank.uplift_cost > 0 ? formatCr(tank.uplift_cost) : "0 SC"}</span>}
       </div>
       {!readOnly && <><Slider aria-label="Target fuel (gal)" className="mt-3" min={min} max={max} step={1} value={[current]} onValueChange={(v) => onChange(v[0] ?? min)} disabled={max <= min} />
       <div className="mt-2 flex gap-2">
-        {presets.map(([label, v]) => <Button key={label} size="sm" variant="outline" className="flex-1" onClick={() => onChange(v)}>{label}</Button>)}
+        {presets.map(([label, v]) => <Button key={label} size="sm" variant={v === current ? "secondary" : "outline"} className="flex-1" onClick={() => onChange(v)}>{label}</Button>)}
       </div></>}
-      {load && <p className="readout mt-3 border border-amber/40 bg-background/40 px-2 py-1.5 text-xs text-amber">Sim load: {n(load.gal)} gal · {n(load.lbs)} lbs · {n(load.kg)} kg</p>}
-      <FuelMarket market={market} persistent />
+      <p className="readout mt-3 border border-amber/40 bg-background/40 px-2 py-1.5 text-xs text-amber">Sim load: {n(load.gal)} gal · {n(load.lbs)} lbs · {n(load.kg)} kg</p>
+      {atMinimum && !readOnly && <p role="status" className="mt-2 border-l-2 border-amber bg-amber/10 px-2 py-2 text-xs text-amber">Minimum legal fuel only (trip + reserve). Any headwind, holding or go-around can force a divert right after departure — add margin or import your SimBrief plan.</p>}
+      <FuelMarket market={market} persistent={!rental} />
       <p className="mt-2 text-xs text-muted-foreground">
-        Min {gal(min)} (trip + reserve, or fuel already on board) · Max {gal(max)} (tank / MTOW with this payload). Extra fuel reduces payload and stays in the tanks after landing. If ACARS sees more fuel in the simulator before take-off, the extra is billed as a ramp fuel adjustment.
+        {rental
+          ? <>Set the fuel you will really load in the simulator — the slider is your fuel order, not a suggestion to fly on the minimum. Min {gal(min)} (trip + reserve) · Max {gal(max)} (tank / MTOW with this payload). Fuel weight reduces passengers and cargo. Nothing is charged at departure: after landing you pay only for fuel burned (minimum-burn rule applies); unburned fuel stays with the rental. If ACARS sees more fuel in the simulator before take-off, the plan rises automatically within MTOW at no extra charge.</>
+          : <>Min {gal(min)} (trip + reserve, or fuel already on board) · Max {gal(max)} (tank / MTOW with this payload). Extra fuel reduces payload and stays in the tanks after landing. If ACARS sees more fuel in the simulator before take-off, the extra is billed as a ramp fuel adjustment.</>}
       </p>
     </section>
   );

@@ -533,6 +533,13 @@
       "when": 1795456441730,
       "tag": "0075_payload_preview_precision",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1795470657754,
+      "tag": "0076_spot_rental_target_fuel",
+      "breakpoints": true
     }
   ]
 }

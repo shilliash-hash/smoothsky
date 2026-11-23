@@ -51,8 +51,14 @@ describe('live payload planning', () => {
     const p = payloadPlanning(limited, 'commercial', 8, 350, null);
     expect([p?.passengers, p?.cargoKg]).toEqual([2, 55]);
   });
-  it('rentals retain trip-plus-reserve fuel regardless of target input', () => {
-    const rental = { ...q, tank: { ...q.tank, persistent: false, current_fuel_gal: 0, min_target_gal: 100, target_fuel_gal: 100, max_target_gal: 400, added_fuel_gal: 100, uplift_cost: 0, fuel_price_effective_per_gal: 5.8 } };
-    expect(payloadPlanning(rental, 'commercial', 4, 200, 300)?.quote.weight_budget?.planned_fuel_gal).toBe(100);
+  const rental = { ...q, tank: { ...q.tank, persistent: false, current_fuel_gal: 0, min_target_gal: 100, target_fuel_gal: 100, max_target_gal: 400, added_fuel_gal: 100, uplift_cost: 0, fuel_price_effective_per_gal: 5.8 } };
+  it('spot rental 300 gal target consumes MTOW: 3 PAX + 60 kg cargo instead of 4 PAX + 200 kg, 0 SC up front', () => {
+    const p = payloadPlanning(rental, 'commercial', 4, 200, 300);
+    expect(p?.quote.weight_budget?.planned_fuel_gal).toBe(300);
+    expect([p?.passengers, p?.cargoKg]).toEqual([3, 60]);
+    expect(p?.quote.tank?.uplift_cost).toBe(0);
+  });
+  it('spot rental target below trip + reserve is raised to the 100 gal minimum', () => {
+    expect(payloadPlanning(rental, 'commercial', 4, 200, 50)?.quote.weight_budget?.planned_fuel_gal).toBe(100);
   });
 });

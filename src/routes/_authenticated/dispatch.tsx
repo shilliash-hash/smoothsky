@@ -159,7 +159,7 @@ function Dispatch() {
   useEffect(() => { setTargetFuel(null); setTargetQuoteFuel(null); }, [selected?.id, destination]);
   useEffect(() => { setPassengers(null); setQuotePassengers(null); setCargoKg(0); setCargoQuoteKg(0); }, [selected?.id]);
   useEffect(() => {
-    if (!pendingRamp || !quote?.tank?.persistent) return;
+    if (!pendingRamp || !quote?.tank) return;
     const gal = simbriefRampToGallons(pendingRamp.value, pendingRamp.unit, fuelDensity);
     setPendingRamp(null);
     if (gal === null) return;
@@ -387,7 +387,7 @@ function Dispatch() {
                     {Math.round(quote.minutes)} min
                   </p>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
-                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} />}
+                  {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} {...(quote.weight_budget ? { reserveGal: quote.weight_budget.reserve_fuel_gal } : {})} />}
                   {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && planning !== null} onAutoLoad={() => {
                     if (!confirmedQuote) return;
                     const mix = bestPayloadMix(confirmedQuote, flightMode, targetFuel);
@@ -425,7 +425,7 @@ function Dispatch() {
                   </dl>
                   {fuelPlan && <aside aria-label="Fuel planning and billing" className="mt-4 border-y border-border bg-panel px-3 py-4 text-sm">
                     <p className="readout text-xs uppercase text-primary">Fuel · Pay-as-you-burn</p>
-                    <p className="mt-2 text-muted-foreground">Billed from actual ACARS consumption ({Math.round((quote.weight_budget?.fuel_billing_floor_pct ?? 0.8) * 100)}% estimated trip fuel minimum floor; {reserveMinutes}-min safety reserve is never charged unless consumed). {quote.tank?.persistent ? `Owned/leased: you pay ${formatCr(quote.tank.uplift_cost)} at departure for ${Math.round(quote.tank.added_fuel_gal)} gal uplift only; remaining fuel stays in the tanks for the next flight.` : "Spot rental: you pay only for fuel burned; the aircraft is returned after landing."}</p>
+                    <p className="mt-2 text-muted-foreground">Billed from actual ACARS consumption ({Math.round((quote.weight_budget?.fuel_billing_floor_pct ?? 0.8) * 100)}% estimated trip fuel minimum floor; {reserveMinutes}-min safety reserve is never charged unless consumed). {quote.tank?.persistent ? `Owned/leased: you pay ${formatCr(quote.tank.uplift_cost)} at departure for ${Math.round(quote.tank.added_fuel_gal)} gal uplift only; remaining fuel stays in the tanks for the next flight.` : "Spot rental: choose your real fuel load above; nothing is charged at departure, you pay only for fuel burned and the aircraft is returned after landing."}</p>
                     <dl className="mt-3 space-y-2 text-xs">
                       <div><dt className="text-muted-foreground">Estimated trip consumption</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.tripGallons, fuelDensity)}</dd></div>
                       <div><dt className="text-muted-foreground">Required reserve · {reserveMinutes} min</dt><dd className="readout mt-1">{fuelLabel(fuelPlan.reserveGallons, fuelDensity)}</dd></div>

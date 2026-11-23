@@ -6,7 +6,7 @@ export function payloadPlanning(q: Quote, mode: FlightMode, passengers: number |
   const wb = q.weight_budget;
   const limits = q.payload_limits;
   if (!wb || !limits) return null;
-  const fuelGal = q.tank?.persistent ? Math.max(q.tank.min_target_gal, targetFuel ?? q.tank.target_fuel_gal) : Number(wb.planned_fuel_gal ?? 0);
+  const fuelGal = q.tank ? Math.max(q.tank.min_target_gal, targetFuel ?? q.tank.target_fuel_gal) : Number(wb.planned_fuel_gal ?? 0);
   const fuelKg = fuelGal * Number(wb.fuel_kg_per_gal ?? 0);
   const capacity = Math.max(0, wb.mtow_kg - wb.empty_weight_kg - fuelKg);
   const paxWeight = wb.passenger_weight_kg;
