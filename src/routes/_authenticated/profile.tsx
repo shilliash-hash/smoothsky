@@ -28,9 +28,9 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 const ratingGroups = [
-  { id: "T3_4", label: "Tier 4", tiers: [4], hint: "Twin Otter" },
-  { id: "T5", label: "Tier 5", tiers: [5], hint: "ATR 72-600" },
-  { id: "T6_7", label: "Tier 6–7", tiers: [6, 7], hint: "A320neo, 777-300ER" },
+  { id: "T3_4", label: "Tier 4", tiers: [4], hint: "BizJets Family (Traveling with class)" },
+  { id: "T5", label: "Tier 5", tiers: [5], hint: "Regional Jets, Turboprop Commuters i.e.: Fokker 70,ATRs,Dash8" },
+  { id: "T6_7", label: "Tier 6–7", tiers: [6, 7], hint: "Airliners (Regional/Long Haul)" },
 ] as const;
 
 function Profile() {
