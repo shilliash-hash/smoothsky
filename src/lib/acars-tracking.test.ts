@@ -84,6 +84,7 @@ beforeAll(async () => {
  CREATE TRIGGER cancelled_fuel AFTER UPDATE OF status ON flights FOR EACH ROW EXECUTE FUNCTION return_cancelled_fuel();`);
  await db.exec(readFileSync('drizzle/migrations/0032_acars_resume_window.sql','utf8'));
  await db.exec(readFileSync(process.env['ACARS_TRACKING_SQL'] ?? 'drizzle/migrations/0071_acars_continuous_tracking.sql','utf8'));
+ await db.exec(readFileSync(process.env['ACARS_AIRCRAFT_SQL'] ?? 'drizzle/migrations/0072_acars_aircraft_fuel_plausibility.sql','utf8'));
 },30000);
 const one = async (sql:string) => (await db.query<Record<string, unknown>>(sql)).rows[0];
 async function safely(sql:string,args:unknown[]=[]){
@@ -242,5 +243,85 @@ describe('ACARS continuous GPS and real-time integrity',()=>{
   expect(await one(`SELECT location_icao FROM fleet_aircraft`)).toEqual({location_icao:'DEST'});
   expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='TICKET_REVENUE'`)).toEqual({n:1});
   await expect(safely(`SELECT acars_pirep('test','{"fuel_used_gal":2,"flight_time_hours":0.3}')`)).rejects.toThrow('PIREP already received');
+ });
+ describe('aircraft fuel plausibility',()=>{
+  async function departure(fuel:number,phase='TAXI'){
+   await db.exec(`UPDATE profiles SET last_position_at=NULL; UPDATE flights SET execution_source='ACARS_AGENT',departed_at=now(),telemetry=NULL,estimate=jsonb_set(estimate,'{weight_budget,min_safe_fuel_gal}','40')`);
+   return safely(`SELECT acars_position('test',$1::jsonb) q`,[JSON.stringify({lat:0,lon:0,fuel_gal:fuel,phase,ground_speed_kt:0})]);
+  }
+  async function landing(used:number,hours:number,cumulative=0,icao='DEST'){
+   await seed(icao==='DEST'?1:0.5,60);
+   await db.query(`UPDATE flights SET cumulative_fuel_used_gal=$1,telemetry=jsonb_set(jsonb_set(telemetry,'{live,phase}','"PARKED"'),'{live,ground_speed_kt}','0')`,[cumulative]);
+   return safely(`SELECT acars_pirep('test',$1::jsonb) q`,[JSON.stringify({fuel_used_gal:used,flight_time_hours:hours})]);
+  }
+  it.each(['TAXI','TAXI_OUT','TAKEOFF','CLIMB','CRUISE'])('rejects departure below 70% minimum safe in %s',async phase=>{
+   const r=(await departure(27.999,phase)).rows[0] as {q:{reason:string}}|undefined;
+   expect(r?.q.reason).toBe('INSUFFICIENT_DEPARTURE_FUEL');expect((await state())?.['status']).toBe('CANCELLED');
+   expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='TICKET_REVENUE'`)).toEqual({n:0});
+  });
+  it('accepts exactly 70% of minimum safe fuel',async()=>{
+   await departure(28);expect((await state())?.['status']).toBe('EN_ROUTE');expect((await state())?.['telemetry']).toMatchObject({departure_fuel_checked:true});
+  });
+  it('allows initial PREFLIGHT menu changes before departure',async()=>{
+   await departure(1,'PREFLIGHT');expect((await state())?.['status']).toBe('EN_ROUTE');expect((await state())?.['telemetry']).not.toHaveProperty('departure_fuel_checked');
+  });
+  it('does not allow an initial PARKED packet to bypass the departure check',async()=>{
+   await departure(1,'PARKED');await db.exec(`UPDATE profiles SET last_position_at=NULL`);
+   const r=(await safely(`SELECT acars_position('test','{"lat":0,"lon":0,"fuel_gal":1,"phase":"TAKEOFF"}') q`)).rows[0] as {q:{reason:string}}|undefined;
+   expect(r?.q.reason).toBe('INSUFFICIENT_DEPARTURE_FUEL');
+  });
+  it('does not recheck departure minimum on airborne reconnect with low remaining fuel',async()=>{
+   await seed();await db.exec(`UPDATE flights SET fuel_tracking_started=true,last_observed_fuel_gal=2,cumulative_fuel_used_gal=26`);
+   await safely(`SELECT acars_connect('test')`);
+   await safely(`SELECT acars_position('test','{"lat":0,"lon":0,"fuel_gal":2,"phase":"CRUISE"}')`);
+   expect((await state())?.['status']).toBe('EN_ROUTE');expect(await one('SELECT cumulative_fuel_used_gal::float burn FROM flights')).toEqual({burn:26});
+  });
+  it('legacy quotes without minimum safe fuel retain existing checks',async()=>{
+   await db.exec(`UPDATE flights SET estimate=estimate #- '{weight_budget,min_safe_fuel_gal}'`);
+   await position(0,60,'TAXI');expect((await state())?.['status']).toBe('EN_ROUTE');
+  });
+  it('rejects raw burn below 35% at exactly 0.6 hours before billing floor and payout',async()=>{
+   const r=(await landing(1.7849,0.6)).rows[0] as {q:{reason:string}}|undefined;
+   expect(r?.q.reason).toBe('IMPLAUSIBLE_LOW_FUEL_BURN');expect((await state())?.['status']).toBe('CANCELLED');
+   expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='TICKET_REVENUE'`)).toEqual({n:0});
+  });
+  it('accepts exactly 35% nominal burn at 0.6 hours',async()=>{
+   await landing(1.785,0.6);expect((await state())?.['status']).toBe('COMPLETED');
+  });
+  it('does not apply low-burn check below 0.6 hours',async()=>{
+   await landing(0.1,0.5999);expect((await state())?.['status']).toBe('COMPLETED');
+  });
+  it('uses cumulative server burn rather than a reset PIREP after reconnect',async()=>{
+   await landing(0.1,1,3);expect((await state())?.['status']).toBe('COMPLETED');
+  });
+  it('client-supplied cumulative burn cannot defeat low-burn guard',async()=>{
+   await seed(1,60);await db.exec(`UPDATE flights SET telemetry=jsonb_set(jsonb_set(telemetry,'{live,phase}','"PARKED"'),'{live,ground_speed_kt}','0')`);
+   const r=(await safely(`SELECT acars_pirep('test','{"fuel_used_gal":0.1,"flight_time_hours":1,"cumulative_fuel_used_gal":9999}') q`)).rows[0] as {q:{reason:string}}|undefined;
+   expect(r?.q.reason).toBe('IMPLAUSIBLE_LOW_FUEL_BURN');
+  });
+  it('refunds departure uplift once on low-burn rejection',async()=>{
+   await db.exec(`INSERT INTO airport_fuel_pools VALUES('ORIG','100LL',90,now()); UPDATE flights SET estimate=estimate||'{"fuel_reserved_gal":10,"fuel_uplift_gal":10,"fuel_uplift_cost":82}'`);
+   await db.query(`SELECT company_post('${company}','FUEL_EXPENSE','FUEL_EXPENSE','COMPANY_CASH',-82,'Uplift','${flight}','test:MISMATCH_UPLIFT')`);
+   await landing(0.1,1);
+   expect(await one(`SELECT stock_gal::float fuel FROM airport_fuel_pools WHERE airport_icao='ORIG'`)).toEqual({fuel:100});
+   expect(await one(`SELECT sum(company_delta)::float delta,count(*) FILTER(WHERE entry_type='FUEL_REFUND')::int refunds FROM company_ledger`)).toEqual({delta:0,refunds:1});
+   await expect(landing(0.1,1)).rejects.toThrow('PIREP already received');
+   expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='FUEL_REFUND'`)).toEqual({n:1});
+  });
+  it('validates raw burn at a divert without paying original tickets',async()=>{
+   await landing(0.1,1,3,'ALTN');expect((await state())?.['status']).toBe('DIVERTED');
+   expect(await one(`SELECT count(*)::int n FROM company_ledger WHERE entry_type='TICKET_REVENUE'`)).toEqual({n:0});
+  });
+  it('new continuation checks its own departure fuel and refunds only that uplift',async()=>{
+   await divert();await call('continue',30);
+   await db.exec(`UPDATE flights SET estimate=jsonb_set(estimate,'{weight_budget,min_safe_fuel_gal}','40'); UPDATE profiles SET last_position_at=NULL`);
+   const r=(await safely(`SELECT acars_position('test','{"lat":0.5,"lon":0,"fuel_gal":1,"phase":"TAXI"}') q`)).rows[0] as {q:{reason:string}}|undefined;
+   expect(r?.q.reason).toBe('INSUFFICIENT_DEPARTURE_FUEL');expect((await state())?.['status']).toBe('DIVERTED');
+   expect(await one(`SELECT location_icao,status FROM fleet_aircraft`)).toEqual({location_icao:'ALTN',status:'DIVERTED'});
+   expect(await one(`SELECT stock_gal::float fuel FROM airport_fuel_pools WHERE airport_icao='ALTN'`)).toEqual({fuel:100});
+  });
+  it('keeps the existing 105% tank capacity guard',async()=>{
+   await expect(departure(58.801,'PREFLIGHT')).rejects.toThrow('exceeds aircraft tank capacity');
+  });
  });
 });
