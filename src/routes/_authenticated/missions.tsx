@@ -8,6 +8,7 @@ import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { InfoHint } from "@/components/game/InfoHint";
+import { FlightBriefing } from "@/components/game/FlightBriefing";
 import { companyQuery } from "@/lib/game";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { missionsQuery, missionPayout, missionFleetFit, type Mission } from "@/lib/missions";
@@ -198,6 +199,7 @@ function ActiveMission({ mission: m, now, companyId }: { mission: Mission; now: 
         </div>
       ) : <p className="mt-4 text-sm text-muted-foreground">Missions are flown on airline aircraft. <Link to="/onboarding" className="text-primary underline">Found an airline</Link> to dispatch it.</p>)}
       <div className="mt-4 flex flex-wrap items-center gap-3">
+        {m.flight_id && <FlightBriefing flightId={m.flight_id} label="Mission details" size="default" />}
         {m.flight_id && <Button asChild variant="outline"><Link to="/dispatch">Open Dispatch</Link></Button>}
         {!m.flight_id ? (
           <AlertDialog>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { liveRadarQuery } from "@/lib/live-radar";
 import { FidsReadout } from "./FidsReadout";
 import { readDivertState } from "@/lib/divert";
+import { FlightBriefing } from "./FlightBriefing";
 
 const statuses: Record<string, string> = { EN_ROUTE: "EN ROUTE", DISPATCHED: "READY", DIVERTED: "DIVERTED", COMPLETED: "ARRIVED", CANCELLED: "CANCELLED" };
 const pilots: Record<string, string> = { ROSTER: "ROSTER PILOT", FREELANCE: "FREELANCER", FREELANCER: "FREELANCER", OWNER: "OWNER" };
@@ -48,7 +49,7 @@ export function OperationalFlightsBoard({ companyId }: { companyId: string }) {
       </li>)}</ol> : <ol className="divide-y divide-border/60">{flights.map(flight => <li key={flight.id} className="flight-board-row grid grid-cols-[1fr_1.2fr_1fr] items-center gap-2 px-3 py-4">
         <div className="min-w-0"><p className="readout break-all text-sm text-amber">{flight.flight_number ?? "—"}</p><p className="readout mt-1 break-all text-[10px] text-muted-foreground">{flight.aircraft?.registration ?? "—"}</p></div>
         <div className="min-w-0"><div className="flex flex-wrap items-center gap-1 text-xs text-primary"><FidsReadout value={flight.origin_icao} /><span aria-label="to">→</span><FidsReadout value={flight.destination_icao} /></div><p className="readout mt-2 text-[10px] text-muted-foreground">{pilots[flight.pilot_mode ?? "OWNER"] ?? flight.pilot_mode} · {flight.passengers} PAX</p></div>
-        <div className="min-w-0 text-right"><span className={`readout text-[11px] ${flight.status === "CANCELLED" ? "text-destructive" : flight.status === "EN_ROUTE" || flight.status === "COMPLETED" ? "text-primary" : "text-amber"}`}>{statuses[flight.status] ?? flight.status}</span><p className="readout mt-1 text-[10px] text-muted-foreground">{new Date(flight.completed_at ?? flight.created_at).toLocaleTimeString("en-GB", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" })} UTC</p></div>
+        <div className="min-w-0 text-right"><span className={`readout text-[11px] ${flight.status === "CANCELLED" ? "text-destructive" : flight.status === "EN_ROUTE" || flight.status === "COMPLETED" ? "text-primary" : "text-amber"}`}>{statuses[flight.status] ?? flight.status}</span><p className="readout mt-1 text-[10px] text-muted-foreground">{new Date(flight.completed_at ?? flight.created_at).toLocaleTimeString("en-GB", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" })} UTC</p>{view === "active" && <FlightBriefing flightId={flight.id} label="Plan" className="mt-2 h-7 px-2 text-xs" />}</div>
         {flight.status === "DIVERTED" && <div className="col-span-3 flex flex-wrap items-center justify-between gap-2 border-l-2 border-amber pl-2">
           <p className="readout text-[10px] text-amber">At {readDivertState(flight.divert_state)?.airport ?? flight.origin_icao} · Contract on hold</p>
           <Button asChild variant="outline" size="sm" className="h-auto whitespace-normal py-2 text-xs text-amber"><Link to="/dispatch" search={{ aircraft: flight.aircraft_id }} hash={`flight-${flight.id}`}><Navigation className="h-3.5 w-3.5" />Resolve in Dispatch</Link></Button>

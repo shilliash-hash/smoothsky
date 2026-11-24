@@ -31,6 +31,7 @@ import { simbriefRampToGallons } from "@/lib/fuel-units";
 import { adminAccessQuery } from '@/lib/admin';
 import { acarsLinkLabel, simulationControlsVisible } from '@/lib/acars-status';
 import { FlightDebrief } from '@/components/game/FlightDebrief';
+import { FlightBriefing } from '@/components/game/FlightBriefing';
 import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
 import { InfoHint } from "@/components/game/InfoHint";
@@ -498,6 +499,7 @@ function Dispatch() {
                 </div>
                 <div className={cn("flex flex-wrap gap-2", f.status === "DIVERTED" && "w-full min-w-0")}>
                   {f.status === "DIVERTED" && <DivertControls flight={f.id} destination={f.destination_icao} state={f.divert_state} />}
+                  {(active || f.status === "DIVERTED") && <FlightBriefing flightId={f.id} />}
                   {f.status === "DISPATCHED" && f.divert_state && <div className="w-full min-w-0">
                     <ContinuationFuelNotice persistent={d.fleet.find(a => a.id === f.aircraft_id)?.ownership !== "RENTAL"} ready />
                     {continuationTank && <FuelTankPanel tank={continuationTank} value={continuationTank.target_fuel_gal} onChange={() => {}} market={(f.estimate as Quote).fuel_market} {...(continuationFuelKgPerGal ? { kgPerLitre: continuationFuelKgPerGal / 3.785411784 } : {})} readOnly />}

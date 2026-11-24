@@ -1,5 +1,9 @@
 # Roadmap
 
+## Flight Briefing snapshot
+- [x] Read-only modal of the plan approved at dispatch (route, PAX/cargo, W&B vs MTOW, tank/uplift/ramp fuel, estimated economics) in Dispatch rows, dashboard board (Plan), fleet cards (Flight plan) and accepted missions (Mission details); unit toggles shared.
+- [x] 7 briefing tests + 33 related tests passed; signed-in desktop/mobile dashboard check with a simulated active flight (no data written), Dispatch/Missions load without errors. A real dispatched flight was not opened.
+
 ## Special missions require an aircraft on site
 - [x] Accept only with an available airline aircraft parked at the origin that fits the cargo; board shows "reposition to X to accept" or "REG ready at X", Accept disabled otherwise.
 - [x] 20 mission tests passed (on-site, elsewhere, busy, too small, personal aircraft); applied definition confirmed; signed-in board checked with 0 of 13 Accept buttons enabled (no aircraft at any origin), no runtime errors. Green "ready" state covered by tests only.

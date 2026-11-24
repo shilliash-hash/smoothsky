@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCr } from "@/lib/rules";
 import { Button } from "@/components/ui/button";
 import { arrangeFleet, isAirborne, type FleetFilter } from "@/lib/fleet-carousel";
+import { operationalBoardQuery } from "@/lib/game";
+import { FlightBriefing } from "./FlightBriefing";
 
 type Aircraft = { id: string; registration: string; status: string; location_icao: string; ownership: string; purchase_price: number | null; weekly_rate: number; next_payment_due: string; type?: { manufacturer: string; model: string } | null };
 const pills: { id: FleetFilter; label: string }[] = [{ id: "all", label: "All" }, { id: "available", label: "Available" }, { id: "flight", label: "In Flight" }, { id: "sale", label: "For Sale" }];
@@ -17,6 +19,9 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
     if (error) throw error; return data.map(r => r.fleet_aircraft_id).filter((x): x is string => !!x);
   } });
   const forSale = useMemo(() => new Set(listed), [listed]);
+  // Shares the dashboard's polled operational board cache to find each aircraft's active flight.
+  const { data: board } = useQuery(operationalBoardQuery(companyId));
+  const activeFlight = useMemo(() => new Map((board?.active ?? []).map(fl => [fl.aircraft_id, fl.id] as const)), [board]);
   const [filter, setFilter] = useState<FleetFilter>("all");
   const items = useMemo(() => arrangeFleet(fleet, filter, forSale), [fleet, filter, forSale]);
   const ref = useRef<HTMLDivElement>(null);
@@ -55,7 +60,10 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
               <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
           </dl>
           </Button>
-          {f.status === "DIVERTED" && <Button asChild variant="outline" size="sm" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber"><Link to="/dispatch" search={{ aircraft: f.id }}><Navigation className="h-4 w-4" />Resolve in Dispatch</Link></Button>}
+          {(activeFlight.has(f.id) || f.status === "DIVERTED") && <div className="mt-3 flex flex-wrap gap-2">
+            {activeFlight.has(f.id) && <FlightBriefing flightId={activeFlight.get(f.id) ?? ""} label="Flight plan" className="flex-1" />}
+            {f.status === "DIVERTED" && <Button asChild variant="outline" size="sm" className="h-auto flex-1 whitespace-normal py-2 text-amber"><Link to="/dispatch" search={{ aircraft: f.id }}><Navigation className="h-4 w-4" />Resolve in Dispatch</Link></Button>}
+          </div>}
         </div>)}
       </div>
       {!view.atEnd && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />}
