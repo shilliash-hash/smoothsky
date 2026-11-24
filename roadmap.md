@@ -1,5 +1,10 @@
 # Roadmap
 
+## Special missions require an aircraft on site
+- [x] Accept only with an available airline aircraft parked at the origin that fits the cargo; board shows "reposition to X to accept" or "REG ready at X", Accept disabled otherwise.
+- [x] 20 mission tests passed (on-site, elsewhere, busy, too small, personal aircraft); applied definition confirmed; signed-in board checked with 0 of 13 Accept buttons enabled (no aircraft at any origin), no runtime errors. Green "ready" state covered by tests only.
+- [ ] Dispatch Timeout / Force Recall — next.
+
 ## Divert guidance and dashboard settlement refresh
 - [x] Keep diverted flights visible with direct Dispatch actions on the board, fleet and dashboard banner; prioritize diverted aircraft and explain continuation refuelling before taxi, frozen fuel plans and cancellation vs abandonment.
 - [x] Shared 15-second board polling refreshes fleet, authoritative balance, filtered history and aircraft details; observed arrivals show ARRIVED confirmation without a reload. 74 regression tests passed, including external-settlement cache/readback and one-time arrival notification. Existing signed-in Dashboard/Dispatch checked; supplemental browser-only rental divert → Continue → arrival verified on desktop/mobile with automatic rental removal and no overflow/runtime errors. No player flight/company created, deleted or modified; real ACARS/simulator flight remains for the user's test. Database, ACARS and deployment variables unchanged; build OK.

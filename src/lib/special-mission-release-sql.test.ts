@@ -18,7 +18,7 @@ beforeAll(async () => {
   CREATE TABLE operating_rules(all_cargo_capacity_bonus numeric);
   CREATE TABLE companies(id uuid PRIMARY KEY, user_id uuid, is_personal boolean DEFAULT false);
   CREATE TABLE aircraft_types(id text PRIMARY KEY, cargo_kg int);
-  CREATE TABLE fleet_aircraft(id uuid PRIMARY KEY, company_id uuid, aircraft_type_id text, location_icao text, returned_at timestamptz);
+  CREATE TABLE fleet_aircraft(id uuid PRIMARY KEY, company_id uuid, aircraft_type_id text, location_icao text, returned_at timestamptz, status text DEFAULT 'AVAILABLE');
   CREATE TABLE flights(id uuid PRIMARY KEY, status text);
   CREATE TABLE special_missions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), category text DEFAULT 'AOG', origin_icao text DEFAULT 'ORIG', destination_icao text DEFAULT 'DEST',
     distance_nm numeric DEFAULT 100, cargo_kg int, payout numeric DEFAULT 5000, deadline_hours numeric DEFAULT 4, status text DEFAULT 'OPEN', created_at timestamptz DEFAULT now(),
@@ -26,6 +26,7 @@ beforeAll(async () => {
     final_payout numeric, delivered_late boolean DEFAULT false);`);
   await db.exec(readFileSync("drizzle/migrations/0077_special_mission_cancel_release.sql", "utf8"));
   await db.exec(readFileSync("drizzle/migrations/0078_special_mission_airline_fleet_only.sql", "utf8"));
+  await db.exec(readFileSync("drizzle/migrations/0079_special_mission_aircraft_at_origin.sql", "utf8"));
 }, 30000);
 beforeEach(async () => {
   await db.exec(`BEGIN;
@@ -44,8 +45,8 @@ describe("special mission cancel and auto-release SQL", () => {
     await db.query(`INSERT INTO special_missions(id,cargo_kg) VALUES ('${mission}',2377)`);
     await expect(db.query(`SELECT accept_special_mission('${mission}')`)).rejects.toThrow(/fleet max: 319 kg/);
   });
-  it("accepts when an All-Cargo aircraft fits (1,200 kg × 1.5 ≥ 1,500 kg)", async () => {
-    await db.query(`INSERT INTO fleet_aircraft VALUES ('${id(21)}','${company}','BIG','EPWA',NULL)`);
+  it("accepts when an All-Cargo aircraft at the origin fits (1,200 kg × 1.5 ≥ 1,500 kg)", async () => {
+    await db.query(`INSERT INTO fleet_aircraft VALUES ('${id(21)}','${company}','BIG','ORIG',NULL)`);
     await db.query(`INSERT INTO special_missions(id,cargo_kg) VALUES ('${mission}',1500)`);
     await db.query(`SELECT accept_special_mission('${mission}')`);
     expect(await one(`SELECT status, accepted_by FROM special_missions`)).toEqual({ status: "ACCEPTED", accepted_by: owner });
@@ -88,5 +89,15 @@ describe("special mission cancel and auto-release SQL", () => {
     await db.query(`UPDATE flights SET status='DIVERTED'`);
     await db.query(`INSERT INTO special_missions(id,cargo_kg,status,accepted_by,deadline_at,flight_id) VALUES ('${mission}',150,'ACCEPTED','${owner}',now()+interval '2 hours','${flight}')`);
     await expect(db.query(`SELECT cancel_special_mission('${mission}')`)).rejects.toThrow(/Resolve the divert in Dispatch/);
+  });
+  it("refuses when the only capable aircraft is parked at another airport", async () => {
+    await db.query(`INSERT INTO fleet_aircraft VALUES ('${id(21)}','${company}','BIG','EPWA',NULL)`);
+    await db.query(`INSERT INTO special_missions(id,cargo_kg) VALUES ('${mission}',1500)`);
+    await expect(db.query(`SELECT accept_special_mission('${mission}')`)).rejects.toThrow(/available aircraft at ORIG carrying at least 1500 kg/);
+  });
+  it("refuses when the capable aircraft at the origin is not available", async () => {
+    await db.query(`INSERT INTO fleet_aircraft VALUES ('${id(21)}','${company}','BIG','ORIG',NULL,'IN_FLIGHT')`);
+    await db.query(`INSERT INTO special_missions(id,cargo_kg) VALUES ('${mission}',1500)`);
+    await expect(db.query(`SELECT accept_special_mission('${mission}')`)).rejects.toThrow(/available aircraft at ORIG/);
   });
 });

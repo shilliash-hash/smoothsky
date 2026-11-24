@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { HeartPulse, Wrench, Timer, Plane, Undo2, MapPin } from "lucide-react";
+import { HeartPulse, Wrench, Timer, Plane, Undo2, MapPin, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -65,14 +65,15 @@ function Missions() {
       <p className="readout text-xs uppercase text-amber">Urgent contracts · Fixed payout</p>
       <h1 className="mt-1 flex items-center gap-2 text-3xl font-semibold">Special Missions
         <InfoHint label="Mission rules">
-          <p><span className="text-foreground">Cargo capacity:</span> you can accept a mission only if your airline fleet has an aircraft that fits its cargo (All-Cargo capacity +{Math.round(bonus * 100)}% counted).</p>
+          <p><span className="text-foreground">Aircraft on site:</span> you can accept a mission only with an available airline aircraft already parked at its departure airport that fits the cargo (All-Cargo capacity +{Math.round(bonus * 100)}% counted).</p>
+          <p><span className="text-foreground">First come, first served:</span> fly an empty repositioning leg to the origin before the offer leaves the board — if another airline accepts it first, the contract is gone.</p>
           <p><span className="text-foreground">Abandon:</span> you can give up an accepted mission any time before its flight is dispatched — no penalty, it simply returns to the shared board.</p>
           <p><span className="text-foreground">Auto-release:</span> if no aircraft is dispatched before the deadline, the contract goes back to the board automatically.</p>
           <p><span className="text-foreground">Late delivery:</span> once the flight is under way the contract stays yours; landing after the deadline pays 50%.</p>
         </InfoHint>
       </h1>
       <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-        MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. The clock starts when you accept; late delivery halves the payout.
+        MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. To accept, an aircraft must already be parked at the origin; the clock starts when you accept and late delivery halves the payout.
       </p>
       {active.map((m) => <ActiveMission key={m.id} mission={m} now={now} companyId={company?.id ?? null} />)}
       <section className="mt-8">
@@ -121,11 +122,13 @@ function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now
       <div className="flex flex-wrap items-center justify-end gap-3">
         {!fit.capable ? (
           <span className="readout text-xs text-destructive">Requires ≥ {m.cargo_kg.toLocaleString()} kg cargo (fleet max: {fit.fleetMaxKg.toLocaleString()} kg)</span>
-        ) : !fit.atOrigin && fit.elsewhereIcao ? (
-          <span className="readout flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />Aircraft at {fit.elsewhereIcao} (repositioning required)</span>
-        ) : null}
+        ) : !fit.atOrigin ? (
+          <span className="readout flex items-center gap-1 text-xs text-amber"><MapPin className="h-3 w-3" />{fit.elsewhereIcao ? `Aircraft at ${fit.elsewhereIcao} · ` : "Aircraft busy · "}reposition to {m.origin_icao} to accept</span>
+        ) : (
+          <span className="readout flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="h-3 w-3" />{fit.readyRegistration ?? "Aircraft"} ready at {m.origin_icao} (All-Cargo {fit.readyKg.toLocaleString()} kg)</span>
+        )}
         <span className="readout text-lg text-amber">{formatCr(Number(m.payout))}</span>
-        <Button size="sm" disabled={busy || !canAccept || !fit.capable} title={!fit.capable ? "No aircraft in your fleet can carry this cargo" : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
+        <Button size="sm" disabled={busy || !canAccept || !fit.capable || !fit.atOrigin} title={!fit.capable ? "No aircraft in your fleet can carry this cargo" : !fit.atOrigin ? `Park an available aircraft at ${m.origin_icao} to accept` : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
           setBusy(true);
           try { await accept({ data: { mission: m.id } }); await qc.invalidateQueries({ queryKey: ["missions"] }); toast.success("Mission accepted — the clock is running"); }
           catch (e) { toast.error(e instanceof Error ? e.message : "Unable to accept mission"); }
