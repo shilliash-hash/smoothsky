@@ -1268,6 +1268,10 @@ export type Database = {
         Args: { f: Database["public"]["Tables"]["flights"]["Row"] }
         Returns: undefined
       }
+      cancel_special_mission: {
+        Args: { p_mission: string }
+        Returns: undefined
+      }
       cancel_test_flight: { Args: { p_flight: string }; Returns: undefined }
       cancel_used_listing: { Args: { p_listing: string }; Returns: undefined }
       cargo_capacity: { Args: { p_airport: string }; Returns: number }
@@ -1772,6 +1776,7 @@ export type Database = {
       recruitment_commission_settings: { Args: never; Returns: Json }
       refresh_special_missions: { Args: never; Returns: undefined }
       regenerate_acars_key: { Args: never; Returns: string }
+      release_stale_special_missions: { Args: never; Returns: number }
       rent_aircraft: {
         Args: { p_registration?: string; p_type: string }
         Returns: string

@@ -540,6 +540,13 @@
       "when": 1795470657754,
       "tag": "0076_spot_rental_target_fuel",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1795505022221,
+      "tag": "0077_special_mission_cancel_release",
+      "breakpoints": true
     }
   ]
 }

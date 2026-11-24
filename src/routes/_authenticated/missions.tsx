@@ -2,14 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { HeartPulse, Wrench, Timer, Plane } from "lucide-react";
+import { HeartPulse, Wrench, Timer, Plane, Undo2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { InfoHint } from "@/components/game/InfoHint";
 import { companyQuery } from "@/lib/game";
 import { fleetOverviewQuery } from "@/lib/fleet";
-import { missionsQuery, missionPayout, type Mission } from "@/lib/missions";
-import { acceptMission } from "@/lib/missions.functions";
+import { missionsQuery, missionPayout, missionFleetFit, type Mission } from "@/lib/missions";
+import { acceptMission, cancelMission } from "@/lib/missions.functions";
 import { flightAction } from "@/lib/operations.functions";
 import type { Quote } from "@/lib/operations";
 import { formatCr } from "@/lib/rules";
@@ -47,6 +49,8 @@ function countdown(to: string | null, now: number) {
 function Missions() {
   const { data } = useSuspenseQuery(missionsQuery);
   const { data: company } = useSuspenseQuery(companyQuery);
+  const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
+  const bonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const [now, setNow] = useState(data.serverTime);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15000);
@@ -58,7 +62,14 @@ function Missions() {
   return (
     <AppShell company={company ?? null}>
       <p className="readout text-xs uppercase text-amber">Urgent contracts · Fixed payout</p>
-      <h1 className="mt-1 text-3xl font-semibold">Special Missions</h1>
+      <h1 className="mt-1 flex items-center gap-2 text-3xl font-semibold">Special Missions
+        <InfoHint label="Mission rules">
+          <p><span className="text-foreground">Cargo capacity:</span> you can accept a mission only if your fleet has an aircraft that fits its cargo (All-Cargo capacity +{Math.round(bonus * 100)}% counted).</p>
+          <p><span className="text-foreground">Abandon:</span> you can give up an accepted mission any time before its flight is dispatched — no penalty, it simply returns to the shared board.</p>
+          <p><span className="text-foreground">Auto-release:</span> if no aircraft is dispatched before the deadline, the contract goes back to the board automatically.</p>
+          <p><span className="text-foreground">Late delivery:</span> once the flight is under way the contract stays yours; landing after the deadline pays 50%.</p>
+        </InfoHint>
+      </h1>
       <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
         MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. The clock starts when you accept; late delivery halves the payout.
       </p>
@@ -66,7 +77,7 @@ function Missions() {
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Mission board · {open.length} open</h2>
         <div className="mt-3 divide-y divide-border border-y border-border">
-          {open.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} />)}
+          {open.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={missionFleetFit(overview.fleet, m.cargo_kg, m.origin_icao, bonus)} />)}
           {open.length === 0 && <p className="py-8 text-muted-foreground">No open missions right now.</p>}
         </div>
       </section>
@@ -91,7 +102,7 @@ function Icon({ category }: { category: string }) {
   return category === "MEDEVAC" ? <HeartPulse className="h-5 w-5 text-destructive" /> : <Wrench className="h-5 w-5 text-amber" />;
 }
 
-function MissionRow({ mission: m, now, canAccept }: { mission: Mission; now: number; canAccept: boolean }) {
+function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now: number; canAccept: boolean; fit: ReturnType<typeof missionFleetFit> }) {
   const accept = useServerFn(acceptMission);
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -106,9 +117,14 @@ function MissionRow({ mission: m, now, canAccept }: { mission: Mission; now: num
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {!fit.capable ? (
+          <span className="readout text-xs text-destructive">Requires ≥ {m.cargo_kg.toLocaleString()} kg cargo (fleet max: {fit.fleetMaxKg.toLocaleString()} kg)</span>
+        ) : !fit.atOrigin && fit.elsewhereIcao ? (
+          <span className="readout flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />Aircraft at {fit.elsewhereIcao} (repositioning required)</span>
+        ) : null}
         <span className="readout text-lg text-amber">{formatCr(Number(m.payout))}</span>
-        <Button size="sm" disabled={busy || !canAccept} title={canAccept ? undefined : "Complete your current mission first"} onClick={async () => {
+        <Button size="sm" disabled={busy || !canAccept || !fit.capable} title={!fit.capable ? "No aircraft in your fleet can carry this cargo" : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
           setBusy(true);
           try { await accept({ data: { mission: m.id } }); await qc.invalidateQueries({ queryKey: ["missions"] }); toast.success("Mission accepted — the clock is running"); }
           catch (e) { toast.error(e instanceof Error ? e.message : "Unable to accept mission"); }
@@ -122,6 +138,7 @@ function MissionRow({ mission: m, now, canAccept }: { mission: Mission; now: num
 function ActiveMission({ mission: m, now, hasCompany }: { mission: Mission; now: number; hasCompany: boolean }) {
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const action = useServerFn(flightAction);
+  const cancel = useServerFn(cancelMission);
   const qc = useQueryClient();
   const bonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const candidates = useMemo(
@@ -175,7 +192,33 @@ function ActiveMission({ mission: m, now, hasCompany }: { mission: Mission; now:
           {quote && <p className="readout text-xs text-muted-foreground md:col-span-2">Payout {formatCr(quote.revenue)} · fuel {formatCr(-quote.fuel_cost)} · fees {formatCr(-(quote.landing_fee + quote.handling_fee))} · maintenance {formatCr(-quote.maintenance)} · net {formatCr(quote.net)}</p>}
         </div>
       ) : <p className="mt-4 text-sm text-muted-foreground">Missions are flown on airline aircraft. <Link to="/onboarding" className="text-primary underline">Found an airline</Link> to dispatch it.</p>)}
-      {m.flight_id && <Button asChild variant="outline" className="mt-4"><Link to="/dispatch">Open Dispatch</Link></Button>}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {m.flight_id && <Button asChild variant="outline"><Link to="/dispatch">Open Dispatch</Link></Button>}
+        {!m.flight_id ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={busy} className="text-muted-foreground hover:text-destructive"><Undo2 className="h-4 w-4" />Abandon mission</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Abandon this mission?</AlertDialogTitle>
+                <AlertDialogDescription>{m.origin_icao} → {m.destination_icao} goes back to the shared mission board. There is no penalty and you can accept another mission right away.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep mission</AlertDialogCancel>
+                <AlertDialogAction onClick={async () => {
+                  setBusy(true);
+                  try { await cancel({ data: { mission: m.id } }); await qc.invalidateQueries({ queryKey: ["missions"] }); toast.success("Mission returned to the board"); }
+                  catch (e) { toast.error(e instanceof Error ? e.message : "Unable to abandon mission"); }
+                  finally { setBusy(false); }
+                }}>Abandon mission</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <p className="text-xs text-muted-foreground">To abandon, first cancel the mission flight in Dispatch (before take-off).</p>
+        )}
+      </div>
     </section>
   );
 }

@@ -246,3 +246,6 @@
 - [x] Spot rental: pilot-chosen Target Fuel counted against MTOW, SimBrief sync, divert continuation, zero-cost ACARS ramp sync, clear fuel guidance
 
 - [x] Dispatch fuel/W&B: kg/lbs and gal/ltr switch (remembered), dual-unit readouts, rule text behind amber (i) popovers
+
+- [x] Special missions: abandon before dispatch (back to board), auto-release after missed deadline with no flight, accept only with a fleet aircraft able to carry the cargo, rules behind (i)
+- [ ] Dispatch timeout / force recall (planned next)

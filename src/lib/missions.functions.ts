@@ -26,3 +26,12 @@ export const acceptMission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return true;
   });
+
+export const cancelMission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ mission: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("cancel_special_mission", { p_mission: data.mission });
+    if (error) throw new Error(error.message);
+    return true;
+  });

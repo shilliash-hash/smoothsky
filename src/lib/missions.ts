@@ -8,3 +8,18 @@ export function missionPayout(payout: number, deadlineAt: string | null, at: num
   const late = !!deadlineAt && at > new Date(deadlineAt).getTime();
   return { amount: late ? Math.round(payout * 50) / 100 : payout, late };
 }
+
+type FitAircraft = { returned_at: string | null; location_icao: string; type?: { cargo_kg: number | null } | null };
+
+/** Can the player's active fleet carry a mission's cargo (All-Cargo bonus counted), and is a capable aircraft at the origin? */
+export function missionFleetFit(fleet: FitAircraft[], cargoKg: number, origin: string, allCargoBonus: number) {
+  const capacity = (f: FitAircraft) => Math.floor((f.type?.cargo_kg ?? 0) * (1 + allCargoBonus));
+  const active = fleet.filter((f) => !f.returned_at);
+  const capable = active.filter((f) => capacity(f) >= cargoKg);
+  return {
+    capable: capable.length > 0,
+    fleetMaxKg: active.reduce((max, f) => Math.max(max, capacity(f)), 0),
+    atOrigin: capable.some((f) => f.location_icao === origin),
+    elsewhereIcao: capable.find((f) => f.location_icao !== origin)?.location_icao ?? null,
+  };
+}
