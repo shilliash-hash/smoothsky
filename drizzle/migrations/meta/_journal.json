@@ -547,6 +547,13 @@
       "when": 1795505022221,
       "tag": "0077_special_mission_cancel_release",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795505210964,
+      "tag": "0078_special_mission_airline_fleet_only",
+      "breakpoints": true
     }
   ]
 }

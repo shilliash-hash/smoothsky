@@ -51,6 +51,7 @@ function Missions() {
   const { data: company } = useSuspenseQuery(companyQuery);
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const bonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
+  const airlineFleet = useMemo(() => (company ? overview.fleet.filter((f) => f.company_id === company.id) : []), [overview.fleet, company]);
   const [now, setNow] = useState(data.serverTime);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15000);
@@ -64,7 +65,7 @@ function Missions() {
       <p className="readout text-xs uppercase text-amber">Urgent contracts · Fixed payout</p>
       <h1 className="mt-1 flex items-center gap-2 text-3xl font-semibold">Special Missions
         <InfoHint label="Mission rules">
-          <p><span className="text-foreground">Cargo capacity:</span> you can accept a mission only if your fleet has an aircraft that fits its cargo (All-Cargo capacity +{Math.round(bonus * 100)}% counted).</p>
+          <p><span className="text-foreground">Cargo capacity:</span> you can accept a mission only if your airline fleet has an aircraft that fits its cargo (All-Cargo capacity +{Math.round(bonus * 100)}% counted).</p>
           <p><span className="text-foreground">Abandon:</span> you can give up an accepted mission any time before its flight is dispatched — no penalty, it simply returns to the shared board.</p>
           <p><span className="text-foreground">Auto-release:</span> if no aircraft is dispatched before the deadline, the contract goes back to the board automatically.</p>
           <p><span className="text-foreground">Late delivery:</span> once the flight is under way the contract stays yours; landing after the deadline pays 50%.</p>
@@ -73,11 +74,11 @@ function Missions() {
       <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
         MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. The clock starts when you accept; late delivery halves the payout.
       </p>
-      {active.map((m) => <ActiveMission key={m.id} mission={m} now={now} hasCompany={!!company} />)}
+      {active.map((m) => <ActiveMission key={m.id} mission={m} now={now} companyId={company?.id ?? null} />)}
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Mission board · {open.length} open</h2>
         <div className="mt-3 divide-y divide-border border-y border-border">
-          {open.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={missionFleetFit(overview.fleet, m.cargo_kg, m.origin_icao, bonus)} />)}
+          {open.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={missionFleetFit(airlineFleet, m.cargo_kg, m.origin_icao, bonus)} />)}
           {open.length === 0 && <p className="py-8 text-muted-foreground">No open missions right now.</p>}
         </div>
       </section>
@@ -135,15 +136,16 @@ function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now
   );
 }
 
-function ActiveMission({ mission: m, now, hasCompany }: { mission: Mission; now: number; hasCompany: boolean }) {
+function ActiveMission({ mission: m, now, companyId }: { mission: Mission; now: number; companyId: string | null }) {
+  const hasCompany = !!companyId;
   const { data: overview } = useSuspenseQuery(fleetOverviewQuery);
   const action = useServerFn(flightAction);
   const cancel = useServerFn(cancelMission);
   const qc = useQueryClient();
   const bonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const candidates = useMemo(
-    () => overview.fleet.filter((f) => !f.returned_at && f.status === "AVAILABLE" && f.location_icao === m.origin_icao && (f.type?.cargo_kg ?? 0) * (1 + bonus) >= m.cargo_kg),
-    [overview.fleet, m, bonus],
+    () => overview.fleet.filter((f) => f.company_id === companyId && !f.returned_at && f.status === "AVAILABLE" && f.location_icao === m.origin_icao && (f.type?.cargo_kg ?? 0) * (1 + bonus) >= m.cargo_kg),
+    [overview.fleet, m, bonus, companyId],
   );
   const [aircraft, setAircraft] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -216,7 +218,7 @@ function ActiveMission({ mission: m, now, hasCompany }: { mission: Mission; now:
             </AlertDialogContent>
           </AlertDialog>
         ) : (
-          <p className="text-xs text-muted-foreground">To abandon, first cancel the mission flight in Dispatch (before take-off).</p>
+          <p className="text-xs text-muted-foreground">To release this mission, manage its flight in Dispatch: cancel it before take-off, or abandon it after a divert.</p>
         )}
       </div>
     </section>

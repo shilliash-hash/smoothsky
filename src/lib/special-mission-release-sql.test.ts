@@ -16,7 +16,7 @@ beforeAll(async () => {
   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid $$;
   CREATE TABLE airports(icao text PRIMARY KEY, size int, longest_runway_ft int, airport_type text, lat float8, lon float8);
   CREATE TABLE operating_rules(all_cargo_capacity_bonus numeric);
-  CREATE TABLE companies(id uuid PRIMARY KEY, user_id uuid);
+  CREATE TABLE companies(id uuid PRIMARY KEY, user_id uuid, is_personal boolean DEFAULT false);
   CREATE TABLE aircraft_types(id text PRIMARY KEY, cargo_kg int);
   CREATE TABLE fleet_aircraft(id uuid PRIMARY KEY, company_id uuid, aircraft_type_id text, location_icao text, returned_at timestamptz);
   CREATE TABLE flights(id uuid PRIMARY KEY, status text);
@@ -25,6 +25,7 @@ beforeAll(async () => {
     expires_at timestamptz DEFAULT now() + interval '6 hours', accepted_by uuid, accepted_at timestamptz, deadline_at timestamptz, flight_id uuid, completed_at timestamptz,
     final_payout numeric, delivered_late boolean DEFAULT false);`);
   await db.exec(readFileSync("drizzle/migrations/0077_special_mission_cancel_release.sql", "utf8"));
+  await db.exec(readFileSync("drizzle/migrations/0078_special_mission_airline_fleet_only.sql", "utf8"));
 }, 30000);
 beforeEach(async () => {
   await db.exec(`BEGIN;
@@ -76,5 +77,16 @@ describe("special mission cancel and auto-release SQL", () => {
     await db.query(`INSERT INTO special_missions(id,cargo_kg,status,accepted_by,deadline_at) VALUES ('${id(42)}',150,'ACCEPTED','${owner}',now()-interval '68 hours'),('${mission}',150,'OPEN',NULL,NULL)`);
     await db.query(`SELECT accept_special_mission('${mission}')`);
     expect(await one(`SELECT status FROM special_missions WHERE id='${mission}'`)).toEqual({ status: "ACCEPTED" });
+  });
+  it("a private personal aircraft does not unlock a mission", async () => {
+    await db.query(`INSERT INTO companies VALUES ('${id(11)}','${owner}',true)`);
+    await db.query(`INSERT INTO fleet_aircraft VALUES ('${id(22)}','${id(11)}','BIG','ORIG',NULL)`);
+    await db.query(`INSERT INTO special_missions(id,cargo_kg) VALUES ('${mission}',1500)`);
+    await expect(db.query(`SELECT accept_special_mission('${mission}')`)).rejects.toThrow(/fleet max: 319 kg/);
+  });
+  it("a diverted mission flight points the player to resolve the divert in Dispatch", async () => {
+    await db.query(`UPDATE flights SET status='DIVERTED'`);
+    await db.query(`INSERT INTO special_missions(id,cargo_kg,status,accepted_by,deadline_at,flight_id) VALUES ('${mission}',150,'ACCEPTED','${owner}',now()+interval '2 hours','${flight}')`);
+    await expect(db.query(`SELECT cancel_special_mission('${mission}')`)).rejects.toThrow(/Resolve the divert in Dispatch/);
   });
 });
