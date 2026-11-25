@@ -1,3 +1,4 @@
+import { cargoPoolQuery, cargoPoolLabel, cargoPoolLbs } from "@/lib/cargo-pool";
 import { createFileRoute, ClientOnly, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from "react";
@@ -284,6 +285,7 @@ function Radar() {
                     {Math.floor(stock)} / {Math.round(capacity)} pax
                   </dd>
                 </div>
+                <CargoPoolTile icao={airport.icao} />
                 <div>
                   <dt className="text-muted-foreground">Jet-A1 · simulated supply</dt>
                   <dd>
@@ -343,5 +345,18 @@ function Radar() {
         </section>
       )}
     </AppShell>
+  );
+}
+
+function CargoPoolTile({ icao }: { icao: string }) {
+  const { data, isError } = useQuery(cargoPoolQuery(icao));
+  return (
+    <div>
+      <dt className="text-muted-foreground">Cargo pool</dt>
+      <dd>
+        {data ? cargoPoolLabel(data) : isError ? "Unavailable" : "Loading…"}
+        {data && <div className="text-xs text-muted-foreground">{cargoPoolLbs(data)}</div>}
+      </dd>
+    </div>
   );
 }

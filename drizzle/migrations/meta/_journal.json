@@ -561,6 +561,13 @@
       "when": 1795506096877,
       "tag": "0079_special_mission_aircraft_at_origin",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1795565006895,
+      "tag": "0080_spot_rental_delivery_zones",
+      "breakpoints": true
     }
   ]
 }

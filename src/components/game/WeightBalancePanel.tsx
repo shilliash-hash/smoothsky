@@ -7,14 +7,17 @@ import type { Quote } from "@/lib/operations";
 import { formatVolume, formatWeight, otherWeight, useUnitPreferences, type WeightUnit } from "@/lib/unit-preferences";
 import { InfoHint } from "./InfoHint";
 import { UnitToggle } from "./UnitToggle";
+import { useQuery } from "@tanstack/react-query";
+import { cargoPoolQuery } from "@/lib/cargo-pool";
 
 type Budget = NonNullable<Quote["weight_budget"]>;
 
-export function WeightBalancePanel({ budget, passengers, cargoKg, canAutoLoad, onAutoLoad, controls }: {
-  budget: Budget; passengers: number; cargoKg: number; canAutoLoad: boolean; onAutoLoad: () => void;
+export function WeightBalancePanel({ budget, passengers, cargoKg, canAutoLoad, onAutoLoad, controls, originIcao }: {
+  originIcao?: string; budget: Budget; passengers: number; cargoKg: number; canAutoLoad: boolean; onAutoLoad: () => void;
   controls?: { mode: FlightMode; maxPax: number; maxCargo: number; ticketRevenue: number; cargoRevenue: number; onPassengers: (v: number) => void; onCargo: (v: number) => void };
 }) {
   const [units, setUnits] = useUnitPreferences();
+  const { data: cargoPool } = useQuery(cargoPoolQuery(originIcao ?? ""));
   const wu = units.weight;
   const w = (v: number) => formatWeight(v, wu);
   const alt = (v: number) => formatWeight(v, otherWeight(wu));
@@ -58,6 +61,7 @@ export function WeightBalancePanel({ budget, passengers, cargoKg, canAutoLoad, o
         </div>
         <div>
           <label htmlFor="payload-cargo" className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="flex items-center gap-2 uppercase text-muted-foreground"><Package className="h-3.5 w-3.5" />Cargo</span><span className="readout">{w(cargoKg)} / {w(controls.maxCargo)} <span className="text-muted-foreground">· {alt(cargoKg)}</span></span></label>
+          {cargoPool && <p className="readout mt-1 text-xs text-muted-foreground">Airport cargo pool{originIcao ? ` · ${originIcao}` : ""}: <span className={cargoPool.stock <= controls.maxCargo ? "text-amber" : "text-foreground"}>{w(cargoPool.stock)} / {w(cargoPool.capacity)}</span>{cargoPool.stock <= controls.maxCargo ? " · limited by airport stock" : " · limited by aircraft / MTOW"}</p>}
           <Slider id="payload-cargo" aria-label={`Cargo (${wu})`} className="mt-3" min={controls.mode === 'cargo' ? Math.min(10, controls.maxCargo) : 0} max={controls.maxCargo} step={1} value={[cargoKg]} onValueChange={v => controls.onCargo(v[0] ?? 0)} disabled={controls.mode === 'ferry' || controls.maxCargo === 0} />
           <p className="readout mt-2 text-xs text-muted-foreground">{controls.mode === 'ferry' ? 'Ferry repositioning' : `${controls.mode === 'cargo' ? 'All-Cargo' : 'Belly cargo'} · Est. cargo: ${formatCr(controls.cargoRevenue)}`}</p>
         </div>

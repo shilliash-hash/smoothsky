@@ -1778,7 +1778,11 @@ export type Database = {
       regenerate_acars_key: { Args: never; Returns: string }
       release_stale_special_missions: { Args: never; Returns: number }
       rent_aircraft: {
-        Args: { p_registration?: string; p_type: string }
+        Args: {
+          p_airport_icao?: string
+          p_registration?: string
+          p_type: string
+        }
         Returns: string
       }
       replenish_broker_market: { Args: never; Returns: undefined }
@@ -1835,6 +1839,34 @@ export type Database = {
       sign_lease: {
         Args: { p_type: string; p_weeks?: number }
         Returns: string
+      }
+      spot_rental_cfg: {
+        Args: { p_default: number; p_key: string }
+        Returns: number
+      }
+      spot_rental_delivery_options: {
+        Args: { p_query?: string; p_type: string }
+        Returns: {
+          anchor_icao: string
+          city: string
+          country: string
+          distance_nm: number
+          fee_pct: number
+          icao: string
+          longest_runway_ft: number
+          name: string
+          runway_ok: boolean
+          zone: string
+        }[]
+      }
+      spot_rental_delivery_zone: {
+        Args: { p_company: string; p_icao: string }
+        Returns: {
+          anchor_icao: string
+          distance_nm: number
+          fee_pct: number
+          zone: string
+        }[]
       }
       spot_rental_price: { Args: { p_weekly: number }; Returns: number }
       stake_market: {

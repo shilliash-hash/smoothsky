@@ -6,6 +6,7 @@ import type { WorldActivity } from '@/lib/radar-world';
 import { fuelLabel } from "@/lib/fleet-rules";
 import { routeWaypointsSchema } from "@/lib/route-waypoints";
 import { drawRoute } from "./route-layer";
+import { fetchCargoPool, cargoPoolLabel } from "@/lib/cargo-pool";
 import {
   distanceNm,
   rangeRing,
@@ -139,6 +140,12 @@ export default function RadarMap({
         const line = document.createElement("div");
         line.textContent = text;
         popup.append(line);
+        if (text.startsWith("Passengers:")) {
+          const cargoLine = document.createElement("div");
+          cargoLine.textContent = "Cargo: …";
+          cargoLine.dataset['cargoPool'] = a.icao;
+          popup.append(cargoLine);
+        }
       }
       if (popupAirport.current === a.icao && airportPopup.current?.isOpen()) {
         airportPopup.current.setContent(popup);
@@ -146,6 +153,8 @@ export default function RadarMap({
       const openAirport = () => {
         popupAirport.current = a.icao;
         airportPopup.current?.setLatLng([a.lat, a.lon]).setContent(popup).openOn(m);
+        const cargoLine = popup.querySelector<HTMLElement>("[data-cargo-pool]");
+        if (cargoLine) void fetchCargoPool(a.icao).then(p => { cargoLine.textContent = `Cargo: ${cargoPoolLabel(p)}`; }).catch(() => { cargoLine.textContent = "Cargo: unavailable"; });
         onAirport(a);
       };
       const marker = L.circleMarker([a.lat, a.lon], {

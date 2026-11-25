@@ -390,7 +390,7 @@ function Dispatch() {
                   </p>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
                   {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} {...(quote.weight_budget ? { reserveGal: quote.weight_budget.reserve_fuel_gal } : {})} />}
-                  {quote.weight_budget && <WeightBalancePanel budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && planning !== null} onAutoLoad={() => {
+                  {quote.weight_budget && <WeightBalancePanel {...(selected?.location_icao ? { originIcao: selected.location_icao } : {})} budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && planning !== null} onAutoLoad={() => {
                     if (!confirmedQuote) return;
                     const mix = bestPayloadMix(confirmedQuote, flightMode, targetFuel);
                     setPassengers(mix.passengers); setCargoKg(mix.cargoKg);

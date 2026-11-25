@@ -35,9 +35,9 @@ export const leaseAction = createServerFn({ method: "POST" })
   });
 export const rentAircraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ type: z.string().min(1), registration: z.string().trim().max(12) }))
+  .inputValidator(z.object({ type: z.string().min(1), registration: z.string().trim().max(12), airport: z.string().trim().max(8).optional() }))
   .handler(async ({ data, context }) => {
-    const result = await context.supabase.rpc("rent_aircraft", { p_type: data.type, ...(data.registration ? { p_registration: data.registration } : {}) });
+    const result = await context.supabase.rpc("rent_aircraft", { p_type: data.type, ...(data.registration ? { p_registration: data.registration } : {}), ...(data.airport ? { p_airport_icao: data.airport } : {}) });
     if (result.error) throw new Error(result.error.message);
     return result.data;
   });
@@ -97,4 +97,13 @@ export const getRegistrationRules = createServerFn({ method: "POST" })
     const result = await context.supabase.from("registration_rules").select("*");
     if (result.error) throw new Error(result.error.message);
     return result.data;
+  });
+export type SpotDeliveryOption = { icao: string; name: string | null; city: string | null; country: string | null; longest_runway_ft: number | null; zone: "MAIN" | "SATELLITE" | "EXTENDED"; fee_pct: number; anchor_icao: string; distance_nm: number; runway_ok: boolean };
+export const getSpotDeliveryOptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ type: z.string().min(1), query: z.string().trim().max(60) }))
+  .handler(async ({ data, context }) => {
+    const result = await context.supabase.rpc("spot_rental_delivery_options", { p_type: data.type, p_query: data.query });
+    if (result.error) throw new Error(result.error.message);
+    return (result.data ?? []).map(r => ({ ...r, fee_pct: Number(r.fee_pct), distance_nm: Number(r.distance_nm) })) as SpotDeliveryOption[];
   });
