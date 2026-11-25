@@ -35,17 +35,17 @@ export const Route = createFileRoute("/")({
 });
 
 const pillars = [
-  { icon: Landmark, title: "Realistic economics", points: ["1 SC = 1 EUR/USD — every coin goes through a double-entry ledger", "Hub & Feeder passenger demand rewards flying traffic into major hubs", "Pay-As-You-Burn fuel settled from actual ACARS consumption", "Leases, purchases, FBO bases and weekly obligations"] },
+  { icon: Landmark, title: "Realistic economics", points: ["1 SC = 1 EUR/USD — every coin goes through a double-entry ledger", "Hub & Feeder passenger demand rewards flying traffic into major hubs", "Pay-As-You-Burn fuel settled from actual ACARS consumption", "Leases, purchases, FBO bases and weekly obligations", "SmoothSky rule of thumb - 3 flights a week for leased plane - guarantee of profit"] },
   { icon: Users, title: "Two career paths", points: ["Airline Owner: lease or buy aircraft, open bases, hire pilots", "Pilot: fly on a Roster contract or as a Freelancer for commission", "Fly Tier 1–3 aircraft from Day 1 with zero-commitment Spot Rentals", "Buy airline stakes for weekly dividends or a personal aircraft"] },
-  { icon: Package, title: "Cargo & urgent missions", points: ["Belly cargo alongside passengers or All-Cargo with +50% capacity", "Cargo pools regenerate hourly — even at small regional fields", "MEDEVAC / transplant runs with fees waived and 2–3 h deadlines", "AOG industrial freight — late delivery halves the payout"] },
+  { icon: Package, title: "Cargo & urgent missions", points: ["Belly cargo alongside passengers or All-Cargo with +50% capacity", "Cargo and PAX pools regenerate dynamically — even at small regional fields", "MEDEVAC / transplant runs with fees waived and 2–3 h deadlines", "AOG industrial freight — late delivery halves the payout"] },
   { icon: Radio, title: "SimBrief + Live ACARS", points: ["Optional SimBrief OFP route & fuel import — or dispatch in 2 clicks without external tools", "Dedicated desktop ACARS client for MSFS 2020/2024 & X-Plane 11/12", "Personal ACARS key streams live position to the radar", "PIREPs are validated against flight physics and strict anti-refuel telemetry"] },
 ];
 
 const steps = [
-  "2 Clicks & Fly — zero spreadsheet headache: pick a route from Best Deals, hit Auto-load best mix, and dispatch in 5 seconds (deep MTOW, fuel tankering, and SimBrief tools are always optional).",
+  "3 Clicks & Fly — zero spreadsheet headache: pick a route from Best Deals, hit Auto-load best mix, and dispatch in 5 seconds (deep MTOW, fuel tankering, and SimBrief tools are always optional).",
   "Fly Tier 1–3 aircraft from Day 1 with single-flight Spot Rentals — zero deposits or weekly pressure.",
   "Not a '2nd job': weekly leases pay for themselves in 3–4 normal flights, with 75% deposit refund on early exit.",
-  "Built-in Chapter 11 safety net: reset debt and get a fresh starter grant once every 30 days without losing your logbook.",
+  "Built-in safety net: reset debt and get a fresh starter grant once every 30 days without losing your logbook.",
   "Dispatch passengers or cargo, fly in MSFS or X-Plane with live ACARS, and climb the leaderboard.",
 ];
 
