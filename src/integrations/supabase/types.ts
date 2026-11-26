@@ -1765,6 +1765,7 @@ export type Database = {
             }[]
           }
       ramp_fuel_adjust: { Args: { p: Json; p_flight: string }; Returns: Json }
+      recall_stale_dispatches: { Args: never; Returns: number }
       record_divert: {
         Args: {
           dest: string

@@ -5,6 +5,11 @@
 - [x] CR-03: Powrót do karty odświeża sesję przed aktywnymi zapytaniami; błędy sieci są ponawiane bez fałszywego wylogowania, a funkcje serwerowe zachowują błędy RPC zamiast HTML.
 - [x] 563 testy i kontrola typów przechodzą; najnowsza kompilacja podglądu OK. Bez automatycznych testów przeglądarki, zmian bazy danych i ustawień wdrożenia; rzeczywiste uśpienie karty pozostaje do potwierdzenia przez użytkownika.
 
+## Rzut 2 — CR-01 Dispatch Timeout / Force Recall
+- [x] Automatyczny Recall po 3 h wyłącznie dla nieuruchomionych DISPATCHED bez telemetrii ACARS od 30 min; EN_ROUTE, DIVERTED, departed_at i kontynuacje chronione. Progi edytowalne w /admin, uruchamiane przez istniejące odświeżanie operacji.
+- [x] Ręczny Recall z potwierdzeniem w Dispatch i na Dashboardzie; wspólna, idempotentna ścieżka anulowania zwraca paliwo, dopłatę i Spot Rental bez podwójnych zwrotów.
+- [x] Migracje 0081–0083 zastosowane; 576 testów i kontrola typów OK, w tym 13 nowych testów CR-01 oraz regresje ACARS, divert i admin cleanup. Bez testów przeglądarkowych i zmian wrangler.jsonc.
+
 ## Flight Briefing snapshot
 - [x] Read-only modal of the plan approved at dispatch (route, PAX/cargo, W&B vs MTOW, tank/uplift/ramp fuel, estimated economics) in Dispatch rows, dashboard board (Plan), fleet cards (Flight plan) and accepted missions (Mission details); unit toggles shared.
 - [x] 7 briefing tests + 33 related tests passed; signed-in desktop/mobile dashboard check with a simulated active flight (no data written), Dispatch/Missions load without errors. A real dispatched flight was not opened.
@@ -12,7 +17,6 @@
 ## Special missions require an aircraft on site
 - [x] Accept only with an available airline aircraft parked at the origin that fits the cargo; board shows "reposition to X to accept" or "REG ready at X", Accept disabled otherwise.
 - [x] 20 mission tests passed (on-site, elsewhere, busy, too small, personal aircraft); applied definition confirmed; signed-in board checked with 0 of 13 Accept buttons enabled (no aircraft at any origin), no runtime errors. Green "ready" state covered by tests only.
-- [ ] Dispatch Timeout / Force Recall — next.
 
 ## Divert guidance and dashboard settlement refresh
 - [x] Keep diverted flights visible with direct Dispatch actions on the board, fleet and dashboard banner; prioritize diverted aircraft and explain continuation refuelling before taxi, frozen fuel plans and cancellation vs abandonment.
@@ -262,4 +266,3 @@
 - [x] Dispatch fuel/W&B: kg/lbs and gal/ltr switch (remembered), dual-unit readouts, rule text behind amber (i) popovers
 
 - [x] Special missions: abandon before dispatch (back to board), auto-release after missed deadline with no flight, accept only with a fleet aircraft able to carry the cargo, rules behind (i)
-- [ ] Dispatch timeout / force recall (planned next)

@@ -38,6 +38,7 @@ import { InfoHint } from "@/components/game/InfoHint";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
 import { DivertControls } from '@/components/game/DivertControls';
 import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
+import { RecallFlightButton } from '@/components/game/RecallFlightButton';
 const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
@@ -466,6 +467,7 @@ function Dispatch() {
         <span className="readout text-xs text-amber">
           {webSimAllowed ? `WEB TEST · ${String(d.rules["simulation_time_scale"])}× · ACARS LIVE` : "ACARS LIVE MODE · real-time telemetry"}
         </span>
+        <p className="mt-2 text-xs text-muted-foreground">Unstarted dispatches auto-recall after {String(d.rules["dispatch_timeout_hours"] ?? 3)} h without ACARS activity for {String(d.rules["dispatch_telemetry_grace_minutes"] ?? 30)} min. Departed, en-route and diverted flights are never auto-recalled.</p>
         <div className="mt-3 divide-y divide-border border-y border-border">
           {d.flights.map((f) => {
             const acars = f.execution_source === "ACARS_AGENT";
@@ -526,19 +528,20 @@ function Dispatch() {
                         : "Complete & settle"}
                     </Button>
                   )}
-                  {active && (
+                  {active && f.divert_state && (
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={busy}
                       onClick={() => {
-                        if (confirm(f.divert_state ? `Cancel continuation ${f.flight_number}? New fuel uplift is refunded; the contract stays on hold at ${f.origin_icao}.` : `Cancel flight ${f.flight_number}? The aircraft returns to ${f.origin_icao} and no revenue is paid.`)) void run("cancel", f.id);
+                        if (confirm(`Cancel continuation ${f.flight_number}? New fuel uplift is refunded; the contract stays on hold at ${f.origin_icao}.`)) void run("cancel", f.id);
                       }}
                     >
                       <X className="h-4 w-4" />
-                      {f.divert_state ? "Cancel continuation" : "Cancel flight"}
+                      Cancel continuation
                     </Button>
                   )}
+                  {active && !f.divert_state && <RecallFlightButton flightId={f.id} flightNumber={f.flight_number} originIcao={f.origin_icao} />}
                   {f.status === "COMPLETED" && (
                     <><FlightDebrief flightNumber={f.flight_number} route={`${f.origin_icao} → ${f.destination_icao}`} settlement={f.settlement} estimate={f.estimate} telemetry={f.telemetry} estimatedMinutes={f.estimated_minutes} divertState={f.divert_state} /><span className="readout text-primary">
                       {formatCr((f.settlement as Quote)?.net ?? 0)}

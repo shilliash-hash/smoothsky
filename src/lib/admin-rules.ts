@@ -34,6 +34,8 @@ export function validateEconomyValue(key: string, value: unknown) {
   if (key === "dispatch_usable_range_pct") return z.number().finite().min(0.05).max(1).parse(value);
   if (key === "recruitment_commissions") return recruitmentSchema.parse(value);
   if (key === "spot_rental_multiplier") return z.number().finite().min(0.01).max(1).parse(value);
+  if (key === "dispatch_timeout_hours") return z.number().int().min(1).max(168).parse(value);
+  if (key === "dispatch_telemetry_grace_minutes") return z.number().int().min(5).max(120).parse(value);
   if (key === "short_hop_threshold_nm") return z.number().int().min(10).max(300).parse(value);
   if (key === "short_hop_min_multiplier") return z.number().finite().min(0).max(1).parse(value);
   if (key === "web_simulation_enabled") return z.boolean().parse(value);
