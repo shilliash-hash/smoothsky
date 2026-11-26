@@ -1,3 +1,7 @@
+export function shouldRenderHtmlErrorPage(handlerType: "router" | "serverFn"): boolean {
+  return handlerType === "router";
+}
+
 export function renderErrorPage(): string {
   return `<!doctype html>
 <html lang="en">

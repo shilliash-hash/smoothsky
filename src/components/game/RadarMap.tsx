@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import L from "leaflet";
 import type { Operations, Airport } from "@/lib/operations";
 import { liveRadarPosition, type LiveRadarFlight } from '@/lib/live-radar';
@@ -6,7 +7,7 @@ import type { WorldActivity } from '@/lib/radar-world';
 import { fuelLabel } from "@/lib/fleet-rules";
 import { routeWaypointsSchema } from "@/lib/route-waypoints";
 import { drawRoute } from "./route-layer";
-import { fetchCargoPool, cargoPoolLabel } from "@/lib/cargo-pool";
+import { cargoPoolLabel, cargoPoolQuery } from "@/lib/cargo-pool";
 import {
   distanceNm,
   rangeRing,
@@ -39,6 +40,7 @@ export default function RadarMap({
   onAirport: (a: Airport) => void;
   onFlight: (f: LiveRadarFlight) => void;
 }) {
+  const queryClient = useQueryClient();
   const div = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const airportLayer = useRef<L.LayerGroup | null>(null);
@@ -142,7 +144,8 @@ export default function RadarMap({
         popup.append(line);
         if (text.startsWith("Passengers:")) {
           const cargoLine = document.createElement("div");
-          cargoLine.textContent = "Cargo: …";
+          const cached = queryClient.getQueryData(cargoPoolQuery(a.icao).queryKey);
+          cargoLine.textContent = cached ? `Cargo: ${cargoPoolLabel(cached)}` : "Cargo: …";
           cargoLine.dataset['cargoPool'] = a.icao;
           popup.append(cargoLine);
         }
@@ -153,8 +156,21 @@ export default function RadarMap({
       const openAirport = () => {
         popupAirport.current = a.icao;
         airportPopup.current?.setLatLng([a.lat, a.lon]).setContent(popup).openOn(m);
-        const cargoLine = popup.querySelector<HTMLElement>("[data-cargo-pool]");
-        if (cargoLine) void fetchCargoPool(a.icao).then(p => { cargoLine.textContent = `Cargo: ${cargoPoolLabel(p)}`; }).catch(() => { cargoLine.textContent = "Cargo: unavailable"; });
+        const updateCargo = (text: string) => {
+          if (popupAirport.current !== a.icao || !airportPopup.current?.isOpen()) return;
+          // The radar may have rebuilt the marker layers since this request started.
+          // Always update the live popup, never the detached element captured on click.
+          const line = airportPopup.current.getElement()?.querySelector<HTMLElement>(`[data-cargo-pool="${a.icao}"]`);
+          if (line) line.textContent = text;
+        };
+        const cached = queryClient.getQueryData(cargoPoolQuery(a.icao).queryKey);
+        if (cached) updateCargo(`Cargo: ${cargoPoolLabel(cached)}`);
+        void queryClient.fetchQuery(cargoPoolQuery(a.icao))
+          .then(p => updateCargo(`Cargo: ${cargoPoolLabel(p)}`))
+          .catch(() => {
+            const retained = queryClient.getQueryData(cargoPoolQuery(a.icao).queryKey);
+            updateCargo(retained ? `Cargo: ${cargoPoolLabel(retained)}` : "Cargo: unavailable");
+          });
         onAirport(a);
       };
       const marker = L.circleMarker([a.lat, a.lon], {

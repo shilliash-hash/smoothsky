@@ -129,12 +129,50 @@ function RootComponent() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event === "SIGNED_OUT") queryClient.clear();
-      else queryClient.invalidateQueries();
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+        void router.invalidate();
+        return;
+      }
+      void queryClient.invalidateQueries();
+      void router.invalidate();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  useEffect(() => {
+    let disposed = false;
+    let recovering = false;
+    let lastAttempt = 0;
+    const resume = () => {
+      if (disposed || recovering || document.visibilityState === "hidden" || !navigator.onLine) return;
+      const now = Date.now();
+      if (now - lastAttempt < 5000) return;
+      lastAttempt = now;
+      recovering = true;
+      // getSession refreshes an expired token through the auth client's shared lock.
+      // Only after it settles do active queries refetch, avoiding an expired-token storm.
+      void supabase.auth.getSession()
+        .then(({ data, error }) => {
+          if (!disposed && !error && data.session) return queryClient.invalidateQueries({ refetchType: "active" });
+          return undefined;
+        })
+        .catch(() => undefined)
+        .finally(() => { recovering = false; });
+    };
+    const onVisibility = () => { if (document.visibilityState === "visible") resume(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", resume);
+    window.addEventListener("online", resume);
+    window.addEventListener("pageshow", resume);
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", resume);
+      window.removeEventListener("online", resume);
+      window.removeEventListener("pageshow", resume);
+    };
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

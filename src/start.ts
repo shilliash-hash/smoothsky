@@ -1,13 +1,14 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
-import { renderErrorPage } from "./lib/error-page";
+import { renderErrorPage, shouldRenderHtmlErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async ({ next, handlerType }) => {
   try {
     return await next();
   } catch (error) {
-    if (error != null && typeof error === "object" && "statusCode" in error) {
+    if (!shouldRenderHtmlErrorPage(handlerType) || (error != null && typeof error === "object" && "statusCode" in error)) {
+      // Server-function clients need the original serialized RPC error, not an HTML document.
       throw error;
     }
     console.error(error);

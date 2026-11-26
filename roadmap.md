@@ -1,5 +1,10 @@
 # Roadmap
 
+## Rzut 1 — CR-02 + CR-03
+- [x] CR-02: Cargo w otwartym dymku radaru korzysta z cache TanStack Query, aktualizuje aktualny popup i zachowuje poprzednie dane podczas odświeżeń radaru.
+- [x] CR-03: Powrót do karty odświeża sesję przed aktywnymi zapytaniami; błędy sieci są ponawiane bez fałszywego wylogowania, a funkcje serwerowe zachowują błędy RPC zamiast HTML.
+- [x] 563 testy i kontrola typów przechodzą; najnowsza kompilacja podglądu OK. Bez automatycznych testów przeglądarki, zmian bazy danych i ustawień wdrożenia; rzeczywiste uśpienie karty pozostaje do potwierdzenia przez użytkownika.
+
 ## Flight Briefing snapshot
 - [x] Read-only modal of the plan approved at dispatch (route, PAX/cargo, W&B vs MTOW, tank/uplift/ramp fuel, estimated economics) in Dispatch rows, dashboard board (Plan), fleet cards (Flight plan) and accepted missions (Mission details); unit toggles shared.
 - [x] 7 briefing tests + 33 related tests passed; signed-in desktop/mobile dashboard check with a simulated active flight (no data written), Dispatch/Missions load without errors. A real dispatched flight was not opened.
