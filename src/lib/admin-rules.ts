@@ -35,7 +35,19 @@ export const routeSaturationFields: Record<string, { label: string; min: number;
   route_saturation_pax_floor_pct: { label: "Minimum PAX Demand (fraction)", min: 0, max: 1, step: 0.01 },
   route_saturation_cargo_floor_pct: { label: "Minimum Cargo Demand (fraction)", min: 0, max: 1, step: 0.01 },
 };
+export const specialMissionFields: Record<string, { label: string; min: number; max: number; step: number }> = {
+  special_mission_open_target: { label: "Open Special Missions on Board", min: 0, max: 100, step: 1 },
+  special_mission_aog_multiplier: { label: "AOG Payout Multiplier", min: 0, max: 10, step: 0.1 },
+  special_mission_medevac_multiplier: { label: "MEDEVAC Payout Multiplier", min: 0, max: 10, step: 0.1 },
+  special_mission_aog_base_fee: { label: "AOG Mobilization Fee (SC)", min: 0, max: 100000, step: 100 },
+  special_mission_medevac_base_fee: { label: "MEDEVAC Mobilization Fee (SC)", min: 0, max: 100000, step: 100 },
+};
 export function validateEconomyValue(key: string, value: unknown) {
+  const mission = specialMissionFields[key];
+  if (mission) {
+    const schema = z.number().finite().min(mission.min).max(mission.max);
+    return (key === "special_mission_open_target" ? schema.int() : schema).parse(value);
+  }
   if (key === 'spot_rental_deposit_ratio') return z.number().finite().min(0).max(5).parse(value);
   if (key === 'secondary_hub_rental_warmup_hours') return z.number().int().min(0).max(168).parse(value);
   const saturation = routeSaturationFields[key];
