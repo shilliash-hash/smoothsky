@@ -65,4 +65,3 @@ use the editor.
 - Cargo/missions pass options to flight_quote_cargo via a transaction-local setting; mission board refreshes lazily, late cuts apply in settle_flight — one settlement path.
 - Homepage reads only anon aggregate counts — no player data.
 - Used market: flights-completion trigger accrues airframe hours; SQL depreciated_value prices net worth, broker and P2P listings — one valuation rule.
-- Maintenance wear, Spot Rental landing charges and the AOG/Major-defect dispatch guard run in flights triggers (completion/insert) from docs/sql/0090, so MANUAL and ACARS settlement share one path without patching settle_flight.
