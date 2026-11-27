@@ -285,3 +285,4 @@
 - [x] Dispatch fuel/W&B: kg/lbs and gal/ltr switch (remembered), dual-unit readouts, rule text behind amber (i) popovers
 
 - [x] Special missions: abandon before dispatch (back to board), auto-release after missed deadline with no flight, accept only with a fleet aircraft able to carry the cargo, rules behind (i)
+- [x] CR-11 Urgent Charter Missions coded (0089 awaits manual deploy)

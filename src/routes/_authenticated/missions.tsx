@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { HeartPulse, Wrench, Timer, Plane, Undo2, MapPin, CheckCircle2 } from "lucide-react";
+import { HeartPulse, Wrench, Crown, Users, Timer, Plane, Undo2, MapPin, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import { InfoHint } from "@/components/game/InfoHint";
 import { FlightBriefing } from "@/components/game/FlightBriefing";
 import { companyQuery } from "@/lib/game";
 import { fleetOverviewQuery } from "@/lib/fleet";
-import { missionsQuery, missionPayout, missionFleetFit, type Mission } from "@/lib/missions";
+import { missionsQuery, missionPayout, missionFleetFit, charterFleetFit, charterKind, missionPax, type Mission, type MissionTab } from "@/lib/missions";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { acceptMission, cancelMission } from "@/lib/missions.functions";
 import { flightAction } from "@/lib/operations.functions";
 import type { Quote } from "@/lib/operations";
@@ -28,9 +30,9 @@ export const Route = createFileRoute("/_authenticated/missions")({
   head: () => ({
     meta: [
       { title: "Special Missions — SmoothSky" },
-      { name: "description", content: "Urgent MEDEVAC and AOG contracts with fixed payouts and tight deadlines." },
+      { name: "description", content: "Urgent MEDEVAC, AOG and VIP/Group charter contracts with fixed payouts and tight deadlines." },
       { property: "og:title", content: "Special Missions — SmoothSky" },
-      { property: "og:description", content: "Accept time-critical MEDEVAC and AOG freight missions across the SmoothSky network." },
+      { property: "og:description", content: "Accept time-critical MEDEVAC, AOG freight and exclusive charter missions across the SmoothSky network." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -61,6 +63,13 @@ function Missions() {
   const mine = data.missions.filter((m) => m.accepted_by === data.userId);
   const active = mine.filter((m) => m.status === "ACCEPTED");
   const open = data.missions.filter((m) => m.status === "OPEN");
+  const [tab, setTab] = useState<MissionTab>("ALL");
+  const [readyOnly, setReadyOnly] = useState(false);
+  const fitOf = (m: Mission) => m.category === "CHARTER"
+    ? charterFleetFit(airlineFleet, missionPax(m), m.cargo_kg, m.origin_icao)
+    : missionFleetFit(airlineFleet, m.cargo_kg, m.origin_icao, bonus);
+  const count = (c: MissionTab) => (c === "ALL" ? open.length : open.filter((m) => m.category === c).length);
+  const shown = open.filter((m) => (tab === "ALL" || m.category === tab) && (!readyOnly || fitOf(m).atOrigin));
   return (
     <AppShell company={company ?? null}>
       <p className="readout text-xs uppercase text-amber">Urgent contracts · Fixed payout</p>
@@ -70,18 +79,32 @@ function Missions() {
           <p><span className="text-foreground">First come, first served:</span> fly an empty repositioning leg to the origin before the offer leaves the board — if another airline accepts it first, the contract is gone.</p>
           <p><span className="text-foreground">Abandon:</span> you can give up an accepted mission any time before its flight is dispatched — no penalty, it simply returns to the shared board.</p>
           <p><span className="text-foreground">Auto-release:</span> if no aircraft is dispatched before the deadline, the contract goes back to the board automatically.</p>
+          <p><span className="text-foreground">Charters:</span> VIP (6–14 PAX) and Group (45–150 PAX) charters book the whole aircraft — only the charter party and their baggage fly, no scheduled passengers or freight. The fixed payout is not reduced by corridor saturation.</p>
           <p><span className="text-foreground">Late delivery:</span> once the flight is under way the contract stays yours; landing after the deadline pays 50%.</p>
         </InfoHint>
       </h1>
       <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-        MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. To accept, an aircraft must already be parked at the origin; the clock starts when you accept and late delivery halves the payout.
+        MEDEVAC flights carry 150–300 kg with airport fees waived and a 2–3 h deadline. AOG freight needs at least 1,500 kg capacity and a 4 h deadline. VIP and Group charters need enough seats for the whole party plus baggage space. To accept, an aircraft must already be parked at the origin; the clock starts when you accept and late delivery halves the payout.
       </p>
       {active.map((m) => <ActiveMission key={m.id} mission={m} now={now} companyId={company?.id ?? null} />)}
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Mission board · {open.length} open</h2>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as MissionTab)}>
+            <TabsList>
+              <TabsTrigger value="ALL">All ({count("ALL")})</TabsTrigger>
+              <TabsTrigger value="CHARTER">VIP & Group Charters ({count("CHARTER")})</TabsTrigger>
+              <TabsTrigger value="AOG">AOG Cargo ({count("AOG")})</TabsTrigger>
+              <TabsTrigger value="MEDEVAC">MEDEVAC ({count("MEDEVAC")})</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Switch checked={readyOnly} onCheckedChange={setReadyOnly} />Ready at my airports
+          </label>
+        </div>
         <div className="mt-3 divide-y divide-border border-y border-border">
-          {open.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={missionFleetFit(airlineFleet, m.cargo_kg, m.origin_icao, bonus)} />)}
-          {open.length === 0 && <p className="py-8 text-muted-foreground">No open missions right now.</p>}
+          {shown.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={fitOf(m)} />)}
+          {shown.length === 0 && <p className="py-8 text-muted-foreground">{open.length === 0 ? "No open missions right now." : "No missions match this filter."}</p>}
         </div>
       </section>
       {mine.some((m) => m.status === "COMPLETED") && (
@@ -101,35 +124,45 @@ function Missions() {
   );
 }
 
-function Icon({ category }: { category: string }) {
+function Icon({ category, pax = 0 }: { category: string; pax?: number }) {
+  if (category === "CHARTER") return charterKind(pax) === "VIP" ? <Crown className="h-5 w-5 text-amber" /> : <Users className="h-5 w-5 text-primary" />;
   return category === "MEDEVAC" ? <HeartPulse className="h-5 w-5 text-destructive" /> : <Wrench className="h-5 w-5 text-amber" />;
 }
 
-function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now: number; canAccept: boolean; fit: ReturnType<typeof missionFleetFit> }) {
+function missionTitle(m: Mission) {
+  if (m.category === "CHARTER") return charterKind(missionPax(m)) === "VIP" ? "VIP / Executive charter" : "Group / Event charter";
+  return m.category === "MEDEVAC" ? "MEDEVAC / Transplant" : "AOG / Industrial freight";
+}
+
+type Fit = ReturnType<typeof missionFleetFit> | ReturnType<typeof charterFleetFit>;
+
+function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now: number; canAccept: boolean; fit: Fit }) {
+  const charter = m.category === "CHARTER";
+  const pax = missionPax(m);
   const accept = useServerFn(acceptMission);
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 py-4">
       <div className="flex items-start gap-3">
-        <Icon category={m.category} />
+        <Icon category={m.category} pax={pax} />
         <div>
-          <p className="readout text-primary">{m.category === "MEDEVAC" ? "MEDEVAC / Transplant" : "AOG / Industrial freight"} · {m.origin_icao} → {m.destination_icao}</p>
+          <p className="readout text-primary">{missionTitle(m)} · {m.origin_icao} → {m.destination_icao}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {Math.round(Number(m.distance_nm))} NM · {m.cargo_kg} kg · deadline {Number(m.deadline_hours)} h after acceptance{m.category === "MEDEVAC" ? " · airport fees 0 SC" : ""} · board expires in {countdown(m.expires_at, now)}
+            {Math.round(Number(m.distance_nm))} NM · {charter ? `${pax} PAX + ${m.cargo_kg} kg baggage · exclusive cabin` : `${m.cargo_kg} kg`} · deadline {Number(m.deadline_hours)} h after acceptance{m.category === "MEDEVAC" ? " · airport fees 0 SC" : ""} · board expires in {countdown(m.expires_at, now)}
           </p>
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3">
         {!fit.capable ? (
-          <span className="readout text-xs text-destructive">Requires ≥ {m.cargo_kg.toLocaleString()} kg cargo (fleet max: {fit.fleetMaxKg.toLocaleString()} kg)</span>
+          <span className="readout text-xs text-destructive">{"fleetMaxPax" in fit ? `Requires ≥ ${pax} seats and ${m.cargo_kg} kg hold (fleet max: ${fit.fleetMaxPax} seats)` : `Requires ≥ ${m.cargo_kg.toLocaleString()} kg cargo (fleet max: ${fit.fleetMaxKg.toLocaleString()} kg)`}</span>
         ) : !fit.atOrigin ? (
           <span className="readout flex items-center gap-1 text-xs text-amber"><MapPin className="h-3 w-3" />{fit.elsewhereIcao ? `Aircraft at ${fit.elsewhereIcao} · ` : "Aircraft busy · "}reposition to {m.origin_icao} to accept</span>
         ) : (
-          <span className="readout flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="h-3 w-3" />{fit.readyRegistration ?? "Aircraft"} ready at {m.origin_icao} (All-Cargo {fit.readyKg.toLocaleString()} kg)</span>
+          <span className="readout flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="h-3 w-3" />{fit.readyRegistration ?? "Aircraft"} ready at {m.origin_icao}{"readyKg" in fit ? ` (All-Cargo ${fit.readyKg.toLocaleString()} kg)` : ""}</span>
         )}
         <span className="readout text-lg text-amber">{formatCr(Number(m.payout))}</span>
-        <Button size="sm" disabled={busy || !canAccept || !fit.capable || !fit.atOrigin} title={!fit.capable ? "No aircraft in your fleet can carry this cargo" : !fit.atOrigin ? `Park an available aircraft at ${m.origin_icao} to accept` : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
+        <Button size="sm" disabled={busy || !canAccept || !fit.capable || !fit.atOrigin} title={!fit.capable ? (charter ? "No aircraft in your fleet can seat this charter" : "No aircraft in your fleet can carry this cargo") : !fit.atOrigin ? `Park an available aircraft at ${m.origin_icao} to accept` : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
           setBusy(true);
           try { await accept({ data: { mission: m.id } }); await qc.invalidateQueries({ queryKey: ["missions"] }); toast.success("Mission accepted — the clock is running"); }
           catch (e) { toast.error(e instanceof Error ? e.message : "Unable to accept mission"); }
@@ -148,7 +181,9 @@ function ActiveMission({ mission: m, now, companyId }: { mission: Mission; now: 
   const qc = useQueryClient();
   const bonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const candidates = useMemo(
-    () => overview.fleet.filter((f) => f.company_id === companyId && !f.returned_at && f.status === "AVAILABLE" && f.location_icao === m.origin_icao && (f.type?.cargo_kg ?? 0) * (1 + bonus) >= m.cargo_kg),
+    () => overview.fleet.filter((f) => f.company_id === companyId && !f.returned_at && f.status === "AVAILABLE" && f.location_icao === m.origin_icao && (m.category === "CHARTER"
+      ? (f.type?.pax ?? 0) >= missionPax(m) && (f.type?.cargo_kg ?? 0) >= m.cargo_kg
+      : (f.type?.cargo_kg ?? 0) * (1 + bonus) >= m.cargo_kg)),
     [overview.fleet, m, bonus, companyId],
   );
   const [aircraft, setAircraft] = useState("");
@@ -185,7 +220,7 @@ function ActiveMission({ mission: m, now, companyId }: { mission: Mission; now: 
           <label className="text-xs uppercase text-muted-foreground">Aircraft at {m.origin_icao}
             <select className="mt-2 block w-full rounded-sm border border-input bg-panel p-3 text-sm normal-case text-foreground" value={aircraft} onChange={(e) => setAircraft(e.target.value)}>
               <option value="">{candidates.length ? "Select aircraft" : "No suitable aircraft at origin"}</option>
-              {candidates.map((f) => <option key={f.id} value={f.id}>{f.registration} · {f.type?.model} · {Math.floor((f.type?.cargo_kg ?? 0) * (1 + bonus))} kg All-Cargo</option>)}
+              {candidates.map((f) => <option key={f.id} value={f.id}>{f.registration} · {f.type?.model} · {m.category === "CHARTER" ? `${f.type?.pax ?? 0} seats` : `${Math.floor((f.type?.cargo_kg ?? 0) * (1 + bonus))} kg All-Cargo`}</option>)}
             </select>
           </label>
           <Button disabled={busy || !quote} onClick={async () => {

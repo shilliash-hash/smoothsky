@@ -41,6 +41,10 @@ export const specialMissionFields: Record<string, { label: string; min: number; 
   special_mission_medevac_multiplier: { label: "MEDEVAC Payout Multiplier", min: 0, max: 10, step: 0.1 },
   special_mission_aog_base_fee: { label: "AOG Mobilization Fee (SC)", min: 0, max: 100000, step: 100 },
   special_mission_medevac_base_fee: { label: "MEDEVAC Mobilization Fee (SC)", min: 0, max: 100000, step: 100 },
+  charter_payout_multiplier: { label: "Charter Payout Multiplier", min: 1.1, max: 2, step: 0.05 },
+  charter_vip_base_fee: { label: "VIP Charter Mobilization Fee (SC)", min: 0, max: 100000, step: 100 },
+  charter_group_base_fee: { label: "Group Charter Mobilization Fee (SC)", min: 0, max: 200000, step: 100 },
+  charter_mission_share: { label: "Charter Share of New Missions", min: 0, max: 1, step: 0.01 },
 };
 export function validateEconomyValue(key: string, value: unknown) {
   const mission = specialMissionFields[key];
