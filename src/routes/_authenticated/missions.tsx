@@ -2,13 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { HeartPulse, Wrench, Crown, Users, Timer, Plane, Undo2, MapPin, CheckCircle2 } from "lucide-react";
+import { HeartPulse, Wrench, Crown, Users, Timer, Plane, Undo2, MapPin, CheckCircle2, Map, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/game/AppShell";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { InfoHint } from "@/components/game/InfoHint";
 import { FlightBriefing } from "@/components/game/FlightBriefing";
+import { MissionPreview } from "@/components/game/MissionPreview";
+import type { PreviewAircraft } from "@/lib/mission-preview";
 import { companyQuery } from "@/lib/game";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { missionsQuery, missionPayout, missionFleetFit, charterFleetFit, charterKind, missionPax, type Mission, type MissionTab } from "@/lib/missions";
@@ -103,7 +105,7 @@ function Missions() {
           </label>
         </div>
         <div className="mt-3 divide-y divide-border border-y border-border">
-          {shown.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={fitOf(m)} />)}
+          {shown.map((m) => <MissionRow key={m.id} mission={m} now={now} canAccept={active.length === 0} fit={fitOf(m)} fleet={airlineFleet} bonus={bonus} />)}
           {shown.length === 0 && <p className="py-8 text-muted-foreground">{open.length === 0 ? "No open missions right now." : "No missions match this filter."}</p>}
         </div>
       </section>
@@ -136,12 +138,13 @@ function missionTitle(m: Mission) {
 
 type Fit = ReturnType<typeof missionFleetFit> | ReturnType<typeof charterFleetFit>;
 
-function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now: number; canAccept: boolean; fit: Fit }) {
+function MissionRow({ mission: m, now, canAccept, fit, fleet, bonus }: { mission: Mission; now: number; canAccept: boolean; fit: Fit; fleet: PreviewAircraft[]; bonus: number }) {
   const charter = m.category === "CHARTER";
   const pax = missionPax(m);
   const accept = useServerFn(acceptMission);
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState(false);
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 py-4">
       <div className="flex items-start gap-3">
@@ -162,6 +165,7 @@ function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now
           <span className="readout flex items-center gap-1 text-xs text-primary"><CheckCircle2 className="h-3 w-3" />{fit.readyRegistration ?? "Aircraft"} ready at {m.origin_icao}{"readyKg" in fit ? ` (All-Cargo ${fit.readyKg.toLocaleString()} kg)` : ""}</span>
         )}
         <span className="readout text-lg text-amber">{formatCr(Number(m.payout))}</span>
+        <Button size="sm" variant="outline" aria-expanded={preview} aria-controls={`mission-preview-${m.id}`} onClick={() => setPreview(v => !v)}>{preview ? <ChevronUp className="h-4 w-4" /> : <Map className="h-4 w-4" />}Preview</Button>
         <Button size="sm" disabled={busy || !canAccept || !fit.capable || !fit.atOrigin} title={!fit.capable ? (charter ? "No aircraft in your fleet can seat this charter" : "No aircraft in your fleet can carry this cargo") : !fit.atOrigin ? `Park an available aircraft at ${m.origin_icao} to accept` : canAccept ? undefined : "Complete or abandon your current mission first"} onClick={async () => {
           setBusy(true);
           try { await accept({ data: { mission: m.id } }); await qc.invalidateQueries({ queryKey: ["missions"] }); toast.success("Mission accepted — the clock is running"); }
@@ -169,6 +173,7 @@ function MissionRow({ mission: m, now, canAccept, fit }: { mission: Mission; now
           finally { setBusy(false); }
         }}>Accept</Button>
       </div>
+      {preview && <MissionPreview mission={m} fleet={fleet} bonus={bonus} now={now} />}
     </div>
   );
 }

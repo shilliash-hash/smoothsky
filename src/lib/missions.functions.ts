@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+export const getMissionPreviewAirports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ codes: z.array(z.string().min(1).max(16)).max(200) }))
+  .handler(async ({ data, context }) => {
+    if (data.codes.length === 0) return [];
+    const result = await context.supabase.from("airports")
+      .select("icao, name, lat, lon, longest_runway_ft")
+      .in("icao", [...new Set(data.codes)]).limit(200);
+    if (result.error) throw new Error(result.error.message);
+    return result.data ?? [];
+  });
+
 export const getMissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

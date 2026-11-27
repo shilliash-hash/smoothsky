@@ -1,5 +1,9 @@
 # Roadmap
 
+## Special Missions preview
+- [x] Inline Preview: Great Circle mission route and nearest fitting airline aircraft with registration, parked airport and ferry NM; no economy/schema changes.
+- [x] Twenty targeted selection/mission tests passed; preview compilation OK. No automated browser checks or live player writes; visual interaction remains for manual verification.
+
 ## Smooth fuel market + Spot Rental deposit / secondary warmup
 - [x] Manual SQL 0086/0087 in docs/sql: continuous 5–7 day fuel cycle capped near 4% relative daily movement, 24/48h forecasts; base-fee-only refundable deposit (default 100%); satellite delivery warmup default 12h. No retrospective deposit charges; frozen flight prices preserved.
 - [x] Dispatch forecast icons and five-minute quote refresh; market separates non-refundable base/positioning fees and refundable deposit, checks total affordability and displays satellite warmup; admin settings validated.
