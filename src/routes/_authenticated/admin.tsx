@@ -481,7 +481,7 @@ function EconomyRow({
   onSave: (value: unknown) => Promise<boolean>;
 }) {
   const [value, setValue] = useState(JSON.stringify(row.value));
-  const saturationField = routeSaturationFields[row.key];
+  const saturationField = routeSaturationFields[row.key] ?? (row.key === 'spot_rental_deposit_ratio' ? { label: 'Spot Rental Refundable Deposit (base fee fraction)', min: 0, max: 5, step: 0.01 } : row.key === 'secondary_hub_rental_warmup_hours' ? { label: 'Satellite Rental Warmup (hours)', min: 0, max: 168, step: 1 } : undefined);
   const isArray = Array.isArray(row.value),
     isBool = typeof row.value === "boolean";
   return (

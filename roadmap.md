@@ -1,5 +1,11 @@
 # Roadmap
 
+## Smooth fuel market + Spot Rental deposit / secondary warmup
+- [x] Manual SQL 0086/0087 in docs/sql: continuous 5–7 day fuel cycle capped near 4% relative daily movement, 24/48h forecasts; base-fee-only refundable deposit (default 100%); satellite delivery warmup default 12h. No retrospective deposit charges; frozen flight prices preserved.
+- [x] Dispatch forecast icons and five-minute quote refresh; market separates non-refundable base/positioning fees and refundable deposit, checks total affordability and displays satellite warmup; admin settings validated.
+- [x] 160 targeted tests passed, including deposit retirement once, continuation retention, restructuring double-refund protection, 12h boundary, prices, deals, divert and Recall; current preview compilation OK. No browser tests, live data writes, ACARS client or deployment-setting changes.
+- [ ] Manual production deployment: run docs/sql/0086_smooth_fuel_market.sql and docs/sql/0087_spot_rental_deposit_warmup.sql; user action required. Real simulator/UI verification of the new SQL awaits this deployment.
+
 ## CR-04 — Etap 4A / 4B
 - [ ] 4A: przygotować SQL do ręcznego wdrożenia (globalne nasycenie PAX/Cargo, feeder credit, indeksy i sześć ustawień), bez zmian Reacta ani uruchamiania na bazie graczy; zapis w supabase/migrations zablokowany przez platformę, plik w docs/sql.
 - [ ] 4A: sprawdzić matematykę, zamrożone wyceny, wspólną ścieżkę Best Deals i blokady odprawy w izolowanych testach SQL.

@@ -114,7 +114,7 @@ function Dispatch() {
     d.fleet.find((f) => f.id === aircraft) ?? d.fleet.find((f) => f.status === "AVAILABLE");
   const origin = d.airports.find((a) => a.icao === selected?.location_icao);
   const tiers = dispatchAirportTiers(selected?.type?.tier ?? 1, explicitTiers);
-  const marketDay = new Date(now).toISOString().slice(0, 10);
+  const marketDay = Math.floor(now / 300_000);
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules, marketDay]);
   const usableRangePct = 1;
   const ferry = flightMode === "ferry";

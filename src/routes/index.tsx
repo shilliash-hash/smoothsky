@@ -43,7 +43,7 @@ const pillars = [
 
 const steps = [
   "3 Clicks & Fly — zero spreadsheet headache: pick a route from Best Deals, hit Auto-load best mix, and dispatch in 5 seconds (deep MTOW, fuel tankering, and SimBrief tools are always optional).",
-  "Fly Tier 1–3 aircraft from Day 1 with single-flight Spot Rentals — zero deposits or weekly pressure.",
+  "Fly Tier 1–3 aircraft from Day 1 with single-flight Spot Rentals — refundable deposit, no weekly pressure.",
   "Not a '2nd job': weekly leases pay for themselves in 3–4 normal flights, with 75% deposit refund on early exit.",
   "Built-in safety net: reset debt and get a fresh starter grant once every 30 days without losing your logbook.",
   "Dispatch passengers or cargo, fly in MSFS or X-Plane with live ACARS, and climb the leaderboard.",

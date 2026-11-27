@@ -7,35 +7,37 @@ import { InfoHint } from './InfoHint';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { acquisitionDue, type AcquisitionMode } from '@/lib/market-rules';
+import { acquisitionDue, spotRentalBreakdown, type AcquisitionMode } from '@/lib/market-rules';
 import { formatCr } from '@/lib/rules';
 import type { registrationRule } from '@/lib/registration-rules';
 
 type Aircraft = { id: string; manufacturer: string; model: string; tier: number; weekly_rate: number; security_deposit: number; purchase_price: number };
-export function AcquisitionConfirmation({ mode, aircraft, rentalMultiplier, home, weeks, balance, registration, rule, busy, block, onRegistration, onClose, onConfirm, delivery, onDelivery }: {
+export function AcquisitionConfirmation({ mode, aircraft, rentalMultiplier, depositRatio = 0, warmupHours = 0, warmups = [], home, weeks, balance, registration, rule, busy, block, onRegistration, onClose, onConfirm, delivery, onDelivery }: {
+  depositRatio?: number; warmupHours?: number; warmups?: { icao: string; remaining: number }[];
   delivery?: SpotDeliveryOption | null; onDelivery?: (value: SpotDeliveryOption) => void;
   mode: AcquisitionMode; aircraft: Aircraft; rentalMultiplier?: number; home: string; weeks: number; balance: number; registration: string; rule: ReturnType<typeof registrationRule>; busy: boolean; block: string | null;
   onRegistration: (value: string) => void; onClose: () => void; onConfirm: () => void;
 }) {
-  const baseDue = acquisitionDue(mode, aircraft, rentalMultiplier);
-  const fee = mode === 'rent' && delivery ? Math.round(baseDue * delivery.fee_pct * 100) / 100 : 0;
-  const due = baseDue + fee;
+  const rental = spotRentalBreakdown(aircraft.weekly_rate, rentalMultiplier, depositRatio, delivery?.fee_pct ?? 0);
+  const baseDue = mode === 'rent' ? rental.base : acquisitionDue(mode, aircraft, rentalMultiplier);
+  const fee = mode === 'rent' ? rental.positioning : 0;
+  const due = mode === 'rent' ? rental.total : baseDue;
   const deliveryAt = mode === 'rent' && delivery ? delivery.icao : home;
   const shownBlock = block ?? (mode === 'rent' && balance < due ? 'Insufficient funds' : null);
   const rows: [string, string][] = [
     ['Delivery airport', deliveryAt], ['Agreement', mode === 'lease' ? `Weekly Lease · ${weeks} weeks` : mode === 'rent' ? 'Spot Rental · 1 flight' : 'Outright Purchase'],
     ...(mode === 'lease' ? [['Weekly rate', formatCr(aircraft.weekly_rate)], ['Contract total (excl. deposit)', formatCr(aircraft.weekly_rate * weeks)]] as [string, string][] : []),
-    ['Refundable deposit', formatCr(mode === 'lease' ? aircraft.security_deposit : 0)],
+    ['Refundable deposit', formatCr(mode === 'lease' ? aircraft.security_deposit : mode === 'rent' ? rental.deposit : 0)],
     ...(mode === 'rent' ? [['Weekly commitments', 'None'], ['Return', 'After completion or cancellation'], ['Base rental fee', formatCr(baseDue)], ['Positioning fee', fee > 0 && delivery ? `+${Math.round(delivery.fee_pct * 100)}% · ${formatCr(fee)} · ${Math.round(delivery.distance_nm)} NM from ${delivery.anchor_icao}` : 'Free']] as [string, string][] : []),
   ];
   return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg" onEscapeKeyDown={e => { if (busy) e.preventDefault(); }} onPointerDownOutside={e => { if (busy) e.preventDefault(); }}>
     <DialogTitle>{aircraft.manufacturer} {aircraft.model}</DialogTitle>
     <DialogDescription>Tier {aircraft.tier} · Acquisition review</DialogDescription>
-    {mode === 'rent' && onDelivery && <DeliveryPicker type={aircraft.id} home={home} value={delivery ?? null} disabled={busy} onChange={onDelivery} />}
+    {mode === 'rent' && onDelivery && <><DeliveryPicker type={aircraft.id} home={home} value={delivery ?? null} disabled={busy} onChange={onDelivery} /><p className="readout text-xs text-muted-foreground">Satellite delivery activates after {warmupHours}h; fuel and handling discounts apply immediately.</p>{warmups.map(w => <p key={w.icao} className="readout text-xs text-amber">{w.icao} · Rental warmup · {w.remaining.toFixed(1)}h remaining</p>)}</>}
     <dl className="readout space-y-3 border-y border-border py-4 text-sm">{rows.map(([label, value]) => <div key={label} className="flex justify-between gap-4"><dt className="text-muted-foreground">{label}</dt><dd className="text-right">{value}</dd></div>)}</dl>
     <dl className="readout space-y-2"><div className="flex justify-between gap-4 font-semibold"><dt>{mode === 'rent' ? 'Total due now' : 'Due now'}</dt><dd className="text-primary">{formatCr(due)}</dd></div><div className="flex justify-between gap-4 text-sm"><dt className="text-muted-foreground">Estimated balance after</dt><dd className={balance < due ? 'text-destructive' : 'text-foreground'}>{formatCr(balance - due)}</dd></div></dl>
     {mode === 'lease' ? <p className="readout text-xs text-muted-foreground">Registration assigned automatically · {rule.prefix}{rule.suffix_pattern}</p> : <label className="text-sm">Registration (optional)<Input aria-label="Aircraft registration" disabled={busy} className="mt-2 readout" placeholder={`${rule.prefix}${'A'.repeat(rule.suffix_length)}`} value={registration} onChange={e => onRegistration(e.target.value.toUpperCase())} /><span className="mt-2 block text-xs text-muted-foreground">{rule.prefix}{rule.suffix_pattern} · Leave empty for automatic assignment.</span></label>}
-    <p className="flex gap-2 border-l-2 border-amber bg-amber/10 p-3 text-sm text-amber"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />This decision is final. Once signed, upfront payments and lease commitments cannot be cancelled for a refund.</p>
+    <p className="flex gap-2 border-l-2 border-amber bg-amber/10 p-3 text-sm text-amber"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />{mode === 'rent' ? 'Rental and positioning fees are non-refundable. The deposit returns when the aircraft is returned after settlement or pre-start cancellation / Recall; it stays locked during divert and continuation. Fuel burned is billed separately and may exceed the deposit.' : 'This decision is final. Once signed, upfront payments and lease commitments cannot be cancelled for a refund.'}</p>
     {shownBlock && <p role="alert" className="text-sm text-destructive">{shownBlock}</p>}
     <div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={onClose}>Cancel</Button><Button disabled={busy || shownBlock !== null || (mode === 'rent' && !!onDelivery && (!delivery || !delivery.runway_ok))} onClick={onConfirm}>{busy && <LoaderCircle className="h-4 w-4 animate-spin" />}{busy ? 'Signing…' : 'Confirm & Sign'}</Button></div>
   </DialogContent></Dialog>;
@@ -47,13 +49,13 @@ function DeliveryPicker({ type, home, value, disabled, onChange }: { type: strin
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   useEffect(() => { const t = setTimeout(() => setDebounced(query.trim()), 250); return () => clearTimeout(t); }, [query]);
-  const bases = useQuery({ queryKey: ['spot-delivery', type, ''], queryFn: () => fetchOptions({ data: { type, query: '' } }), staleTime: 60_000 });
+  const bases = useQuery({ queryKey: ['spot-delivery', type, ''], queryFn: () => fetchOptions({ data: { type, query: '' } }), staleTime: 60_000, refetchInterval: 60_000 });
   const search = useQuery({ queryKey: ['spot-delivery', type, debounced], queryFn: () => fetchOptions({ data: { type, query: debounced } }), enabled: debounced.length >= 2, staleTime: 60_000 });
   const baseList = (bases.data ?? []).filter(o => o.zone !== 'EXTENDED').sort((a, b) => (a.zone === 'MAIN' ? -1 : 0) - (b.zone === 'MAIN' ? -1 : 0));
   useEffect(() => { if (!value) { const main = baseList.find(o => o.zone === 'MAIN') ?? baseList[0]; if (main) onChange(main); } }, [value, baseList, onChange]);
   const results = (debounced.length >= 2 ? search.data ?? [] : (bases.data ?? []).filter(o => o.zone === 'EXTENDED').slice(0, 8));
   return <section className="space-y-3 border-t border-border pt-4" aria-label="Delivery airport">
-    <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-3.5 w-3.5" />Delivery airport<InfoHint label="Delivery zones">Free delivery to your Main Hub and every active Satellite FBO. Any airport within 100 NM of the Main Hub or 60 NM of a Satellite FBO costs +10% positioning fee, if its runway suits this aircraft. Farther airports are not available.</InfoHint></div>
+    <div className="flex items-center gap-2 text-xs uppercase text-muted-foreground"><MapPin className="h-3.5 w-3.5" />Delivery airport<InfoHint label="Delivery zones">Free delivery to your Main Hub and eligible Satellite FBOs after their rental warmup. Any airport within 100 NM of the Main Hub or 60 NM of an eligible Satellite FBO costs +10% positioning fee, if its runway suits this aircraft. Farther airports are not available.</InfoHint></div>
     <div className="flex flex-wrap gap-2">{bases.isLoading && <span className="text-xs text-muted-foreground">Loading bases…</span>}
       {baseList.map(o => <button key={o.icao} type="button" disabled={disabled} onClick={() => onChange(o)} aria-pressed={value?.icao === o.icao} className={`readout inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-xs transition-colors ${value?.icao === o.icao ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground hover:border-primary/60'}`}>{o.zone === 'MAIN' ? <Building2 className="h-3 w-3" /> : <Radio className="h-3 w-3" />}{o.icao} · {zoneLabel(o)} · <span className="text-primary">Free</span></button>)}
       {!bases.isLoading && baseList.length === 0 && <span className="readout text-xs text-muted-foreground">{home} · Main Hub · Free</span>}

@@ -1,3 +1,4 @@
 - Manual-only SQL proposals stay outside managed migration history and are tested against PGlite before handoff; never execute them against player databases without an explicit deployment request.
 - Route saturation is computed inside the shared quote path after dispatch endpoint locks; payload limits must expose the same reduced demand so frontend optimization cannot bypass it.
 - ACARS fuel clarity is additive in the revoked flight JSON helper; key-checked connect retains authentication and the legacy trip field while exposing the frozen full tank target — avoids client changes or altering settlement.
+- Smooth fuel prices use a revoked timestamp-based cycle shared by quotes and forecasts; frozen prices remain untouched. Rental deposits snapshot the base fee in lease_deposit and refund only on first terminal fleet retirement, not divert — prevents price drift and duplicate asset refunds.

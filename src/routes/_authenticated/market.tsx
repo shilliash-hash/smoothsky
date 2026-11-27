@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { fleetOverviewQuery, registrationRulesQuery } from "@/lib/fleet";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/game/AppShell";
 import { basesQuery } from "@/lib/bases";
 import { canInvest } from "@/lib/bases-rules";
-import { acquisitionBlock, acquisitionDue, canAcquireWithLicense, DEFAULT_SPOT_RENTAL_MULTIPLIER, spotRentalPrice, type AcquisitionMode } from '@/lib/market-rules';
+import { acquisitionBlock, acquisitionDue, canAcquireWithLicense, DEFAULT_SPOT_RENTAL_MULTIPLIER, spotRentalPrice, spotRentalBreakdown, rentalWarmupRemaining, type AcquisitionMode } from '@/lib/market-rules';
 import { registrationRule } from '@/lib/registration-rules';
 
 const rentalCareerQuery = queryOptions({ queryKey: ["career"], queryFn: () => getCareer() });
@@ -47,9 +47,14 @@ function Market() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [registration, setRegistration] = useState("");
   const [delivery, setDelivery] = useState<SpotDeliveryOption | null>(null);
+  const [clock, setClock] = useState<number | null>(null);
+  useEffect(() => { setClock(Date.now()); const timer = setInterval(() => setClock(Date.now()), 60_000); return () => clearInterval(timer); }, []);
   const [weeks, setWeeks] = useState(overview.rules.default_lease_weeks);
   const { data: economy } = useSuspenseQuery(economyQuery);
   const rentalMultiplier = Number(economy['spot_rental_multiplier'] ?? DEFAULT_SPOT_RENTAL_MULTIPLIER);
+  const depositRatio = Number(economy['spot_rental_deposit_ratio'] ?? 0);
+  const warmupHours = Number(economy['secondary_hub_rental_warmup_hours'] ?? 0);
+  const warmups = clock === null ? [] : bases.bases.filter(b => b.base_type !== 'MAIN').map(b => ({ icao: b.airport_icao, remaining: rentalWarmupRemaining(b.created_at, warmupHours, clock) })).filter(b => b.remaining > 0);
   const { data: company } = useSuspenseQuery(companyQuery);
   const c = company;
   const { data: types = [] } = useQuery(aircraftTypesQuery);
@@ -68,7 +73,7 @@ function Market() {
   const rule = registrationRule(registrationRules, c.home_base?.country);
   const block = acquisitionBlock({ health: bases.health, ...(mode === 'lease' ? { weeks } : {}), busy: busy !== null });
   const purchaseType = types.find(t=>t.id===purchasing);
-  const confirmationBlock = purchaseType ? (!canAcquireWithLicense(mode, purchaseType.tier, career.type_ratings) ? `Requires Tier ${purchaseType.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && purchaseType.purchase_price <= 0 ? 'Not for sale' : balance < acquisitionDue(mode, purchaseType, rentalMultiplier) ? 'Insufficient funds' : null)) : null;
+  const confirmationBlock = purchaseType ? (!canAcquireWithLicense(mode, purchaseType.tier, career.type_ratings) ? `Requires Tier ${purchaseType.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && purchaseType.purchase_price <= 0 ? 'Not for sale' : balance < acquisitionDue(mode, purchaseType, rentalMultiplier, depositRatio) ? 'Insufficient funds' : null)) : null;
   async function confirmAcquisition() {
     if (!purchaseType || busy || confirmationBlock) return;
     setBusy(purchaseType.id);
@@ -89,7 +94,7 @@ function Market() {
         <div>
           <p className="readout text-xs uppercase text-amber">Fleet acquisition</p>
           <h1 className="mt-1 text-3xl font-semibold">Aircraft market</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{mode === "lease" ? "Security deposit and first weekly payment due upfront." : mode === "rent" ? `One flight · ${Number((rentalMultiplier * 100).toFixed(2))}% of weekly rate · no deposit or weekly commitments.` : "Purchase outright · delivered to your home base · no weekly lease payments."}</p>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{mode === "lease" ? "Security deposit and first weekly payment due upfront." : mode === "rent" ? `One flight · ${Number((rentalMultiplier * 100).toFixed(2))}% of weekly rate · refundable deposit · no weekly commitments.` : "Purchase outright · delivered to your home base · no weekly lease payments."}</p>
         </div>
         <div className="instrument px-4 py-3 text-right">
           <p className="text-xs uppercase text-muted-foreground">Available funds</p>
@@ -112,7 +117,7 @@ function Market() {
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {visibleTypes.map((t) => {
           const afford = canAffordLease(balance, t);
-          const reason = !canAcquireWithLicense(mode, t.tier, career.type_ratings) ? `Requires Tier ${t.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && t.purchase_price <= 0 ? 'Not for sale' : (mode === 'lease' ? !afford : balance < acquisitionDue(mode, t, rentalMultiplier)) ? 'Insufficient funds' : null);
+          const reason = !canAcquireWithLicense(mode, t.tier, career.type_ratings) ? `Requires Tier ${t.tier} license` : block ?? (mode === 'lease' && full ? 'Fleet limit reached' : mode === 'buy' && t.purchase_price <= 0 ? 'Not for sale' : (mode === 'lease' ? !afford : balance < acquisitionDue(mode, t, rentalMultiplier, depositRatio)) ? 'Insufficient funds' : null);
           return (
             <div key={t.id} className="instrument flex flex-col p-5">
               <div className="flex items-center justify-between">
@@ -132,13 +137,13 @@ function Market() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Deposit</span><span>{formatCr(t.security_deposit)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Weekly rate</span><span className="text-amber">{formatCr(t.weekly_rate)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Upfront total</span><span className="text-primary">{formatCr(leaseUpfrontCost(t))}</span></div>
-              </div> : mode === "rent" ? <div className="readout mt-4 space-y-2 border-t border-border pt-4 text-sm"><div className="flex justify-between gap-2"><span className="text-muted-foreground">Single-flight rental</span><span className="text-primary">{formatCr(spotRentalPrice(t.weekly_rate, rentalMultiplier))}</span></div><div className="flex justify-between gap-2"><span className="text-muted-foreground">Deposit / weekly payments</span><span>{formatCr(0)}</span></div><p className="text-xs text-amber">SPOT RENTAL · 1 FLIGHT</p></div> : <div className="readout mt-4 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Purchase price · no weekly lease</p><p className="mt-2 text-xl text-primary">{formatCr(t.purchase_price)}</p></div>}
+              </div> : mode === "rent" ? <div className="readout mt-4 space-y-2 border-t border-border pt-4 text-sm"><div className="flex justify-between gap-2"><span className="text-muted-foreground">Single-flight rental</span><span className="text-primary">{formatCr(spotRentalPrice(t.weekly_rate, rentalMultiplier))}</span></div><div className="flex justify-between gap-2"><span className="text-muted-foreground">Refundable deposit</span><span>{formatCr(spotRentalBreakdown(t.weekly_rate, rentalMultiplier, depositRatio).deposit)}</span></div><p className="text-xs text-amber">SPOT RENTAL · 1 FLIGHT</p></div> : <div className="readout mt-4 border-t border-border pt-4"><p className="text-xs text-muted-foreground">Purchase price · no weekly lease</p><p className="mt-2 text-xl text-primary">{formatCr(t.purchase_price)}</p></div>}
               <Button className="mt-5" title={reason ?? undefined} disabled={reason !== null} onClick={() => { setPurchasing(t.id); setRegistration(""); setDelivery(null); }}>{reason ?? (mode === 'lease' ? 'Lease aircraft' : mode === 'rent' ? 'Rent for 1 Flight' : 'Buy aircraft')}</Button>
             </div>
           );
         })}
       </div>
-      {purchasing && purchaseType && <AcquisitionConfirmation mode={mode} aircraft={purchaseType} rentalMultiplier={rentalMultiplier} home={c.home_base_icao} weeks={weeks} balance={balance} registration={registration} rule={rule} busy={busy !== null} block={busy ? null : confirmationBlock} onRegistration={setRegistration} delivery={delivery} onDelivery={setDelivery} onClose={() => setPurchasing(null)} onConfirm={() => void confirmAcquisition()} />}
+      {purchasing && purchaseType && <AcquisitionConfirmation mode={mode} aircraft={purchaseType} rentalMultiplier={rentalMultiplier} depositRatio={depositRatio} warmupHours={warmupHours} warmups={warmups} home={c.home_base_icao} weeks={weeks} balance={balance} registration={registration} rule={rule} busy={busy !== null} block={busy ? null : confirmationBlock} onRegistration={setRegistration} delivery={delivery} onDelivery={setDelivery} onClose={() => setPurchasing(null)} onConfirm={() => void confirmAcquisition()} />}
     </AppShell>
   );
 }
