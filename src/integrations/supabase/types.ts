@@ -1789,6 +1789,17 @@ export type Database = {
       replenish_broker_market: { Args: never; Returns: undefined }
       reset_airports_state: { Args: never; Returns: Json }
       restructure_company: { Args: never; Returns: undefined }
+      route_saturation: {
+        Args: {
+          p_apply?: boolean
+          p_cargo_capacity: number
+          p_destination: string
+          p_origin: string
+          p_rules: Json
+          p_seats: number
+        }
+        Returns: Json
+      }
       runway_is_unpaved: {
         Args: { p_runway_ft: number; p_size: number; p_surface: string }
         Returns: boolean
