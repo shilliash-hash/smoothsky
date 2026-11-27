@@ -1860,6 +1860,10 @@ export type Database = {
         Args: { p_type: string; p_weeks?: number }
         Returns: string
       }
+      special_mission_payout: {
+        Args: { p_cargo_kg: number; p_category: string; p_nm: number }
+        Returns: number
+      }
       spot_rental_cfg: {
         Args: { p_default: number; p_key: string }
         Returns: number
