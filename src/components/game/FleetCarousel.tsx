@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { arrangeFleet, isAirborne, type FleetFilter } from "@/lib/fleet-carousel";
 import { operationalBoardQuery } from "@/lib/game";
 import { FlightBriefing } from "./FlightBriefing";
+import { MaintenancePanel } from "./MaintenancePanel";
+import type { MaintenanceState } from "@/lib/maintenance";
 
-type Aircraft = { id: string; registration: string; status: string; location_icao: string; ownership: string; purchase_price: number | null; weekly_rate: number; next_payment_due: string; type?: { manufacturer: string; model: string } | null };
+type Aircraft = { id: string; registration: string; status: string; location_icao: string; ownership: string; purchase_price: number | null; weekly_rate: number; next_payment_due: string; type?: { manufacturer: string; model: string } | null } & MaintenanceState;
 const pills: { id: FleetFilter; label: string }[] = [{ id: "all", label: "All" }, { id: "available", label: "Available" }, { id: "flight", label: "In Flight" }, { id: "sale", label: "For Sale" }];
 const statusLabel: Record<string, string> = { AVAILABLE: "Available", EN_ROUTE: "In flight", DISPATCHED: "Dispatched", DIVERTED: "Diverted", RESERVED: "Reserved" };
 
@@ -60,6 +62,7 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
               <dt>Next payment</dt><dd className="text-right text-foreground">{new Date(f.next_payment_due).toLocaleDateString("en-US")}</dd></>}
           </dl>
           </Button>
+          {f.ownership !== "RENTAL" && <MaintenancePanel aircraft={f.id} state={f} idle={f.status === "AVAILABLE"} />}
           {(activeFlight.has(f.id) || f.status === "DIVERTED") && <div className="mt-3 flex flex-wrap gap-2">
             {activeFlight.has(f.id) && <FlightBriefing flightId={activeFlight.get(f.id) ?? ""} label="Flight plan" className="flex-1" />}
             {f.status === "DIVERTED" && <Button asChild variant="outline" size="sm" className="h-auto flex-1 whitespace-normal py-2 text-amber"><Link to="/dispatch" search={{ aircraft: f.id }}><Navigation className="h-4 w-4" />Resolve in Dispatch</Link></Button>}

@@ -3,6 +3,7 @@ import { ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { formatCr } from "@/lib/rules";
+import { landingMaintenanceNote } from "@/lib/maintenance";
 import { flightDebriefComparison, type DebriefFlight } from "@/lib/flight-debrief";
 
 export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight & { flightNumber: string | null; route: string }) {
@@ -40,6 +41,8 @@ export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight 
           <p className="text-xs uppercase text-muted-foreground">Touchdown quality</p>
           <p className={`readout mt-2 ${tip > 0 ? "text-primary" : "text-muted-foreground"}`}>{typeof data["landing_rating"] === "string" ? data["landing_rating"] : "Landing"} ({fpm} fpm)</p>
           {tip === 0 && <p className="mt-1 text-xs text-muted-foreground">No passenger tip</p>}
+          <p className="mt-2 text-xs text-muted-foreground">Airframe report (owned/leased): {landingMaintenanceNote(fpm, false)}</p>
+          {Math.abs(fpm) > 600 && <p className="mt-1 text-xs text-amber">Spot Rental: {landingMaintenanceNote(fpm, true)}</p>}
         </div>}
         <p className="text-xs uppercase text-amber">Financial Breakdown{flight.estimate ? " · Planned vs Final" : ""}</p>
         <dl className="readout space-y-3 text-sm">

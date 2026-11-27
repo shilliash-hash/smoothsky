@@ -15,7 +15,7 @@ import { adminAccessQuery, adminDataQuery } from "@/lib/admin";
 import { saveAdminData, resetAirports, resetAdminCompany, deleteAdminAccount } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
-import { routeSaturationFields, specialMissionFields, type AircraftEdit } from "@/lib/admin-rules";
+import { routeSaturationFields, specialMissionFields, isMaintenanceKey, maintenanceFields, type AircraftEdit } from "@/lib/admin-rules";
 import { recruitmentSettings } from "@/lib/recruitment-rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { saveOperatingRules } from "@/lib/fleet.functions";
@@ -134,6 +134,7 @@ function Admin() {
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="economy">Economy</TabsTrigger>
           <TabsTrigger value="fleet">Fleet & leasing</TabsTrigger>
+          <TabsTrigger value="maintenance">Maintenance &amp; MRO</TabsTrigger>
           <TabsTrigger value="users">Users & companies</TabsTrigger>
         </TabsList>
         <TabsContent value="economy" className="mt-6">
@@ -148,7 +149,7 @@ function Admin() {
             />)}
           </div>
           <div className="divide-y divide-border">
-            {data.economy.filter(row => !routeSaturationFields[row.key]).map((row) => (
+            {data.economy.filter(row => !routeSaturationFields[row.key] && !isMaintenanceKey(row.key)).map((row) => (
               row.key === "recruitment_commissions" ? <RecruitmentEditor key={JSON.stringify(row.value)} value={row.value} busy={busy} onSave={value => persist({ data: { kind: "economy", key: row.key, value } })} /> : <EconomyRow
                 key={`${row.key}:${JSON.stringify(row.value)}`}
                 row={row}
@@ -185,6 +186,19 @@ function Admin() {
           </div>
           <section className="mt-8 border-y border-border py-5"><h2 className="text-xl font-semibold">World supplies</h2><p className="mt-2 text-sm text-muted-foreground">Restore every airport to the configured initial passenger stock and full simulated fuel capacity. Active flights must be completed or cancelled first.</p><Button variant="destructive" className="mt-4" disabled={busy} onClick={() => setResetOpen(true)}>Reset airports (Passengers & Fuel)</Button></section>
           <Dialog open={resetOpen} onOpenChange={open => { if (!busy) setResetOpen(open); }}><DialogContent><DialogTitle>Reset world airport supplies?</DialogTitle><DialogDescription>This affects all players. Passenger pools return to the configured starting level; both fuel types return to full capacity. Airport data, companies, flights and financial histories remain unchanged.</DialogDescription><label className="text-sm">Type RESET AIRPORTS to confirm<Input aria-label="Airport reset confirmation" className="mt-2" value={resetConfirmation} onChange={e => setResetConfirmation(e.target.value)} /></label><div className="flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setResetOpen(false)}>Cancel</Button><Button variant="destructive" disabled={busy || resetConfirmation !== "RESET AIRPORTS"} onClick={async () => { setBusy(true); try { await reset({ data: { confirmation: "RESET AIRPORTS" } }); setResetOpen(false); setResetConfirmation(""); await qc.invalidateQueries(); toast.success("Airport passenger and fuel supplies reset"); } catch (e) { toast.error(e instanceof Error ? displayTerminology(e.message) : "Reset failed"); } finally { setBusy(false); } }}>Confirm airport reset</Button></div></DialogContent></Dialog>
+        </TabsContent>
+        <TabsContent value="maintenance" className="mt-6">
+          <h2 className="border-b border-border pb-3 text-xl font-semibold">Maintenance, reliability &amp; Spot Rental landings</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Tier arrays list T1–T7 costs. Check intervals drive overdue wear; the FBO Maintenance Bay raises airport level by one and discounts own fleet.</p>
+          <div className="divide-y divide-border">
+            {data.economy.filter(row => isMaintenanceKey(row.key)).map(row => <EconomyRow
+              key={`${row.key}:${JSON.stringify(row.value)}`}
+              row={row}
+              busy={busy}
+              onSave={value => persist({ data: { kind: "economy", key: row.key, value } })}
+            />)}
+          </div>
+          {!data.economy.some(row => isMaintenanceKey(row.key)) && <p className="mt-4 text-sm text-amber">Maintenance settings appear after migration 0090 is deployed.</p>}
         </TabsContent>
         <TabsContent value="fleet" className="mt-6">
           <div className="flex justify-between gap-3">
@@ -481,7 +495,7 @@ function EconomyRow({
   onSave: (value: unknown) => Promise<boolean>;
 }) {
   const [value, setValue] = useState(JSON.stringify(row.value));
-  const saturationField = routeSaturationFields[row.key] ?? specialMissionFields[row.key] ?? (row.key === 'spot_rental_deposit_ratio' ? { label: 'Spot Rental Refundable Deposit (base fee fraction)', min: 0, max: 5, step: 0.01 } : row.key === 'secondary_hub_rental_warmup_hours' ? { label: 'Satellite Rental Warmup (hours)', min: 0, max: 168, step: 1 } : undefined);
+  const saturationField = routeSaturationFields[row.key] ?? specialMissionFields[row.key] ?? maintenanceFields[row.key] ?? (row.key === 'spot_rental_deposit_ratio' ? { label: 'Spot Rental Refundable Deposit (base fee fraction)', min: 0, max: 5, step: 0.01 } : row.key === 'secondary_hub_rental_warmup_hours' ? { label: 'Satellite Rental Warmup (hours)', min: 0, max: 168, step: 1 } : undefined);
   const isArray = Array.isArray(row.value),
     isBool = typeof row.value === "boolean";
   return (

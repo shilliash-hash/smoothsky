@@ -107,3 +107,26 @@ export const getSpotDeliveryOptions = createServerFn({ method: "POST" })
     if (result.error) throw new Error(result.error.message);
     return (result.data ?? []).map(r => ({ ...r, fee_pct: Number(r.fee_pct), distance_nm: Number(r.distance_nm) })) as SpotDeliveryOption[];
   });
+
+export type MaintenanceKind = "A" | "C" | "D" | "MECHANIC";
+export type MaintenanceQuote = { kind: MaintenanceKind; airport_level: number; required_level: number; available: boolean; fbo_bay: boolean; base_cost: number; cost: number };
+const maintenanceInput = z.object({ aircraft: z.string().uuid(), kind: z.enum(["A", "C", "D", "MECHANIC"]) });
+export const quoteMaintenance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(maintenanceInput)
+  .handler(async ({ data, context }) => {
+    // RPC added by docs/sql/0090; generated types refresh after manual deployment.
+    const rpc = context.supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const result = await rpc.call(context.supabase, "maintenance_quote", { p_aircraft: data.aircraft, p_kind: data.kind });
+    if (result.error) throw new Error(result.error.message);
+    return result.data as MaintenanceQuote;
+  });
+export const performMaintenance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(maintenanceInput)
+  .handler(async ({ data, context }) => {
+    const rpc = context.supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const result = await rpc.call(context.supabase, "perform_maintenance", { p_aircraft: data.aircraft, p_kind: data.kind });
+    if (result.error) throw new Error(result.error.message);
+    return result.data as MaintenanceQuote;
+  });

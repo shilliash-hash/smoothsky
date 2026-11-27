@@ -41,6 +41,7 @@ import { DivertControls } from '@/components/game/DivertControls';
 import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
 import { RecallFlightButton } from '@/components/game/RecallFlightButton';
 const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
+import { dispatchMaintenanceBlock } from '@/lib/maintenance';
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
   validateSearch: (
@@ -118,6 +119,8 @@ function Dispatch() {
   const rulesKey = JSON.stringify([d.rules, d.bases, overview.rules, marketDay]);
   const usableRangePct = 1;
   const ferry = flightMode === "ferry";
+  const mxStatus = (selected as { maintenance_status?: string | null } | undefined)?.maintenance_status ?? null;
+  const mxBlock = mxStatus === "MAJOR_DEFECT" && ferry ? null : dispatchMaintenanceBlock(mxStatus);
   const cargoBonus = Number(overview.rules.all_cargo_capacity_bonus ?? 0.5);
   const cargoCapacity = Math.floor((selected?.type?.cargo_kg ?? 0) * (allCargo ? 1 + cargoBonus : 1));
   const payload = { ...flightModePayload(flightMode, cargoQuoteKg, cargoCapacity), ...(quotePassengers !== null ? { passengers: quotePassengers } : {}), ...(targetQuoteFuel !== null ? { targetFuelGal: targetQuoteFuel } : {}) };
@@ -445,10 +448,11 @@ function Dispatch() {
                     </dl>
                   </aside>}
                    {quote.fob_discounts && quote.fob_discounts.savings > 0 && <div className="mt-4 border-y border-border py-3 text-xs text-primary"><p className="readout">FBO savings included · {formatCr(quote.fob_discounts.savings)}</p><p className="mt-1">Fuel {quote.fob_discounts.fuel * 100}% · Landing {quote.fob_discounts.landing * 100}% · Handling {quote.fob_discounts.handling_origin * 100}% origin / {quote.fob_discounts.handling_destination * 100}% destination · Maintenance {quote.fob_discounts.maintenance * 100}%</p></div>}
+                  {mxBlock && <p className="mt-4 border-y border-destructive/40 py-3 text-xs text-destructive">{mxBlock}</p>}
                   <Button
                     className="mt-5 w-full"
                     disabled={
-                      busy || payloadPending || rangeError || !canDispatchPayload(flightMode, quote.passengers, quote.cargo_kg ?? 0) || !numberValid
+                      (mxStatus === "AOG" || (mxStatus === "MAJOR_DEFECT" && !ferry)) || busy || payloadPending || rangeError || !canDispatchPayload(flightMode, quote.passengers, quote.cargo_kg ?? 0) || !numberValid
 
                     }
                     onClick={() => run("dispatch")}

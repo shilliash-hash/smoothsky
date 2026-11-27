@@ -46,7 +46,26 @@ export const specialMissionFields: Record<string, { label: string; min: number; 
   charter_group_base_fee: { label: "Group Charter Mobilization Fee (SC)", min: 0, max: 200000, step: 100 },
   charter_mission_share: { label: "Charter Share of New Missions", min: 0, max: 1, step: 0.01 },
 };
+export const maintenanceTierFields: Record<string, string> = {
+  maintenance_a_check_by_tier: "A-Check cost by tier T1–T7 (SC)",
+  maintenance_c_check_by_tier: "C-Check cost by tier T1–T7 (SC)",
+  maintenance_d_check_by_tier: "D-Check cost by tier T1–T7 (SC)",
+};
+export const maintenanceFields: Record<string, { label: string; min: number; max: number; step: number }> = {
+  maintenance_a_check_interval_hours: { label: "A-Check interval (FH)", min: 10, max: 1000, step: 10 },
+  maintenance_c_check_interval_hours: { label: "C-Check interval (FH)", min: 50, max: 5000, step: 50 },
+  maintenance_d_check_interval_hours: { label: "D-Check interval (FH)", min: 200, max: 20000, step: 100 },
+  maintenance_fly_in_mechanic_multiplier: { label: "Fly-in Mechanic multiplier", min: 1, max: 10, step: 0.1 },
+  maintenance_fbo_bay_discount: { label: "FBO Maintenance Bay discount (fraction)", min: 0, max: 0.9, step: 0.01 },
+  spot_rental_hard_landing_fpm: { label: "Spot Rental hard landing (fpm, absolute)", min: 100, max: 3000, step: 10 },
+  spot_rental_severe_landing_fpm: { label: "Spot Rental severe landing – deposit forfeit (fpm, absolute)", min: 100, max: 5000, step: 10 },
+  spot_rental_hard_landing_penalty_pct: { label: "Spot Rental hard landing surcharge (fraction)", min: 0, max: 2, step: 0.01 },
+};
+export const isMaintenanceKey = (key: string) => key in maintenanceTierFields || key in maintenanceFields;
 export function validateEconomyValue(key: string, value: unknown) {
+  if (maintenanceTierFields[key]) return z.array(z.number().finite().nonnegative()).length(7).parse(value);
+  const mx = maintenanceFields[key];
+  if (mx) return z.number().finite().min(mx.min).max(mx.max).parse(value);
   const mission = specialMissionFields[key];
   if (mission) {
     const schema = z.number().finite().min(mission.min).max(mission.max);
