@@ -41,6 +41,7 @@ import { DivertControls } from '@/components/game/DivertControls';
 import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
 import { RecallFlightButton } from '@/components/game/RecallFlightButton';
 const RoutePreviewMap = lazy(() => import("@/components/game/RoutePreviewMap"));
+const DispatchMiniMap = lazy(() => import("@/components/game/DispatchMiniMap"));
 import { dispatchMaintenanceBlock } from '@/lib/maintenance';
 import { canDispatchPayload, commercialRangeError, flightModePayload, flightModeRange, type FlightMode } from '@/lib/flight-mode';
 export const Route = createFileRoute("/_authenticated/dispatch")({
@@ -364,6 +365,12 @@ function Dispatch() {
                   <Suspense fallback={<div className="h-[320px] border border-border" />}><RoutePreviewMap points={activeRoute} mode={routeMode} /></Suspense>
                 </ClientOnly>
                 <p className="mt-1 text-[11px] text-muted-foreground">Visual only — prices and fuel use the direct distance.</p>
+              </div>}
+              {!activeRoute && origin && <div className="mb-5">
+                <p className="mb-2 readout text-xs uppercase text-muted-foreground">{destination ? `${origin.icao} → ${destination} · great circle` : "Destinations map · click a pin to select"}</p>
+                <ClientOnly fallback={<div className="h-[300px] border border-border" />}>
+                  <Suspense fallback={<div className="h-[300px] border border-border" />}><DispatchMiniMap origin={origin} pins={destinations} top={topDeals} selected={destination} onSelect={setDestination} /></Suspense>
+                </ClientOnly>
               </div>}
               <label htmlFor="flight-number" className="block text-xs uppercase text-muted-foreground">Flight number</label>
               <Input id="flight-number" className="mb-5 mt-2 readout" value={flightNumber ?? d.nextFlightNumber ?? ""} maxLength={12} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} aria-invalid={!numberValid} />
