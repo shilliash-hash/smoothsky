@@ -4,7 +4,8 @@
 - [ ] 4A: przygotować SQL do ręcznego wdrożenia (globalne nasycenie PAX/Cargo, feeder credit, indeksy i sześć ustawień), bez zmian Reacta ani uruchamiania na bazie graczy; zapis w supabase/migrations zablokowany przez platformę, plik w docs/sql.
 - [ ] 4A: sprawdzić matematykę, zamrożone wyceny, wspólną ścieżkę Best Deals i blokady odprawy w izolowanych testach SQL.
 - [ ] Ręczne wdrożenie 4A — czeka na użytkownika.
-- [ ] 4B: badge i InfoHint w Dispatch oraz sześć pól Admin — osobny etap, czeka na zlecenie i wdrożenie 4A.
+- [x] 4B / Dispatch: kompaktowy badge nasycenia PAX/Cargo i angielski InfoHint z telemetrią okna 36 h, feeder credit oraz progami; kontrola TypeScript OK, bez Vitest i testów przeglądarki.
+- [ ] 4B / Admin: sześć pól konfiguracji CR-04 i walidacja admin-rules.ts — na jutro.
 
 ## Rzut 1 — CR-02 + CR-03
 - [x] CR-02: Cargo w otwartym dymku radaru korzysta z cache TanStack Query, aktualizuje aktualny popup i zachowuje poprzednie dane podczas odświeżeń radaru.

@@ -14,6 +14,27 @@ export const operationsQuery = queryOptions({
 export type Operations = Awaited<ReturnType<typeof getOperations>>;
 export type Airport = Operations["airports"][number];
 export type Flight = Operations["flights"][number];
+export type CorridorSaturation = {
+  version: number;
+  applied?: boolean;
+  window_hours: number;
+  pax: {
+    factor: number;
+    corridor_flown: number;
+    feeder_credit: number;
+    effective_excess: number;
+    floor_pct: number;
+    floor_reached: boolean;
+  };
+  cargo: {
+    factor: number;
+    corridor_flown_kg: number;
+    feeder_credit_kg: number;
+    effective_excess_kg: number;
+    floor_pct: number;
+    floor_reached: boolean;
+  };
+};
 export type Quote = {
   distance_nm: number;
   minutes: number;
@@ -22,6 +43,7 @@ export type Quote = {
   revenue: number;
   short_hop_charter?: CharterSnapshot;
   demand?: DemandSnapshot;
+  saturation?: CorridorSaturation;
   runway_unpaved?: boolean;
   rules: { fare_per_nm: number; charter_by_tier: number[] };
   fuel_gal: number;

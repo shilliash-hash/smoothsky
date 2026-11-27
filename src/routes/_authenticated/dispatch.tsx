@@ -35,6 +35,7 @@ import { FlightBriefing } from '@/components/game/FlightBriefing';
 import { FuelTankPanel } from "@/components/game/FuelTankPanel";
 import { WeightBalancePanel } from "@/components/game/WeightBalancePanel";
 import { InfoHint } from "@/components/game/InfoHint";
+import { CorridorSaturationBadge } from "@/components/game/CorridorSaturationBadge";
 import { FlightModeSelector } from '@/components/game/FlightModeSelector';
 import { DivertControls } from '@/components/game/DivertControls';
 import { ContinuationFuelNotice } from '@/components/game/ContinuationFuelNotice';
@@ -385,10 +386,13 @@ function Dispatch() {
               {ferryAvailable && <Button variant="outline" className="mt-3 h-auto w-full whitespace-normal py-2 text-amber" onClick={() => selectFlightMode("ferry")}><Plane className="h-4 w-4" />Not enough MTOW/fuel for payload · Switch to empty Ferry</Button>}
               {quote ? (
                 <>
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {quote.passengers} passengers · {quote.cargo_kg ?? 0} kg cargo · {Math.round(quote.distance_nm)} NM ·{" "}
-                    {Math.round(quote.minutes)} min
-                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {quote.passengers} passengers · {quote.cargo_kg ?? 0} kg cargo · {Math.round(quote.distance_nm)} NM ·{" "}
+                      {Math.round(quote.minutes)} min
+                    </p>
+                    {quote.saturation && <CorridorSaturationBadge saturation={quote.saturation} />}
+                  </div>
                   {quote.demand && !quote.all_cargo && quote.demand.factor < 1 && <p className="mt-1 text-xs text-amber">Passengers: {quote.passengers}/{quote.demand.raw_passengers} (-{Math.round((1 - quote.demand.factor) * 100)}% local demand to Size {quote.demand.destination_size})</p>}
                   {quote.tank && <FuelTankPanel tank={quote.tank} value={targetFuel ?? quote.tank.target_fuel_gal} onChange={setTargetFuel} kgPerLitre={fuelDensity} market={quote.fuel_market} {...(quote.weight_budget ? { reserveGal: quote.weight_budget.reserve_fuel_gal } : {})} />}
                   {quote.weight_budget && <WeightBalancePanel {...(selected?.location_icao ? { originIcao: selected.location_icao } : {})} budget={quote.weight_budget} passengers={quote.passengers} cargoKg={quote.cargo_kg ?? 0} canAutoLoad={!ferry && planning !== null} onAutoLoad={() => {
