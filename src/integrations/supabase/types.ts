@@ -994,6 +994,7 @@ export type Database = {
           flight_id: string | null
           id: string
           origin_icao: string
+          passengers: number
           payout: number
           status: string
         }
@@ -1014,6 +1015,7 @@ export type Database = {
           flight_id?: string | null
           id?: string
           origin_icao: string
+          passengers?: number
           payout: number
           status?: string
         }
@@ -1034,6 +1036,7 @@ export type Database = {
           flight_id?: string | null
           id?: string
           origin_icao?: string
+          passengers?: number
           payout?: number
           status?: string
         }
@@ -1284,6 +1287,10 @@ export type Database = {
       cancel_used_listing: { Args: { p_listing: string }; Returns: undefined }
       cargo_capacity: { Args: { p_airport: string }; Returns: number }
       cargo_stock: { Args: { p_airport: string }; Returns: number }
+      charter_mission_payout: {
+        Args: { p_nm: number; p_pax: number }
+        Returns: number
+      }
       choose_pilot_career: {
         Args: { p_callsign: string; p_home: string }
         Returns: undefined
