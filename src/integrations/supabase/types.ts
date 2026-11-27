@@ -1240,6 +1240,10 @@ export type Database = {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
       }
+      airport_fuel_cycle_multiplier: {
+        Args: { p_at?: string; p_icao: string }
+        Returns: number
+      }
       airport_fuel_market_multiplier: {
         Args: { p_day?: string; p_icao: string }
         Returns: number
@@ -1251,6 +1255,10 @@ export type Database = {
       airport_fuel_stock: {
         Args: { p_airport: string; p_fuel: string }
         Returns: number
+      }
+      airport_fuel_trend: {
+        Args: { p_at?: string; p_icao: string }
+        Returns: Json
       }
       assert_aircraft_tier_license: {
         Args: { p_tier: number }
