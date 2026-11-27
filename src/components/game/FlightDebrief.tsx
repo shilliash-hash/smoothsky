@@ -51,11 +51,13 @@ export function FlightDebrief({ flightNumber, route, ...flight }: DebriefFlight 
                 {comparison.isPersistentTank && comparison.finalFuelCost !== null && <span>Tank burn value: {formatCr(-comparison.finalFuelCost)}</span>}
                 {comparison.actualFuelGal !== null && <span>Actual {comparison.actualFuelGal.toFixed(1)} gal</span>}
                 {comparison.actualFuelGal === null && comparison.billedFuelGal !== null && <span>Billed {comparison.billedFuelGal.toFixed(1)} gal</span>}
-                {comparison.plannedFuelGal !== null && <span>Est. {comparison.plannedFuelGal.toFixed(1)} gal{comparison.plannedFuelCost !== null ? ` · ${formatCr(-comparison.plannedFuelCost)}` : ""}</span>}
+                {comparison.plannedFuelGal !== null && <span title="Operational fuel allowance: trip burn + reserve, excluding tankering">Est. {comparison.plannedFuelGal.toFixed(1)} gal (trip + reserve)</span>}
+                {comparison.plannedFuelCost !== null && <span>Est. trip cost {formatCr(-comparison.plannedFuelCost)}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {comparison.fuelSavings !== null && <span className={`border px-2 py-1 ${comparison.fuelSavings >= 0 ? "border-primary/30 text-primary" : "border-destructive/30 text-destructive"}`}>
-                  {comparison.isPersistentTank ? "Tank value · " : ""}{comparison.fuelSavings >= 0 ? "Saved" : "Overburn"} {signed(comparison.fuelSavings)}
+                {(comparison.fuelStatus !== null || comparison.fuelSavings !== null) && <span className={`border px-2 py-1 ${comparison.fuelStatus === "overburn" ? "border-destructive/30 text-destructive" : comparison.fuelStatus === "saved" ? "border-primary/30 text-primary" : "border-amber/30 text-amber"}`}>
+                  {comparison.fuelStatus === "overburn" ? "Overburn" : comparison.fuelStatus === "within_reserves" ? "Within planned reserves" : comparison.fuelStatus === "saved" ? "Saved" : "Cost delta"}
+                  {comparison.fuelSavings !== null && <> · {comparison.isPersistentTank ? "Tank value delta" : "Cost delta"} {signed(comparison.fuelSavings)}</>}
                 </span>}
                 {comparison.floorApplied && <span className="border border-amber/30 px-2 py-1 text-amber" title={comparison.actualFuelGal !== null ? `Billed ${comparison.billedFuelGal?.toFixed(1)} gal instead of actual ${comparison.actualFuelGal.toFixed(1)} gal` : "Billing floor applied to the final leg"}>
                   {comparison.floorPct !== null ? `${Math.round(comparison.floorPct * 100)}% floor applied` : "Billing floor applied"}

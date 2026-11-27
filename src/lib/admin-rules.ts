@@ -27,7 +27,20 @@ export function assertAircraftMasses(a: { empty_weight_kg: number; mtow_kg: numb
   if (!(a.mtow_kg > a.empty_weight_kg)) throw new Error("MTOW must exceed empty weight");
 }
 export type AircraftEdit = z.infer<typeof aircraftSchema>;
+export const routeSaturationFields: Record<string, { label: string; min: number; max: number; step: number }> = {
+  route_saturation_window_hours: { label: "Corridor Window (hours)", min: 1, max: 168, step: 1 },
+  route_saturation_decay_lambda: { label: "PAX Decay per Aircraft Capacity", min: 0, max: 5, step: 0.01 },
+  route_saturation_cargo_decay_lambda: { label: "Cargo Decay per Aircraft Capacity", min: 0, max: 5, step: 0.01 },
+  route_saturation_feeder_credit_ratio: { label: "Inbound Feeder Credit (fraction)", min: 0, max: 1, step: 0.01 },
+  route_saturation_pax_floor_pct: { label: "Minimum PAX Demand (fraction)", min: 0, max: 1, step: 0.01 },
+  route_saturation_cargo_floor_pct: { label: "Minimum Cargo Demand (fraction)", min: 0, max: 1, step: 0.01 },
+};
 export function validateEconomyValue(key: string, value: unknown) {
+  const saturation = routeSaturationFields[key];
+  if (saturation) {
+    const schema = z.number().finite().min(saturation.min).max(saturation.max);
+    return (key === "route_saturation_window_hours" ? schema.int() : schema).parse(value);
+  }
   if (key === "fuel_price_volatility_pct") return z.number().finite().min(0).max(0.5).multipleOf(0.01).parse(value);
   if (key === "passenger_weight_kg") return z.number().finite().positive().parse(value);
   if (key === "fuel_billing_floor_pct") return z.number().finite().min(0).max(1).parse(value);

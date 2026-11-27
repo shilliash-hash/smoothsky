@@ -26,7 +26,10 @@ export function flightDebriefComparison(flight: DebriefFlight) {
   const pirep = object(telemetry["pirep"]);
   const legs = Array.isArray(final["legs"]) ? final["legs"].map(object) : [];
   const sumLegs = (key: string) => legs.reduce((sum, leg) => sum + (number(leg[key]) ?? 0), 0);
-  const plannedFuelGal = number(budget["trip_fuel_gal"]) ?? number(plan["fuel_gal"]);
+  const plannedTripFuelGal = number(budget["trip_fuel_gal"]) ?? number(plan["fuel_gal"]);
+  const plannedReserveFuelGal = number(budget["reserve_fuel_gal"]);
+  // Operational allowance excludes any tankering in target/planned full tanks.
+  const plannedFuelGal = plannedTripFuelGal === null ? null : plannedTripFuelGal + (plannedReserveFuelGal ?? 0);
   const billedLast = number(final["billed_fuel_gal"]) ?? number(final["fuel_gal"]);
   const actualLast = number(final["actual_fuel_used_gal"]) ?? billedLast;
   const actualFuelGal = actualLast === null || legs.some(leg => number(leg["actual_fuel_used_gal"]) === null) ? null : actualLast + sumLegs("actual_fuel_used_gal");
@@ -48,8 +51,12 @@ export function flightDebriefComparison(flight: DebriefFlight) {
   const floorPct = number(final["fuel_billing_floor_pct"]);
   const floorApplied = actualLast !== null && billedLast !== null && billedLast - actualLast > 0.0001;
   const landingFee = number(final["landing_fee"]);
+  const fuelStatus = actualFuelGal === null || plannedFuelGal === null || plannedTripFuelGal === null
+    ? null
+    : actualFuelGal > plannedFuelGal ? "overburn" : actualFuelGal <= plannedTripFuelGal ? "saved" : "within_reserves";
   return {
-    plannedFuelGal, actualFuelGal, billedFuelGal, plannedFuelCost, finalFuelCost,
+    plannedFuelGal, plannedTripFuelGal, plannedReserveFuelGal, fuelStatus,
+    actualFuelGal, billedFuelGal, plannedFuelCost, finalFuelCost,
     fuelSavings: plannedFuelCost !== null && finalFuelCost !== null ? plannedFuelCost - finalFuelCost : null,
     estimatedNet, finalNet, isPersistentTank, cashCreditedAtLanding,
     netDelta: estimatedNet !== null && finalNet !== null ? finalNet - estimatedNet : null,

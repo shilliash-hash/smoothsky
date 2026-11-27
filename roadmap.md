@@ -5,7 +5,13 @@
 - [ ] 4A: sprawdzić matematykę, zamrożone wyceny, wspólną ścieżkę Best Deals i blokady odprawy w izolowanych testach SQL.
 - [ ] Ręczne wdrożenie 4A — czeka na użytkownika.
 - [x] 4B / Dispatch: kompaktowy badge nasycenia PAX/Cargo i angielski InfoHint z telemetrią okna 36 h, feeder credit oraz progami; kontrola TypeScript OK, bez Vitest i testów przeglądarki.
-- [ ] 4B / Admin: sześć pól konfiguracji CR-04 i walidacja admin-rules.ts — na jutro.
+- [x] 4B / Admin: sześć pól z economy_config w osobnej sekcji, granice zgodne z SQL 4A i walidacja admin-rules.ts; bez Vitest/PGlite dla admina. Pola wymagają istniejących wpisów migracji 4A.
+
+## CR-08 — Fuel Baseline & ACARS Target Fuel Clarity
+- [x] Ręczna migracja docs/sql/0085_acars_target_fuel_clarity.sql zwraca pełny target_fuel_gal z fallbackami do weight_budget.planned_fuel_gal i legacy fuel_gal; zachowuje key-check oraz dawny planned_fuel_gal.
+- [ ] Uruchomienie migracji 0085 w produkcji — czeka na ręczne wdrożenie użytkownika; nie zmieniano bazy graczy.
+- [x] Debrief: próg Overburn = Trip Burn + Reserve, bez tankeringu; Saved / Within planned reserves / Overburn zależą od zużycia, prawdziwe różnice kosztów pozostają osobno.
+- [x] 23 testy CR-08 przechodzą; bieżąca kompilacja OK, bez testów admina i przeglądarki. Rzeczywisty lot ACARS do potwierdzenia po ręcznym wdrożeniu SQL.
 
 ## Rzut 1 — CR-02 + CR-03
 - [x] CR-02: Cargo w otwartym dymku radaru korzysta z cache TanStack Query, aktualizuje aktualny popup i zachowuje poprzednie dane podczas odświeżeń radaru.

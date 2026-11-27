@@ -15,7 +15,7 @@ import { adminAccessQuery, adminDataQuery } from "@/lib/admin";
 import { saveAdminData, resetAirports, resetAdminCompany, deleteAdminAccount } from "@/lib/admin.functions";
 import { companyQuery } from "@/lib/game";
 import { formatCr } from "@/lib/rules";
-import type { AircraftEdit } from "@/lib/admin-rules";
+import { routeSaturationFields, type AircraftEdit } from "@/lib/admin-rules";
 import { recruitmentSettings } from "@/lib/recruitment-rules";
 import { fleetOverviewQuery } from "@/lib/fleet";
 import { saveOperatingRules } from "@/lib/fleet.functions";
@@ -138,8 +138,17 @@ function Admin() {
         </TabsList>
         <TabsContent value="economy" className="mt-6">
           <OperatingRulesEditor />
+          <h2 className="mt-8 border-b border-border pb-3 text-xl font-semibold">Corridor saturation &amp; feeder credit</h2>
           <div className="divide-y divide-border">
-            {data.economy.map((row) => (
+            {data.economy.filter(row => routeSaturationFields[row.key]).map(row => <EconomyRow
+              key={`${row.key}:${JSON.stringify(row.value)}`}
+              row={row}
+              busy={busy}
+              onSave={value => persist({ data: { kind: "economy", key: row.key, value } })}
+            />)}
+          </div>
+          <div className="divide-y divide-border">
+            {data.economy.filter(row => !routeSaturationFields[row.key]).map((row) => (
               row.key === "recruitment_commissions" ? <RecruitmentEditor key={JSON.stringify(row.value)} value={row.value} busy={busy} onSave={value => persist({ data: { kind: "economy", key: row.key, value } })} /> : <EconomyRow
                 key={`${row.key}:${JSON.stringify(row.value)}`}
                 row={row}
@@ -472,6 +481,7 @@ function EconomyRow({
   onSave: (value: unknown) => Promise<boolean>;
 }) {
   const [value, setValue] = useState(JSON.stringify(row.value));
+  const saturationField = routeSaturationFields[row.key];
   const isArray = Array.isArray(row.value),
     isBool = typeof row.value === "boolean";
   return (
@@ -488,7 +498,7 @@ function EconomyRow({
     >
       <div>
         <label htmlFor={row.key} className="text-sm font-medium capitalize">
-          {row.key === "fuel_price_volatility_pct" ? "Fuel Price Volatility (±fraction)" : row.key === "dispatch_usable_range_pct" ? "Dispatch Usable Range (fraction)" : row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : row.key === "short_hop_threshold_nm" ? "Short-Hop Threshold (NM)" : row.key === "short_hop_min_multiplier" ? "Short-Hop Minimum Charter Multiplier" : row.key === "demand_factor_by_size" ? "Passenger Demand by Destination Size" : row.key === "hub_fare_bonus_by_size" ? "Hub Fare Bonus by Destination Size" : displayTerminology(row.key.replaceAll("_", " "))}
+          {saturationField?.label ?? (row.key === "fuel_price_volatility_pct" ? "Fuel Price Volatility (±fraction)" : row.key === "dispatch_usable_range_pct" ? "Dispatch Usable Range (fraction)" : row.key === "charter_by_tier" ? "Stepped Charter Surcharge" : row.key === "spot_rental_multiplier" ? "Spot Rental Rate Multiplier" : row.key === "short_hop_threshold_nm" ? "Short-Hop Threshold (NM)" : row.key === "short_hop_min_multiplier" ? "Short-Hop Minimum Charter Multiplier" : row.key === "demand_factor_by_size" ? "Passenger Demand by Destination Size" : row.key === "hub_fare_bonus_by_size" ? "Hub Fare Bonus by Destination Size" : displayTerminology(row.key.replaceAll("_", " ")))}
         </label>
         <p className="mt-1 text-xs text-muted-foreground">{displayTerminology(row.description)}</p>
       </div>
@@ -528,9 +538,9 @@ function EconomyRow({
           id={row.key}
           aria-label={displayTerminology(row.key.replaceAll("_", " "))}
           type="number"
-          min={row.key === "fuel_price_volatility_pct" ? 0 : row.key === "dispatch_usable_range_pct" ? 0.05 : row.key === "spot_rental_multiplier" ? 0.01 : row.key === "short_hop_min_multiplier" ? 0 : row.key === "short_hop_threshold_nm" ? 10 : undefined}
-          max={row.key === "fuel_price_volatility_pct" ? 0.5 : row.key === "dispatch_usable_range_pct" || row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? 1 : row.key === "short_hop_threshold_nm" ? 300 : undefined}
-          step={row.key === "fuel_price_volatility_pct" ? "0.01" : row.key === "dispatch_usable_range_pct" || row.key === "fuel_billing_floor_pct" ? "0.05" : row.key === "passenger_weight_kg" ? "1" : row.key === "landing_fee_per_ton_mtow" ? "0.1" : row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? "0.01" : row.key === "short_hop_threshold_nm" ? "1" : Number.isInteger(Number(row.value)) ? "1" : "0.1"}
+          min={saturationField?.min ?? (row.key === "fuel_price_volatility_pct" ? 0 : row.key === "dispatch_usable_range_pct" ? 0.05 : row.key === "spot_rental_multiplier" ? 0.01 : row.key === "short_hop_min_multiplier" ? 0 : row.key === "short_hop_threshold_nm" ? 10 : undefined)}
+          max={saturationField?.max ?? (row.key === "fuel_price_volatility_pct" ? 0.5 : row.key === "dispatch_usable_range_pct" || row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? 1 : row.key === "short_hop_threshold_nm" ? 300 : undefined)}
+          step={saturationField?.step ?? (row.key === "fuel_price_volatility_pct" ? "0.01" : row.key === "dispatch_usable_range_pct" || row.key === "fuel_billing_floor_pct" ? "0.05" : row.key === "passenger_weight_kg" ? "1" : row.key === "landing_fee_per_ton_mtow" ? "0.1" : row.key === "spot_rental_multiplier" || row.key === "short_hop_min_multiplier" ? "0.01" : row.key === "short_hop_threshold_nm" ? "1" : Number.isInteger(Number(row.value)) ? "1" : "0.1")}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className="readout"

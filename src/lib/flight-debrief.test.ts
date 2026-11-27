@@ -2,6 +2,31 @@ import { describe, expect, it } from "vitest";
 import { flightDebriefComparison } from "./flight-debrief";
 
 describe("frozen flight debrief comparisons", () => {
+  it("allows trip plus reserve without including tankering in the threshold", () => {
+    const result = flightDebriefComparison({
+      estimate: { target_fuel_gal: 200, weight_budget: { trip_fuel_gal: 100, reserve_fuel_gal: 30, planned_fuel_gal: 200 }, fuel_cost: 500 },
+      settlement: { actual_fuel_used_gal: 110, billed_fuel_gal: 110, fuel_cost: 550 },
+    });
+    expect(result.plannedFuelGal).toBe(130);
+    expect(result.fuelStatus).toBe("within_reserves");
+    expect(result.fuelSavings).toBe(-50);
+  });
+
+  it("warns only above the full trip plus reserve allowance", () => {
+    const input = { estimate: { weight_budget: { trip_fuel_gal: 100, reserve_fuel_gal: 30, planned_fuel_gal: 200 } } };
+    expect(flightDebriefComparison({ ...input, settlement: { actual_fuel_used_gal: 130 } }).fuelStatus).toBe("within_reserves");
+    expect(flightDebriefComparison({ ...input, settlement: { actual_fuel_used_gal: 130.1 } }).fuelStatus).toBe("overburn");
+  });
+
+  it("marks savings below trip burn and does not infer reserve from full tanks", () => {
+    expect(flightDebriefComparison({ estimate: { weight_budget: { trip_fuel_gal: 100, reserve_fuel_gal: 30 } }, settlement: { actual_fuel_used_gal: 90 } }).fuelStatus).toBe("saved");
+    expect(flightDebriefComparison({ estimate: { weight_budget: { trip_fuel_gal: 100, planned_fuel_gal: 200 } }, settlement: { actual_fuel_used_gal: 110 } }).plannedFuelGal).toBe(100);
+  });
+
+  it("does not classify incomplete diverted actual consumption", () => {
+    const result = flightDebriefComparison({ estimate: { fuel_gal: 10 }, settlement: { actual_fuel_used_gal: 4, legs: [{ fuel_used_gal: 8 }] } });
+    expect(result.fuelStatus).toBeNull();
+  });
   it("shows tank fuel as value, not a second landing cash charge", () => {
     const result = flightDebriefComparison({
       estimate: { fuel_uplift_gal: 0, fuel_cost: 581.06, net: 647.72 },

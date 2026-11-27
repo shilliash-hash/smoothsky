@@ -1,2 +1,3 @@
 - Manual-only SQL proposals stay outside managed migration history and are tested against PGlite before handoff; never execute them against player databases without an explicit deployment request.
 - Route saturation is computed inside the shared quote path after dispatch endpoint locks; payload limits must expose the same reduced demand so frontend optimization cannot bypass it.
+- ACARS fuel clarity is additive in the revoked flight JSON helper; key-checked connect retains authentication and the legacy trip field while exposing the frozen full tank target — avoids client changes or altering settlement.
