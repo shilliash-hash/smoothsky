@@ -69,7 +69,7 @@ export function FleetCarousel({ companyId, fleet, contractEnd, onSelect, compact
           </div>}
         </div>)}
       </div>
-      {!view.atEnd && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />}
+{!compact && !view.atEnd && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent" />}
     </div>}
     {pages > 1 && <div className="mt-3 flex justify-center gap-1.5" aria-hidden>{Array.from({ length: pages }, (_, i) => <span key={i} className={`h-1 rounded-full transition-all ${i === page ? "w-6 bg-primary" : "w-2 bg-border"}`} />)}</div>}
   </div>;
