@@ -510,14 +510,21 @@ export type Database = {
           airframe_hours: number
           company_id: string
           current_fuel_gal: number
+          defect_hours: number
+          hours_since_a_check: number
+          hours_since_c_check: number
+          hours_since_d_check: number
           id: string
+          last_hard_landing_fpm: number | null
           lease_deposit: number
           leased_at: string
           location_icao: string
+          maintenance_status: string
           next_payment_due: string
           ownership: string
           purchase_price: number
           registration: string
+          reliability_pct: number
           reserved_by: string | null
           reserved_until: string | null
           returned_at: string | null
@@ -529,14 +536,21 @@ export type Database = {
           airframe_hours?: number
           company_id: string
           current_fuel_gal?: number
+          defect_hours?: number
+          hours_since_a_check?: number
+          hours_since_c_check?: number
+          hours_since_d_check?: number
           id?: string
+          last_hard_landing_fpm?: number | null
           lease_deposit: number
           leased_at?: string
           location_icao: string
+          maintenance_status?: string
           next_payment_due: string
           ownership?: string
           purchase_price?: number
           registration: string
+          reliability_pct?: number
           reserved_by?: string | null
           reserved_until?: string | null
           returned_at?: string | null
@@ -548,14 +562,21 @@ export type Database = {
           airframe_hours?: number
           company_id?: string
           current_fuel_gal?: number
+          defect_hours?: number
+          hours_since_a_check?: number
+          hours_since_c_check?: number
+          hours_since_d_check?: number
           id?: string
+          last_hard_landing_fpm?: number | null
           lease_deposit?: number
           leased_at?: string
           location_icao?: string
+          maintenance_status?: string
           next_payment_due?: string
           ownership?: string
           purchase_price?: number
           registration?: string
+          reliability_pct?: number
           reserved_by?: string | null
           reserved_until?: string | null
           returned_at?: string | null
@@ -1690,6 +1711,10 @@ export type Database = {
         Args: { p_aircraft: string; p_price: number }
         Returns: string
       }
+      maintenance_quote: {
+        Args: { p_aircraft: string; p_kind: string }
+        Returns: Json
+      }
       manage_fob: {
         Args: {
           p_action: string
@@ -1705,6 +1730,9 @@ export type Database = {
         Returns: string
       }
       mark_flight_acars: { Args: { p_flight: string }; Returns: undefined }
+      mx_cfg: { Args: { p_default: number; p_key: string }; Returns: number }
+      mx_tier_cost: { Args: { p_key: string; p_tier: number }; Returns: number }
+      mx_wear_rate: { Args: { p_rel: number }; Returns: number }
       my_pilot_profile: { Args: never; Returns: Json }
       new_acars_key: { Args: never; Returns: string }
       next_flight_number: { Args: never; Returns: string }
@@ -1721,6 +1749,10 @@ export type Database = {
       }
       passenger_stock: { Args: { p_airport: string }; Returns: number }
       pay_due_dividends: { Args: { p_company: string }; Returns: undefined }
+      perform_maintenance: {
+        Args: { p_aircraft: string; p_kind: string }
+        Returns: Json
+      }
       pilot_balance: { Args: { p_user: string }; Returns: number }
       pilot_flight_action: {
         Args: {
