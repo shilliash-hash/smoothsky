@@ -9,7 +9,12 @@ import { performMaintenance, quoteMaintenance, type MaintenanceKind, type Mainte
 import { maintenanceStatusLabel, reliabilityBand, type MaintenanceState } from "@/lib/maintenance";
 import { formatCr } from "@/lib/rules";
 
-const kinds: { kind: MaintenanceKind; label: string }[] = [{ kind: "A", label: "A-Check" }, { kind: "C", label: "C-Check" }, { kind: "D", label: "D-Check" }, { kind: "MECHANIC", label: "Fly-in Mechanic" }];
+const kinds: { kind: MaintenanceKind; label: string; effect: string }[] = [
+  { kind: "A", label: "A-Check", effect: "Resets A-Check timer (100 FH) · +10% Reliability" },
+  { kind: "C", label: "C-Check", effect: "Resets A & C timers (600 FH) · Restores ≥95% Reliability" },
+  { kind: "D", label: "D-Check", effect: "Full overhaul (2,400 FH) · Restores 100% Reliability" },
+  { kind: "MECHANIC", label: "Fly-in Mechanic", effect: "Clears active defects & AOG only (keeps check timers)" },
+];
 
 export function MaintenancePanel({ aircraft, state, idle }: { aircraft: string; state: MaintenanceState; idle: boolean }) {
   const [open, setOpen] = useState(false);
@@ -38,10 +43,14 @@ export function MaintenancePanel({ aircraft, state, idle }: { aircraft: string; 
     <Button size="sm" variant="outline" className="mt-2 w-full" disabled={!idle} onClick={show}><Wrench className="h-4 w-4" />Maintenance</Button>
     <Dialog open={open} onOpenChange={o => !busy && setOpen(o)}><DialogContent>
       <DialogTitle>Maintenance & MRO</DialogTitle>
-      <DialogDescription>Airport level depends on its size; your FBO Maintenance Bay adds one level and a discount. A-Check needs level 2, C-Check 4, D-Check 6. A Fly-in Mechanic repairs defects and AOG anywhere.</DialogDescription>
+      <DialogDescription>Check availability depends on airport size. Your FBO Maintenance Bay adds +1 facility level and applies a 35% discount.</DialogDescription>
       {!quotes ? <p className="text-sm text-muted-foreground">Loading quotes…</p> : <div className="divide-y divide-border">
-        {quotes.map((q, i) => <div key={q.kind} className="flex items-center justify-between gap-3 py-2 text-sm">
-          <div><p>{kinds[i]?.label}</p><p className="readout text-xs text-muted-foreground">{q.available ? (q.fbo_bay ? `FBO bay discount · was ${formatCr(q.base_cost)}` : `Airport level ${q.airport_level}`) : `Needs level ${q.required_level} (here ${q.airport_level})`}</p></div>
+        {quotes.map((q, i) => <div key={q.kind} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+          <div className="space-y-0.5">
+            <p className="font-medium">{kinds[i]?.label}</p>
+            <p className="text-xs text-muted-foreground">{kinds[i]?.effect}</p>
+            <p className="readout text-xs text-muted-foreground">{q.available ? (q.fbo_bay ? `FBO bay discount · was ${formatCr(q.base_cost)}` : `Available here · Airport level ${q.airport_level}`) : `Requires level ${q.required_level} (here ${q.airport_level})`}</p>
+          </div>
           <Button size="sm" disabled={busy || !q.available} onClick={() => run(q.kind)}>{formatCr(q.cost)}</Button>
         </div>)}
       </div>}
