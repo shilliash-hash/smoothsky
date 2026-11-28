@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, isCancelledError } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -40,12 +40,19 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
   const router = useRouter();
+  const cancelled = isCancelledError(error) || (error instanceof Error && error.name === "CancelledError");
   const networkError = error instanceof Error && /networkerror|failed to fetch|network request failed|load failed/i.test(error.message);
   useEffect(() => {
+    if (cancelled) {
+      reset();
+      return;
+    }
+    console.error(error);
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, cancelled, reset]);
+
+  if (cancelled) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
