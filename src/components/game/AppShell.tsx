@@ -60,6 +60,7 @@ export function AppShell({
                 >
                   Dashboard
                 </Link>
+                <Link to="/finances" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-primary" }}>Finances</Link>
                 <Link
                   to="/market"
                   className="text-muted-foreground hover:text-foreground"

@@ -1,5 +1,10 @@
 # Roadmap
 
+## CR-16 — Financial Reports Dashboard
+- [x] Isolated /finances page, authenticated paginated read-only data, UTC 7D/30D/All Time, KPI and cash/balance charts, revenue/cost mixes, Tier and fleet P&L including grouped rentals, route and FBO summaries.
+- [x] 36 focused financial/debrief calculation tests passed and current preview compilation OK; no browser tests or live player writes. Signed-in visual/readback verification remains manual.
+- [ ] Full historical rental type attribution and realized FBO/MRO/feeder ROI require owner-safe historical identity/savings snapshots; current report retains unidentified entries and labels plan savings rather than inventing results.
+
 ## Special Missions preview
 - [x] Inline Preview: Great Circle mission route and nearest fitting airline aircraft with registration, parked airport and ferry NM; no economy/schema changes.
 - [x] Twenty targeted selection/mission tests passed; preview compilation OK. No automated browser checks or live player writes; visual interaction remains for manual verification.

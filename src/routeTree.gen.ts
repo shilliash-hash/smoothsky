@@ -18,6 +18,7 @@ import { Route as AuthenticatedBasesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCrewRouteImport } from './routes/_authenticated/crew'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDispatchRouteImport } from './routes/_authenticated/dispatch'
+import { Route as AuthenticatedFinancesRouteImport } from './routes/_authenticated/finances'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedLogbookRouteImport } from './routes/_authenticated/logbook'
 import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
@@ -73,6 +74,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedDispatchRoute = AuthenticatedDispatchRouteImport.update({
   id: '/dispatch',
   path: '/dispatch',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinancesRoute = AuthenticatedFinancesRouteImport.update({
+  id: '/finances',
+  path: '/finances',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeaderboardRoute =
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/crew': typeof AuthenticatedCrewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/finances': typeof AuthenticatedFinancesRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/logbook': typeof AuthenticatedLogbookRoute
   '/market': typeof AuthenticatedMarketRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/crew': typeof AuthenticatedCrewRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dispatch': typeof AuthenticatedDispatchRoute
+  '/finances': typeof AuthenticatedFinancesRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/logbook': typeof AuthenticatedLogbookRoute
   '/market': typeof AuthenticatedMarketRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_authenticated/crew': typeof AuthenticatedCrewRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dispatch': typeof AuthenticatedDispatchRoute
+  '/_authenticated/finances': typeof AuthenticatedFinancesRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/logbook': typeof AuthenticatedLogbookRoute
   '/_authenticated/market': typeof AuthenticatedMarketRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/crew'
     | '/dashboard'
     | '/dispatch'
+    | '/finances'
     | '/leaderboard'
     | '/logbook'
     | '/market'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/crew'
     | '/dashboard'
     | '/dispatch'
+    | '/finances'
     | '/leaderboard'
     | '/logbook'
     | '/market'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crew'
     | '/_authenticated/dashboard'
     | '/_authenticated/dispatch'
+    | '/_authenticated/finances'
     | '/_authenticated/leaderboard'
     | '/_authenticated/logbook'
     | '/_authenticated/market'
@@ -349,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/dispatch'
       fullPath: '/dispatch'
       preLoaderRoute: typeof AuthenticatedDispatchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finances': {
+      id: '/_authenticated/finances'
+      path: '/finances'
+      fullPath: '/finances'
+      preLoaderRoute: typeof AuthenticatedFinancesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leaderboard': {
@@ -444,6 +463,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrewRoute: typeof AuthenticatedCrewRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDispatchRoute: typeof AuthenticatedDispatchRoute
+  AuthenticatedFinancesRoute: typeof AuthenticatedFinancesRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLogbookRoute: typeof AuthenticatedLogbookRoute
   AuthenticatedMarketRoute: typeof AuthenticatedMarketRoute
@@ -460,6 +480,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCrewRoute: AuthenticatedCrewRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDispatchRoute: AuthenticatedDispatchRoute,
+  AuthenticatedFinancesRoute: AuthenticatedFinancesRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLogbookRoute: AuthenticatedLogbookRoute,
   AuthenticatedMarketRoute: AuthenticatedMarketRoute,
