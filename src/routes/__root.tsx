@@ -45,12 +45,12 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const networkError = error instanceof Error && /networkerror|failed to fetch|network request failed|load failed/i.test(error.message);
   useEffect(() => {
     if (cancelled) {
-      reset();
+      void router.invalidate().finally(() => reset());
       return;
     }
     console.error(error);
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error, cancelled, reset]);
+  }, [error, cancelled, reset, router]);
 
   if (cancelled) return null;
 
